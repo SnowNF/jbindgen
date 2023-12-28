@@ -35,7 +35,7 @@ jobs:
     - name: cmake run tests
       run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ctest --output-on-failure -R assimp"
     - name: move generation files
-      run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && mkdir -p && mv generation/* src/main/java"
+      run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && mkdir -p src/main/java && mv generation/* src/main/java"
     - name: generate gradle files
       run: |
         build_gradle="plugins {
