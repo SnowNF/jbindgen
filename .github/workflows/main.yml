@@ -24,7 +24,7 @@ jobs:
         cp -r * ../sid/project
     - name: install depends
       run: |
-        sudo chroot ../sid /bin/bash -c "apt-get install libclang-16-dev clang-16 cmake g++ openjdk-21-jdk-headless openjdk-22-jdk-headless -y --no-install-suggests --no-install-recommends "
+        sudo chroot ../sid /bin/bash -c "apt-get install libclang-16-dev clang-16 cmake ninja g++ openjdk-21-jdk-headless openjdk-22-jdk-headless -y --no-install-suggests --no-install-recommends "
         cd ../sid/extra/
         wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
         unzip gradle-8.5-bin.zip
