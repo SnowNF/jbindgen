@@ -20,7 +20,7 @@ jobs:
         sudo mkdir ../sid/extra
         sudo chmod -R 777 ../sid/project
         sudo chmod -R 777 ../sid/extra
-        sudo chroot ../sid /bin/env -i /bin/bash -c "useradd test"
+        sudo chroot ../sid /bin/env -i /bin/bash -c "useradd test && mkdir -p /home/test && chown test /home/test"
         cp -r * ../sid/project
     - name: install depends
       run: |
