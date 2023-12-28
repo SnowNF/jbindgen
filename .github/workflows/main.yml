@@ -54,7 +54,7 @@ jobs:
         echo "$build_gradle" > build.gradle
         settings_gradle="rootProject.name = 'build'"
         echo "$settings_gradle" > settings.gradle
-        mv build.gradle ../sid/project/build
-        mv settings.gradle ../sid/project/build
+        sudo mv build.gradle ../sid/project/build
+        sudo mv settings.gradle ../sid/project/build
     - name: gradle build
       run: sudo chroot --userspec=test ../sid /bin/bash -c "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64/ cd /project && bash /root/gradle-8.5-bin/bin/gradle build
