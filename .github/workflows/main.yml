@@ -32,13 +32,8 @@ jobs:
       run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project && cmake -B build"
     - name: cmake build
       run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && cmake --build . -j"
-    - name: run tests
-      run: |
-        sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ./assimp"
-        sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ./freetype"
-        sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ./vma"
-        sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ./vulkan"
-        sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ./miniaudio"
+    - name: cmake run tests
+      run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ctest --output-on-failure -R assimp"
     - name: move generation files
       run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && mv generation/* src/main/java"
     - name: generate gradle files
