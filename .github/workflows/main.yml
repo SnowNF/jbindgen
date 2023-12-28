@@ -24,16 +24,16 @@ jobs:
         cp -r * ../sid/project
     - name: install depends
       run: |
-        sudo chroot ../sid /bin/bash -c "apt-get install libclang-16-dev clang-16 cmake g++ openjdk-21-jdk openjdk-22-jdk -y"
+        sudo chroot ../sid /bin/bash -c "apt-get install libclang-16-dev clang-16 cmake g++ openjdk-21-jdk-headless openjdk-22-jdk-headless -y --no-install-suggests --no-install-recommends "
         cd ../sid/extra/
         wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
         unzip gradle-8.5-bin.zip
     - name: cmake configure
       run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project && cmake -B build"
     - name: cmake build
-      run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project && cmake --build . -j"
+      run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && cmake --build . -j"
     - name: cmake run tests
-      run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project && ctest --build-and-test"
+      run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && ctest --build-and-test"
     - name: move generation files
       run: sudo chroot --userspec=test ../sid /bin/bash -c "cd /project/build && mv generation/* src/main/java"
     - name: generate gradle files
