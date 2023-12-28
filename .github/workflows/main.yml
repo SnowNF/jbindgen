@@ -13,13 +13,13 @@ jobs:
     - uses: actions/checkout@v3
     - name: bootstrap a debian
       run: |
-        sudo apt install debootstrap
+        sudo apt-get install debootstrap -y
         sudo debootstrap sid ../sid https://deb.debian.org/debian/
         sudo mkdir ../sid/project
         sudo cp -r * ../sid/project
     - name: install depends
       run: |
-        sudo chroot ../sid /bin/bash -c "apt install libclang-16-dev cmake g++ openjdk-21-jdk openjdk-22-jdk"
+        sudo chroot ../sid /bin/bash -c "apt-get install libclang-16-dev cmake g++ openjdk-21-jdk openjdk-22-jdk -y"
         sudo cd ../sid/root/
         sudo wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
         sudo unzip gradle-8.5-bin.zip
