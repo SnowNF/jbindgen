@@ -57,4 +57,4 @@ jobs:
         sudo mv build.gradle ../sid/project/build
         sudo mv settings.gradle ../sid/project/build
     - name: gradle build
-      run: sudo chroot --userspec=test ../sid /bin/bash -c "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64/ cd /project && bash /extra/gradle-8.5-bin/bin/gradle build"
+      run: sudo chroot --userspec=test ../sid /bin/bash -c "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64/ cd /project && bash /extra/gradle-8.5/bin/gradle build"
