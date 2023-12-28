@@ -13,23 +13,23 @@ jobs:
     - uses: actions/checkout@v3
     - name: bootstrap a debian
       run: |
-        apt install debootstrap
-        debootstrap sid ../sid https://deb.debian.org/debian/
-        cp -r * ../sid/project
+        sudo apt install debootstrap
+        sudo debootstrap sid ../sid https://deb.debian.org/debian/
+        sudo cp -r * ../sid/project
     - name: install depends
       run: |
-        chroot ../sid /bin/bash -c "apt install libclang-16-dev cmake g++ openjdk-21-jdk openjdk-22-jdk"
-        cd ../sid/root/
-        wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
-        unzip gradle-8.5-bin.zip
+        sudo chroot ../sid /bin/bash -c "apt install libclang-16-dev cmake g++ openjdk-21-jdk openjdk-22-jdk"
+        sudo cd ../sid/root/
+        sudo wget https://services.gradle.org/distributions/gradle-8.5-bin.zip
+        sudo unzip gradle-8.5-bin.zip
     - name: cmake configure
-      run: chroot ../sid /bin/bash -c "cd /project && cmake -B build"
+      run: sudo chroot ../sid /bin/bash -c "cd /project && cmake -B build"
     - name: cmake build
-      run: chroot ../sid /bin/bash -c "cd /project && cmake --build . -j"
+      run: sudo chroot ../sid /bin/bash -c "cd /project && cmake --build . -j"
     - name: cmake run tests
-      run: chroot ../sid /bin/bash -c "cd /project && ctest --build-and-test"
+      run: sudo chroot ../sid /bin/bash -c "cd /project && ctest --build-and-test"
     - name: move generation files
-      run: chroot ../sid /bin/bash -c "cd /project/build && mv generation/* src/main/java"
+      run: sudo chroot ../sid /bin/bash -c "cd /project/build && mv generation/* src/main/java"
     - name: generate gradle files
       run: |
         build_gradle="plugins {
@@ -45,8 +45,10 @@ jobs:
                               languageVersion = JavaLanguageVersion.of(22)
                           }
                       }"
-        echo "$build_gradle" > ../sid/project/build.gradle
+        echo "$build_gradle" > build.gradle
         settings_gradle="rootProject.name = 'build'"
-        echo "$settings_gradle" > ../sid/project/settings.gradle
+        echo "$settings_gradle" > settings.gradle
+        sudo mv build.gradle ../sid/project/build
+        sudo mv settings.gradle ../sid/project/build
     - name: gradle build
-      run: chroot ../sid /bin/bash -c "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64/ cd /project && bash /root/gradle-8.5-bin/bin/gradle build
+      run: sudo chroot ../sid /bin/bash -c "JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64/ cd /project && bash /root/gradle-8.5-bin/bin/gradle build
