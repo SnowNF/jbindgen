@@ -15,6 +15,7 @@ jobs:
       run: |
         sudo apt install debootstrap
         sudo debootstrap sid ../sid https://deb.debian.org/debian/
+        sudo mkdir ../sid/project
         sudo cp -r * ../sid/project
     - name: install depends
       run: |
