@@ -96,7 +96,7 @@ public class EnumGenerator implements Generator {
                     %4$s
                 }""".formatted(enumName, e.getTypePkg().packagePath().makePackage(), // 2
                 Generator.extractImports(e, dependency), String.join("\n    ", members), // 4
-                CommonTypes.SpecificTypes.FunctionUtils.getRawName(), // 5
+                CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW), // 5
                 e.getTypePkg().type().getType().getOperations().getValue().typeName(TypeAttr.NameType.RAW), // 6
                 CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW) // 7
 

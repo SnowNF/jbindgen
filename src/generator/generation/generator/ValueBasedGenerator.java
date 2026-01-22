@@ -39,7 +39,7 @@ public class ValueBasedGenerator implements Generator {
                 %2$s
                 import java.util.Objects;
                 
-                public class %3$s implements %5$s<%3$s, %4$s>, Info<%3$s> {
+                public class %3$s implements %5$s<%3$s, %4$s>, %11$s<%3$s> {
                     public static final Operations<%4$s> ELEMENT_OPERATIONS = %6$s;
                     public static final Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);
                 
@@ -139,7 +139,8 @@ public class ValueBasedGenerator implements Generator {
                 CommonTypes.ValueInterface.PtrI.typeName(TypeAttr.NameType.RAW), // 7
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(), // 8
                 CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW), // 9
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW)
+                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 10
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW) // 11
         ));
     }
 }

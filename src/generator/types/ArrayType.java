@@ -35,7 +35,7 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
                     LIST_TYPE.getWildcardName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.WILDCARD));
             case GENERIC ->
                     LIST_TYPE.getGenericName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.GENERIC));
-            case RAW -> LIST_TYPE.getRawName();
+            case RAW -> LIST_TYPE.typeName(TypeAttr.NameType.RAW);
         };
     }
 

@@ -4,6 +4,7 @@ import generator.Dependency;
 import generator.Utils;
 import generator.generation.SymbolProvider;
 import generator.types.CommonTypes;
+import generator.types.TypeAttr;
 
 public class SymbolProviderGenerator implements Generator {
     private final SymbolProvider symbolProvider;
@@ -48,6 +49,6 @@ public class SymbolProviderGenerator implements Generator {
                 """.formatted(symbolProvider.getTypePkg().packagePath().makePackage(),
                 symbolProvider.getTypePkg().packagePath().getClassName(),
                 Generator.extractImports(symbolProvider, dependency), // 3
-                CommonTypes.SpecificTypes.FunctionUtils.getRawName()));
+                CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW)));
     }
 }

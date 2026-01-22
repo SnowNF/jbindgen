@@ -6,7 +6,11 @@ import generator.TypePkg;
 import generator.Utils;
 import generator.generation.Common;
 import generator.types.CommonTypes;
-import generator.types.TypeAttr;
+import generator.types.CommonTypes.BasicOperations;
+import generator.types.CommonTypes.BindTypes;
+import generator.types.CommonTypes.SpecificTypes;
+import generator.types.CommonTypes.ValueInterface;
+import generator.types.TypeAttr.NameType;
 
 import static utils.CommonUtils.Assert;
 
@@ -26,21 +30,21 @@ public class CommonGenerator implements Generator {
             PackagePath packagePath = dependency.getTypePackagePath(implType.type());
             String imports = Generator.extractImports(common, dependency);
             switch (implType.type()) {
-                case CommonTypes.BindTypes bindTypes -> {
+                case BindTypes bindTypes -> {
                     genBindTypes(packagePath, bindTypes, imports);
                 }
                 case CommonTypes.BindTypeOperations btOp -> {
                     genBindTypeOp(packagePath, btOp, imports);
                 }
-                case CommonTypes.ValueInterface v -> {
+                case ValueInterface v -> {
                     genValueInterface(packagePath, v, imports);
                 }
-                case CommonTypes.SpecificTypes specificTypes -> {
+                case SpecificTypes specificTypes -> {
                     switch (specificTypes) {
                         case Array -> genArray(packagePath, imports);
                         case Single -> genSingle(packagePath, imports);
                         case FlatArray -> genFlatArray(packagePath, imports);
-                        case Str -> genNstr(packagePath, imports);
+                        case Str -> genStr(packagePath, imports);
                         case FunctionUtils -> genFunctionUtils(packagePath);
                         case ArrayOp -> genArrayOp(packagePath, imports);
                         case FlatArrayOp -> genFlatArrayOp(packagePath, imports);
@@ -51,7 +55,7 @@ public class CommonGenerator implements Generator {
                 case CommonTypes.FFMTypes FFMTypes -> {
 
                 }
-                case CommonTypes.BasicOperations ext -> {
+                case BasicOperations ext -> {
                     switch (ext) {
                         case Operation -> genOperation(packagePath);
                         case Info -> genInfo(packagePath, imports);
@@ -71,9 +75,9 @@ public class CommonGenerator implements Generator {
                 
                 %s
                 
-                public interface StructI<E> extends Value<MemorySegment> {
-                    static <I> StructI<I> of(MemorySegment value) {
-                        return new StructI<>() {
+                public interface %4$s<E> extends %3$s<MemorySegment> {
+                    static <I> %4$s<I> of(MemorySegment value) {
+                        return new %4$s<>() {
                             @Override
                             public ValueOp<MemorySegment> operator() {
                                 return () -> value;
@@ -86,11 +90,14 @@ public class CommonGenerator implements Generator {
                         };
                     }
                 
-                    static <I> StructI<I> of(StructI<?> value) {
+                    static <I> %4$s<I> of(%4$s<?> value) {
                         return of(value.operator().value());
                     }
                 }
-                """.formatted(path.makePackage(), imports));
+                """.formatted(path.makePackage(), imports,
+                BasicOperations.Value.typeName(NameType.RAW), // 3
+                BasicOperations.StructI.typeName(NameType.RAW) // 4
+        ));
     }
 
     private void genArrayI(PackagePath path, String imports) {
@@ -99,9 +106,9 @@ public class CommonGenerator implements Generator {
                 
                 %s
                 
-                public interface ArrayI<E> extends Value<MemorySegment> {
-                    static <I> ArrayI<I> of(MemorySegment value) {
-                        return new ArrayI<>() {
+                public interface %4$s<E> extends %3$s<MemorySegment> {
+                    static <I> %4$s<I> of(MemorySegment value) {
+                        return new %4$s<>() {
                             @Override
                             public ValueOp<MemorySegment> operator() {
                                 return () -> value;
@@ -114,11 +121,14 @@ public class CommonGenerator implements Generator {
                         };
                     }
                 
-                    static <I> ArrayI<I> of(ArrayI<?> value) {
+                    static <I> %4$s<I> of(%4$s<?> value) {
                         return of(value.operator().value());
                     }
                 }
-                """.formatted(path.makePackage(), imports));
+                """.formatted(path.makePackage(), imports,
+                BasicOperations.Value.typeName(NameType.RAW), // 3
+                BasicOperations.ArrayI.typeName(NameType.RAW) // 4
+        ));
     }
 
     private void genBindTypeOp(PackagePath path, CommonTypes.BindTypeOperations btOp, String imports) {
@@ -129,16 +139,21 @@ public class CommonGenerator implements Generator {
                     %2$s
                     import java.lang.foreign.MemorySegment;
                     
-                    public interface %3$s<T> extends Info<T>, %4$s<T> {
+                    public interface %3$s<T> extends %5$s<T>, %4$s<T> {
                         @Override
-                        %3$sI<T> operator();
+                        %7$s<T> operator();
                     
-                        interface %3$sI<T> extends Info.InfoOp<T>, Value.ValueOp<MemorySegment> {
+                        interface %7$s<T> extends %5$s.InfoOp<T>, %6$s.ValueOp<MemorySegment> {
                     
                         }
                     }
-                    """.formatted(path.makePackage(), imports, btOp.typeName(TypeAttr.NameType.RAW), // 3
-                    btOp.getValue().typeName(TypeAttr.NameType.RAW));
+                    """.formatted(path.makePackage(), imports,
+                    btOp.typeName(NameType.RAW), // 3
+                    btOp.getValue().typeName(NameType.RAW),
+                    BasicOperations.Info.typeName(NameType.RAW), // 5
+                    BasicOperations.Value.typeName(NameType.RAW), // 6
+                    btOp.operatorTypeName() // 7
+                    );
             Utils.write(path, str);
             return;
         }
@@ -148,28 +163,32 @@ public class CommonGenerator implements Generator {
                 %2$s
                 import java.util.function.Function;
                 
-                public interface %3$s<T> extends Info<T>, %4$s<T> {
+                public interface %3$s<T> extends %9$s<T>, %4$s<T> {
                     @Override
                     %6$s<T> operator();
                 
-                    interface %6$s<T> extends Info.InfoOp<T>, Value.ValueOp<%5$s> {
+                    interface %6$s<T> extends %9$s.InfoOp<T>, %10$s.ValueOp<%5$s> {
                 
                     }
                 
-                    static <T extends %4$s<?>> Info.Operations<T> makeOperations(Function<%5$s, T> constructor) {
-                        return new Info.Operations<>(
-                                (param, offset) -> constructor.apply(MemoryUtils.get%8$s(param, offset)),
-                                (source, dest, offset) -> MemoryUtils.set%8$s(dest, offset, source.operator().value()),
+                    static <T extends %4$s<?>> %9$s.Operations<T> makeOperations(Function<%5$s, T> constructor) {
+                        return new %9$s.Operations<>(
+                                (param, offset) -> constructor.apply(%11$s.get%8$s(param, offset)),
+                                (source, dest, offset) -> %11$s.set%8$s(dest, offset, source.operator().value()),
                                 %7$s);
                     }
                 }
                 """.formatted(path.makePackage(), imports,
-                btOp.typeName(TypeAttr.NameType.RAW), // 3
-                btOp.getValue().typeName(TypeAttr.NameType.RAW),
+                btOp.typeName(NameType.RAW), // 3
+                btOp.getValue().typeName(NameType.RAW),
                 btOp.getValue().getPrimitive().getBoxedTypeName(), // 5
                 btOp.operatorTypeName(),
                 btOp.getValue().getPrimitive().getMemoryLayout().getMemoryLayout(), // 7
-                btOp.getValue().getPrimitive().getMemoryUtilName()); // 8
+                btOp.getValue().getPrimitive().getMemoryUtilName(),
+                BasicOperations.Info.typeName(NameType.RAW), // 9
+                BasicOperations.Value.typeName(NameType.RAW), // 10
+                SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 11
+        );
         if (btOp == CommonTypes.BindTypeOperations.PtrOp)
             str = """
                     %1$s
@@ -178,28 +197,32 @@ public class CommonGenerator implements Generator {
                     import java.lang.foreign.MemorySegment;
                     import java.util.function.Function;
                     
-                    public interface %3$s<S, E> extends Info<S>, %5$s<E>, %6$s<E> {
+                    public interface %3$s<S, E> extends %7$s<S>, %5$s<E>, %6$s<E> {
                         @Override
                         %4$s<S, E> operator();
                     
-                        interface %4$s<S, E> extends Info.InfoOp<S>, Value.ValueOp<MemorySegment>, PointeeOp<E> {
-                            Info.Operations<E> elementOperation();
+                        interface %4$s<S, E> extends %7$s.InfoOp<S>, %8$s.ValueOp<MemorySegment>, PointeeOp<E> {
+                            %7$s.Operations<E> elementOperation();
                     
                             void setPointee(E pointee);
                         }
                     
-                        static <T extends %5$s<?>> Info.Operations<T> makeOperations(Function<MemorySegment, T> constructor) {
-                            return new Info.Operations<>(
-                                        (param, offset) -> constructor.apply(MemoryUtils.getAddr(param, offset)),
-                                        (source, dest, offset) -> MemoryUtils.setAddr(dest, offset, source.operator().value()),
+                        static <T extends %5$s<?>> %7$s.Operations<T> makeOperations(Function<MemorySegment, T> constructor) {
+                            return new %7$s.Operations<>(
+                                        (param, offset) -> constructor.apply(%9$s.getAddr(param, offset)),
+                                        (source, dest, offset) -> %9$s.setAddr(dest, offset, source.operator().value()),
                                         ValueLayout.ADDRESS);
                         }
                     }
                     """.formatted(path.makePackage(), imports,
-                    btOp.typeName(TypeAttr.NameType.RAW),
+                    btOp.typeName(NameType.RAW),
                     btOp.operatorTypeName(),
-                    btOp.getValue().typeName(TypeAttr.NameType.RAW),
-                    CommonTypes.BasicOperations.PteI.typeName(TypeAttr.NameType.RAW));// 4
+                    btOp.getValue().typeName(NameType.RAW),
+                    BasicOperations.PteI.typeName(NameType.RAW),
+                    BasicOperations.Info.typeName(NameType.RAW), // 7
+                    BasicOperations.Value.typeName(NameType.RAW), // 8
+                    SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 9
+            );
         Utils.write(path, str);
     }
 
@@ -207,10 +230,11 @@ public class CommonGenerator implements Generator {
         Utils.write(path, """
                 %s
                 
-                public interface Operation {
+                public interface %s {
                     Object operator();
                 }
-                """.formatted(path.makePackage()));
+                """.formatted(path.makePackage(),
+                BasicOperations.Operation.typeName(NameType.RAW)));
     }
 
     private void genValue(PackagePath path, String imports) {
@@ -219,7 +243,7 @@ public class CommonGenerator implements Generator {
                 
                 %s
                 
-                public interface Value<T> extends Operation {
+                public interface %4$s<T> extends %3$s {
                     interface ValueOp<T> {
                         T value();
                     }
@@ -227,7 +251,10 @@ public class CommonGenerator implements Generator {
                     @Override
                     ValueOp<T> operator();
                 }
-                """.formatted(path.makePackage(), imports));
+                """.formatted(path.makePackage(), imports,
+                BasicOperations.Operation.typeName(NameType.RAW), //3
+                BasicOperations.Value.typeName(NameType.RAW) // 4
+        ));
     }
 
     private void genArrayOp(PackagePath path, String imports) {
@@ -239,8 +266,8 @@ public class CommonGenerator implements Generator {
                 import java.util.List;
                 import java.util.RandomAccess;
                 
-                public interface %s<A, E> extends Info<A>, %7$s<E>, %4$s<A, E>, List<E> {
-                    interface ArrayOpI<A, E> extends Value.ValueOp<MemorySegment>, Info.InfoOp<A>, %5$s<A, E> {
+                public interface %s<A, E> extends %11$s<A>, %7$s<E>, %4$s<A, E>, List<E> {
+                    interface ArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A>, %5$s<A, E> {
                         A reinterpret(long length);
                 
                         default A reinterpret(%8$s<?> length) {
@@ -275,14 +302,17 @@ public class CommonGenerator implements Generator {
                 
                     ArrayOpI<A, E> operator();
                 }""".formatted(path.makePackage(), imports,
-                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW), // 4
+                SpecificTypes.ArrayOp.typeName(NameType.RAW),
+                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW), // 4
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(),
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BasicOperations.ArrayI.typeName(TypeAttr.NameType.RAW),// 7
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 9
-                CommonTypes.ValueInterface.I32I.typeName(TypeAttr.NameType.RAW)));
+                BindTypes.Ptr.typeName(NameType.RAW),
+                BasicOperations.ArrayI.typeName(NameType.RAW),// 7
+                ValueInterface.I64I.typeName(NameType.RAW),
+                BindTypes.I64.typeName(NameType.RAW), // 9
+                ValueInterface.I32I.typeName(NameType.RAW), // 10
+                BasicOperations.Info.typeName(NameType.RAW), // 11
+                BasicOperations.Value.typeName(NameType.RAW) // 12
+                ));
     }
 
     private void genFlatArrayOp(PackagePath path, String imports) {
@@ -294,8 +324,8 @@ public class CommonGenerator implements Generator {
                 import java.util.List;
                 import java.util.RandomAccess;
                 
-                public interface %s<A, E> extends Info<A>, %7$s<E>, List<E> {
-                    interface FlatArrayOpI<A, E> extends Value.ValueOp<MemorySegment>, Info.InfoOp<A> {
+                public interface %s<A, E> extends %11$s<A>, %7$s<E>, List<E> {
+                    interface FlatArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A> {
                         A reinterpret(long length);
                 
                         default A reinterpret(%8$s<?> length) {
@@ -320,7 +350,7 @@ public class CommonGenerator implements Generator {
                 
                         %9$s longSize();
                 
-                        Info.Operations<E> elementOperation();
+                        %11$s.Operations<E> elementOperation();
                     }
                 
                     abstract class AbstractRandomAccessList<E> extends AbstractList<E> implements RandomAccess {
@@ -332,14 +362,17 @@ public class CommonGenerator implements Generator {
                 
                     FlatArrayOpI<A, E> operator();
                 }""".formatted(path.makePackage(), imports,
-                CommonTypes.SpecificTypes.FlatArrayOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW), // 4
+                SpecificTypes.FlatArrayOp.typeName(NameType.RAW),
+                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW), // 4
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(),
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BasicOperations.ArrayI.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 9
-                CommonTypes.ValueInterface.I32I.typeName(TypeAttr.NameType.RAW)));
+                BindTypes.Ptr.typeName(NameType.RAW),
+                BasicOperations.ArrayI.typeName(NameType.RAW), // 7
+                ValueInterface.I64I.typeName(NameType.RAW),
+                BindTypes.I64.typeName(NameType.RAW), // 9
+                ValueInterface.I32I.typeName(NameType.RAW), // 10
+                BasicOperations.Info.typeName(NameType.RAW), // 11
+                BasicOperations.Value.typeName(NameType.RAW) // 12
+        ));
     }
 
     private void genStructOp(PackagePath path, String imports) {
@@ -349,24 +382,29 @@ public class CommonGenerator implements Generator {
                 %2$s
                 import java.util.function.Function;
                 
-                public interface StructOp<E> extends Info<E>, %4$s<E> {
+                public interface %7$s<E> extends %5$s<E>, %4$s<E> {
                 
                     @Override
                     StructOpI<E> operator();
                 
-                    interface StructOpI<E> extends Info.InfoOp<E>, Value.ValueOp<MemorySegment> {
+                    interface StructOpI<E> extends %5$s.InfoOp<E>, %6$s.ValueOp<MemorySegment> {
                         E reinterpret();
                 
                         %3$s<E> getPointer();
                     }
                 
-                    static <E extends StructOp<?>> Info.Operations<E> makeOperations(Function<MemorySegment, E> constructor, MemoryLayout layout) {
-                        return new Info.Operations<>(
+                    static <E extends %7$s<?>> %5$s.Operations<E> makeOperations(Function<MemorySegment, E> constructor, MemoryLayout layout) {
+                        return new %5$s.Operations<>(
                                 (param, offset) -> constructor.apply(param.asSlice(offset, layout)),
                                 (source, dest, offset) -> dest.asSlice(offset).copyFrom(source.operator().value()), layout);
                     }
-                }""".formatted(path.makePackage(), imports, CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BasicOperations.StructI.typeName(TypeAttr.NameType.RAW)));
+                }""".formatted(path.makePackage(), imports,
+                BindTypes.Ptr.typeName(NameType.RAW),
+                BasicOperations.StructI.typeName(NameType.RAW), // 4
+                BasicOperations.Info.typeName(NameType.RAW), // 5
+                BasicOperations.Value.typeName(NameType.RAW), // 6
+                SpecificTypes.StructOp.typeName(NameType.RAW) // 7
+        ));
     }
 
     private void genPointee(PackagePath path, String imports) {
@@ -375,23 +413,27 @@ public class CommonGenerator implements Generator {
                 
                 %s
                 
-                public interface %3$s<E> extends Operation {
-                    interface PointeeOp<E> extends Value.ValueOp<MemorySegment> {
+                public interface %3$s<E> extends %4$s {
+                    interface PointeeOp<E> extends %5$s.ValueOp<MemorySegment> {
                         E pointee();
                     }
                 
                     @Override
                     PointeeOp<E> operator();
-                }""".formatted(path.makePackage(), imports, CommonTypes.BasicOperations.PteI.typeName(TypeAttr.NameType.RAW)));
+                }""".formatted(path.makePackage(), imports,
+                BasicOperations.PteI.typeName(NameType.RAW), // 3
+                BasicOperations.Operation.typeName(NameType.RAW),
+                BasicOperations.Value.typeName(NameType.RAW) // 5
+        ));
     }
 
     private void genInfo(PackagePath path, String imports) {
         Utils.write(path, """
-                %s
+                %1$s
                 
-                %s
+                %2$s
                 
-                public interface Info<T> extends Operation {
+                public interface %3$s<T> extends %4$s {
                     interface InfoOp<T> {
                         Operations<T> getOperations();
                     }
@@ -416,226 +458,232 @@ public class CommonGenerator implements Generator {
                         }, MemoryLayout.structLayout());
                     }
                 }
-                """.formatted(path.makePackage(), imports));
+                """.formatted(path.makePackage(), imports,
+                BasicOperations.Info.typeName(NameType.RAW), // 3
+                BasicOperations.Operation.typeName(NameType.RAW) // 4
+        ));
     }
 
     public static final String ARRAY_MAKE_OPERATION_METHOD = "makeOperations";
 
     private void genSingle(PackagePath path, String imports) {
         Utils.write(path, """
-            %1$s
-            
-            %2$s
-            import java.util.List;
-            import java.util.Objects;
-            
-            public class Single<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<Single<E>, E>, Info<Single<E>> {
-                public static <I> Info.Operations<Single<I>> makeOperations(Operations<I> operation) {
-                    return new Info.Operations<>((param, offset) -> new Single<>(MemoryUtils.getAddr(param, offset),
-                            operation), (source, dest, offset) -> MemoryUtils.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
+                %1$s
+                
+                %2$s
+                import java.util.List;
+                import java.util.Objects;
+                
+                public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
+                    public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation) {
+                        return new %10$s.Operations<>((param, offset) -> new %12$s<>(%11$s.getAddr(param, offset),
+                                operation), (source, dest, offset) -> %11$s.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
+                    }
+                
+                    protected final MemorySegment ptr;
+                    protected final %10$s.Operations<E> operations;
+                
+                    public %12$s(%5$s<E> ptr, %10$s<E> info) {
+                        this(ptr, info.operator().getOperations());
+                    }
+                
+                    public %12$s(%6$s<E> ptr) {
+                        this(ptr, ptr.operator().elementOperation());
+                    }
+                
+                    public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
+                        this.ptr = ptr.operator().value();
+                        this.operations = operations;
+                    }
+                
+                    public %12$s(%4$s<?, E> ptr) {
+                        this.ptr = ptr.operator().value();
+                        this.operations = ptr.operator().elementOperation();
+                    }
+                
+                    public %12$s(MemorySegment ptr, %10$s.Operations<E> operations) {
+                        this.ptr = ptr;
+                        this.operations = operations;
+                    }
+                
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info, E element) {
+                        this(allocator, info.operator().getOperations(), element);
+                    }
+                
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, E element) {
+                        this.operations = operations;
+                        this.ptr = allocator.allocate(operations.memoryLayout());
+                        operations.copy().copyTo(element, ptr, 0);
+                    }
+                
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info) {
+                        this(allocator, info.operator().getOperations());
+                    }
+                
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations) {
+                        this.operations = operations;
+                        this.ptr = allocator.allocate(operations.memoryLayout());
+                    }
+                
+                    public E get(int index) {
+                        Objects.checkIndex(index, size());
+                        return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
+                    }
+                
+                    private E get(long index) {
+                        Objects.checkIndex(index, sizeLong());
+                        return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
+                    }
+                
+                    public E get(%9$s<?> index) {
+                        return get(index.operator().value());
+                    }
+                
+                    public E get(%8$s<?> index) {
+                        return get(index.operator().value());
+                    }
+                
+                    @Override
+                    public E set(int index, E element) {
+                        Objects.checkIndex(index, size());
+                        operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
+                        return element;
+                    }
+                
+                    public E set(%9$s<?> index, E element) {
+                        return set(index.operator().value(), element);
+                    }
+                
+                    public E set(%8$s<?> index, E element) {
+                        return set(index.operator().value(), element);
+                    }
+                
+                    public E set(long index, E element) {
+                        Objects.checkIndex(index, sizeLong());
+                        operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
+                        return element;
+                    }
+                
+                    @Override
+                    public ArrayOpI<%12$s<E>, E> operator() {
+                        return new ArrayOpI<>() {
+                            @Override
+                            public %10$s.Operations<E> elementOperation() {
+                                return operations;
+                            }
+                
+                            @Override
+                            public void setPointee(E pointee) {
+                                set(0, pointee);
+                            }
+                
+                            @Override
+                            public %12$s<E> reinterpret(long length) {
+                                return new %12$s<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
+                            }
+                
+                            @Override
+                            public %12$s<E> reinterpret(%8$s<?> length) {
+                                return reinterpret(length.operator().value());
+                            }
+                
+                            @Override
+                            public %6$s<E> pointerAt(long index) {
+                                Objects.checkIndex(index, size());
+                                return new %6$s<>(ptr.asSlice(index * operations.memoryLayout().byteSize(), operations.memoryLayout()), operations);
+                            }
+                
+                            @Override
+                            public %6$s<E> pointerAt(%8$s<?> index) {
+                                return pointerAt(index.operator().value());
+                            }
+                
+                            @Override
+                            public List<%6$s<E>> pointerList() {
+                                return new %3$s.AbstractRandomAccessList<>() {
+                                    @Override
+                                    public %6$s<E> get(int index) {
+                                        return pointerAt(index);
+                                    }
+                
+                                    @Override
+                                    public int size() {
+                                        return %12$s.this.size();
+                                    }
+                                };
+                            }
+                
+                            @Override
+                            public %10$s.Operations<%12$s<E>> getOperations() {
+                                return makeOperations(operations);
+                            }
+                
+                            @Override
+                            public E pointee() {
+                                return get(0);
+                            }
+                
+                            @Override
+                            public MemorySegment value() {
+                                return ptr;
+                            }
+                
+                            @Override
+                            public %7$s longSize() {
+                                return new %7$s(ptr.byteSize() / operations.memoryLayout().byteSize());
+                            }
+                        };
+                    }
+                
+                    public %6$s<E> pointerAt(long index) {
+                        return operator().pointerAt(index);
+                    }
+                
+                    public %6$s<E> pointerAt(%8$s<?> index) {
+                        return operator().pointerAt(index.operator().value());
+                    }
+                
+                    public List<%6$s<E>> pointerList() {
+                        return operator().pointerList();
+                    }
+                
+                    @Override
+                    public int size() {
+                        return (int) (ptr.byteSize() / operations.memoryLayout().byteSize());
+                    }
+                
+                    private long sizeLong() {
+                        return longSize().operator().value();
+                    }
+                
+                    public %7$s longSize() {
+                        return operator().longSize();
+                    }
+                
+                    @Override
+                    public %12$s<E> subList(int fromIndex, int toIndex) {
+                        Objects.checkFromToIndex(fromIndex, toIndex, size());
+                        return new %12$s<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
+                                (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
+                    }
+                
+                    public %12$s<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
+                        Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
+                        return new %12$s<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
+                                (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
+                    }
                 }
-            
-                protected final MemorySegment ptr;
-                protected final Info.Operations<E> operations;
-            
-                public Single(%5$s<E> ptr, Info<E> info) {
-                    this(ptr, info.operator().getOperations());
-                }
-            
-                public Single(%6$s<E> ptr) {
-                    this(ptr, ptr.operator().elementOperation());
-                }
-            
-                public Single(%5$s<E> ptr, Info.Operations<E> operations) {
-                    this.ptr = ptr.operator().value();
-                    this.operations = operations;
-                }
-            
-                public Single(%4$s<?, E> ptr) {
-                    this.ptr = ptr.operator().value();
-                    this.operations = ptr.operator().elementOperation();
-                }
-            
-                public Single(MemorySegment ptr, Info.Operations<E> operations) {
-                    this.ptr = ptr;
-                    this.operations = operations;
-                }
-            
-                public Single(SegmentAllocator allocator, Info<E> info, E element) {
-                    this(allocator, info.operator().getOperations(), element);
-                }
-            
-                public Single(SegmentAllocator allocator, Info.Operations<E> operations, E element) {
-                    this.operations = operations;
-                    this.ptr = allocator.allocate(operations.memoryLayout());
-                    operations.copy().copyTo(element, ptr, 0);
-                }
-            
-                public Single(SegmentAllocator allocator, Info<E> info) {
-                    this(allocator, info.operator().getOperations());
-                }
-            
-                public Single(SegmentAllocator allocator, Info.Operations<E> operations) {
-                    this.operations = operations;
-                    this.ptr = allocator.allocate(operations.memoryLayout());
-                }
-            
-                public E get(int index) {
-                    Objects.checkIndex(index, size());
-                    return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
-                }
-            
-                private E get(long index) {
-                    Objects.checkIndex(index, sizeLong());
-                    return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
-                }
-            
-                public E get(%9$s<?> index) {
-                    return get(index.operator().value());
-                }
-            
-                public E get(%8$s<?> index) {
-                    return get(index.operator().value());
-                }
-            
-                @Override
-                public E set(int index, E element) {
-                    Objects.checkIndex(index, size());
-                    operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
-                    return element;
-                }
-            
-                public E set(%9$s<?> index, E element) {
-                    return set(index.operator().value(), element);
-                }
-            
-                public E set(%8$s<?> index, E element) {
-                    return set(index.operator().value(), element);
-                }
-            
-                public E set(long index, E element) {
-                    Objects.checkIndex(index, sizeLong());
-                    operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
-                    return element;
-                }
-            
-                @Override
-                public ArrayOpI<Single<E>, E> operator() {
-                    return new ArrayOpI<>() {
-                        @Override
-                        public Info.Operations<E> elementOperation() {
-                            return operations;
-                        }
-            
-                        @Override
-                        public void setPointee(E pointee) {
-                            set(0, pointee);
-                        }
-            
-                        @Override
-                        public Single<E> reinterpret(long length) {
-                            return new Single<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
-                        }
-            
-                        @Override
-                        public Single<E> reinterpret(%8$s<?> length) {
-                            return reinterpret(length.operator().value());
-                        }
-            
-                        @Override
-                        public Ptr<E> pointerAt(long index) {
-                            Objects.checkIndex(index, size());
-                            return new %6$s<>(ptr.asSlice(index * operations.memoryLayout().byteSize(), operations.memoryLayout()), operations);
-                        }
-            
-                        @Override
-                        public Ptr<E> pointerAt(%8$s<?> index) {
-                            return pointerAt(index.operator().value());
-                        }
-            
-                        @Override
-                        public List<Ptr<E>> pointerList() {
-                            return new %3$s.AbstractRandomAccessList<>() {
-                                @Override
-                                public Ptr<E> get(int index) {
-                                    return pointerAt(index);
-                                }
-            
-                                @Override
-                                public int size() {
-                                    return Single.this.size();
-                                }
-                            };
-                        }
-            
-                        @Override
-                        public Info.Operations<Single<E>> getOperations() {
-                            return makeOperations(operations);
-                        }
-            
-                        @Override
-                        public E pointee() {
-                            return get(0);
-                        }
-            
-                        @Override
-                        public MemorySegment value() {
-                            return ptr;
-                        }
-            
-                        @Override
-                        public %7$s longSize() {
-                            return new %7$s(ptr.byteSize() / operations.memoryLayout().byteSize());
-                        }
-                    };
-                }
-            
-                public %6$s<E> pointerAt(long index) {
-                    return operator().pointerAt(index);
-                }
-            
-                public %6$s<E> pointerAt(%8$s<?> index) {
-                    return operator().pointerAt(index.operator().value());
-                }
-            
-                public List<%6$s<E>> pointerList() {
-                    return operator().pointerList();
-                }
-            
-                @Override
-                public int size() {
-                    return (int) (ptr.byteSize() / operations.memoryLayout().byteSize());
-                }
-            
-                private long sizeLong() {
-                    return longSize().operator().value();
-                }
-            
-                public %7$s longSize() {
-                    return operator().longSize();
-                }
-            
-                @Override
-                public Single<E> subList(int fromIndex, int toIndex) {
-                    Objects.checkFromToIndex(fromIndex, toIndex, size());
-                    return new Single<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
-                            (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
-                }
-            
-                public Single<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
-                    Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
-                    return new Single<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
-                            (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
-                }
-            }
-            """.formatted(path.makePackage(), imports,
-                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.ValueInterface.PtrI.typeName(TypeAttr.NameType.RAW), // 5
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),  // 6
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.ValueInterface.I32I.typeName(TypeAttr.NameType.RAW) // 9
+                """.formatted(path.makePackage(), imports,
+                SpecificTypes.ArrayOp.typeName(NameType.RAW),
+                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW),
+                ValueInterface.PtrI.typeName(NameType.RAW), // 5
+                BindTypes.Ptr.typeName(NameType.RAW),  // 6
+                BindTypes.I64.typeName(NameType.RAW), // 7
+                ValueInterface.I64I.typeName(NameType.RAW), // 8
+                ValueInterface.I32I.typeName(NameType.RAW), // 9
+                BasicOperations.Info.typeName(NameType.RAW), // 10
+                SpecificTypes.MemoryUtils.typeName(NameType.RAW), // 11
+                SpecificTypes.Single.typeName(NameType.RAW) // 12
         ));
     }
 
@@ -646,52 +694,52 @@ public class CommonGenerator implements Generator {
                 %2$s
                 import java.util.*;
                 
-                public class Array<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<Array<E>, E>, Info<Array<E>> {
-                    public static <I> Info.Operations<Array<I>> makeOperations(Operations<I> operation, %8$s<?> len) {
+                public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
+                    public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation, %8$s<?> len) {
                         return makeOperations(operation, len.operator().value());
                     }
                 
-                    public static <I> Info.Operations<Array<I>> makeOperations(Operations<I> operation, long len) {
-                        return new Info.Operations<>((param, offset) -> new Array<>(MemoryUtils.getAddr(param, offset).reinterpret(len * operation.memoryLayout().byteSize()),
-                                operation), (source, dest, offset) -> MemoryUtils.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
+                    public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation, long len) {
+                        return new %10$s.Operations<>((param, offset) -> new %12$s<>(%11$s.getAddr(param, offset).reinterpret(len * operation.memoryLayout().byteSize()),
+                                operation), (source, dest, offset) -> %11$s.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
                     }
                 
-                    public static <I> Info.Operations<Array<I>> makeOperations(Operations<I> operation) {
-                        return new Info.Operations<>((param, offset) -> new Array<>(MemoryUtils.getAddr(param, offset),
-                                operation), (source, dest, offset) -> MemoryUtils.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
+                    public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation) {
+                        return new %10$s.Operations<>((param, offset) -> new %12$s<>(%11$s.getAddr(param, offset),
+                                operation), (source, dest, offset) -> %11$s.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
                     }
                 
                     protected final MemorySegment ptr;
-                    protected final Info.Operations<E> operations;
+                    protected final %10$s.Operations<E> operations;
                 
-                    public Array(%5$s<E> ptr, Info<E> info) {
+                    public %12$s(%5$s<E> ptr, %10$s<E> info) {
                         this(ptr, info.operator().getOperations());
                     }
                 
-                    public Array(%6$s<E> ptr) {
+                    public %12$s(%6$s<E> ptr) {
                         this(ptr, ptr.operator().elementOperation());
                     }
                 
-                    public Array(%5$s<E> ptr, Info.Operations<E> operations) {
+                    public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
                         this.ptr = ptr.operator().value();
                         this.operations = operations;
                     }
                 
-                    public Array(%4$s<?, E> ptr) {
+                    public %12$s(%4$s<?, E> ptr) {
                         this.ptr = ptr.operator().value();
                         this.operations = ptr.operator().elementOperation();
                     }
                 
-                    public Array(MemorySegment ptr, Info.Operations<E> operations) {
+                    public %12$s(MemorySegment ptr, %10$s.Operations<E> operations) {
                         this.ptr = ptr;
                         this.operations = operations;
                     }
                 
-                    public Array(SegmentAllocator allocator, Info<E> info, Collection<E> elements) {
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info, Collection<E> elements) {
                         this(allocator, info.operator().getOperations(), elements);
                     }
                 
-                    public Array(SegmentAllocator allocator, Info.Operations<E> operations, Collection<E> elements) {
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, Collection<E> elements) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), elements.size());
                         int i = 0;
@@ -701,20 +749,20 @@ public class CommonGenerator implements Generator {
                         }
                     }
                 
-                    public Array(SegmentAllocator allocator, Info<E> info, long len) {
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info, long len) {
                         this(allocator, info.operator().getOperations(), len);
                     }
                 
-                    public Array(SegmentAllocator allocator, Info<E> info, %8$s<?> len) {
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info, %8$s<?> len) {
                         this(allocator, info, len.operator().value());
                     }
                 
-                    public Array(SegmentAllocator allocator, Info.Operations<E> operations, long len) {
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, long len) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), len);
                     }
                 
-                    public Array(SegmentAllocator allocator, Info.Operations<E> operations, %8$s<?> len) {
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %8$s<?> len) {
                         this(allocator, operations, len.operator().value());
                     }
                 
@@ -758,10 +806,10 @@ public class CommonGenerator implements Generator {
                     }
                 
                     @Override
-                    public ArrayOpI<Array<E>, E> operator() {
+                    public ArrayOpI<%12$s<E>, E> operator() {
                         return new ArrayOpI<>() {
                             @Override
-                            public Info.Operations<E> elementOperation() {
+                            public %10$s.Operations<E> elementOperation() {
                                 return operations;
                             }
                 
@@ -771,12 +819,12 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
-                            public Array<E> reinterpret(long length) {
-                                return new Array<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
+                            public %12$s<E> reinterpret(long length) {
+                                return new %12$s<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
                             }
                 
                             @Override
-                            public Array<E> reinterpret(%8$s<?> length) {
+                            public %12$s<E> reinterpret(%8$s<?> length) {
                                 return reinterpret(length.operator().value());
                             }
                 
@@ -787,7 +835,7 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
-                            public Ptr<E> pointerAt(%8$s<?> index) {
+                            public %6$s<E> pointerAt(%8$s<?> index) {
                                 return pointerAt(index.operator().value());
                             }
                 
@@ -801,13 +849,13 @@ public class CommonGenerator implements Generator {
                 
                                     @Override
                                     public int size() {
-                                        return Array.this.size();
+                                        return %12$s.this.size();
                                     }
                                 };
                             }
                 
                             @Override
-                            public Info.Operations<Array<E>> getOperations() {
+                            public %10$s.Operations<%12$s<E>> getOperations() {
                                 return makeOperations(operations, sizeLong());
                             }
                 
@@ -854,26 +902,29 @@ public class CommonGenerator implements Generator {
                     }
                 
                     @Override
-                    public Array<E> subList(int fromIndex, int toIndex) {
+                    public %12$s<E> subList(int fromIndex, int toIndex) {
                         Objects.checkFromToIndex(fromIndex, toIndex, size());
-                        return new Array<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
+                        return new %12$s<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
                                 (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
                     }
                 
-                    public Array<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
+                    public %12$s<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
                         Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
-                        return new Array<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
+                        return new %12$s<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
                                 (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
                     }
                 }
                 """.formatted(path.makePackage(), imports,
-                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.ValueInterface.PtrI.typeName(TypeAttr.NameType.RAW), // 5
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),  // 6
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.ValueInterface.I32I.typeName(TypeAttr.NameType.RAW) // 9
+                SpecificTypes.ArrayOp.typeName(NameType.RAW),
+                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW),
+                ValueInterface.PtrI.typeName(NameType.RAW), // 5
+                BindTypes.Ptr.typeName(NameType.RAW),  // 6
+                BindTypes.I64.typeName(NameType.RAW), // 7
+                ValueInterface.I64I.typeName(NameType.RAW), // 8
+                ValueInterface.I32I.typeName(NameType.RAW), // 9
+                BasicOperations.Info.typeName(NameType.RAW), // 10
+                SpecificTypes.MemoryUtils.typeName(NameType.RAW), // 11
+                SpecificTypes.Array.typeName(NameType.RAW) // 12
         ));
     }
 
@@ -884,47 +935,47 @@ public class CommonGenerator implements Generator {
                 %2$s
                 import java.util.*;
                 
-                public class FlatArray<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<FlatArray<E>, E>, Info<FlatArray<E>> {
-                    public static <I> Operations<FlatArray<I>> makeOperations(Operations<I> operation, %8$s<?> len) {
+                public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
+                    public static <I> Operations<%12$s<I>> makeOperations(Operations<I> operation, %8$s<?> len) {
                         return makeOperations(operation, len.operator().value());
                     }
-                    public static <I> Operations<FlatArray<I>> makeOperations(Operations<I> operation, long len) {
-                        return new Operations<>((param, offset) -> new FlatArray<>(param.asSlice(offset, len * operation.memoryLayout().byteSize()),
-                                operation), (source, dest, offset) -> MemoryUtils.memcpy(source.ptr, 0, dest, offset, len * operation.memoryLayout().byteSize()),
+                    public static <I> Operations<%12$s<I>> makeOperations(Operations<I> operation, long len) {
+                        return new Operations<>((param, offset) -> new %12$s<>(param.asSlice(offset, len * operation.memoryLayout().byteSize()),
+                                operation), (source, dest, offset) -> %11$s.memcpy(source.ptr, 0, dest, offset, len * operation.memoryLayout().byteSize()),
                                 MemoryLayout.sequenceLayout(len, operation.memoryLayout()));
                     }
                 
                     protected final MemorySegment ptr;
-                    protected final Info.Operations<E> operations;
+                    protected final %10$s.Operations<E> operations;
                 
-                    public FlatArray(%5$s<E> ptr, Info<E> info) {
+                    public %12$s(%5$s<E> ptr, %10$s<E> info) {
                         this(ptr, info.operator().getOperations());
                     }
                 
-                    public FlatArray(%6$s<E> ptr) {
+                    public %12$s(%6$s<E> ptr) {
                         this(ptr, ptr.operator().elementOperation());
                     }
                 
-                    public FlatArray(%5$s<E> ptr, Info.Operations<E> operations) {
+                    public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
                         this.ptr = ptr.operator().value();
                         this.operations = operations;
                     }
                 
-                    public FlatArray(%4$s<?, E> ptr) {
+                    public %12$s(%4$s<?, E> ptr) {
                         this.ptr = ptr.operator().value();
                         this.operations = ptr.operator().elementOperation();
                     }
                 
-                    public FlatArray(MemorySegment ptr, Info.Operations<E> operations) {
+                    public %12$s(MemorySegment ptr, %10$s.Operations<E> operations) {
                         this.ptr = ptr;
                         this.operations = operations;
                     }
                 
-                    public FlatArray(SegmentAllocator allocator, Info<E> info, Collection<E> elements) {
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info, Collection<E> elements) {
                         this(allocator, info.operator().getOperations(), elements);
                     }
                 
-                    public FlatArray(SegmentAllocator allocator, Info.Operations<E> operations, Collection<E> elements) {
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, Collection<E> elements) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), elements.size());
                         int i = 0;
@@ -934,20 +985,20 @@ public class CommonGenerator implements Generator {
                         }
                     }
                 
-                    public FlatArray(SegmentAllocator allocator, Info<E> info, long len) {
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info, long len) {
                         this(allocator, info.operator().getOperations(), len);
                     }
                 
-                    public FlatArray(SegmentAllocator allocator, Info<E> info, %8$s<?> len) {
+                    public %12$s(SegmentAllocator allocator, %10$s<E> info, %8$s<?> len) {
                         this(allocator, info, len.operator().value());
                     }
                 
-                    public FlatArray(SegmentAllocator allocator, Info.Operations<E> operations, long len) {
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, long len) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), len);
                     }
                 
-                    public FlatArray(SegmentAllocator allocator, Info.Operations<E> operations, %8$s<?> len) {
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %8$s<?> len) {
                         this(allocator, operations, len.operator().value());
                     }
                 
@@ -991,20 +1042,20 @@ public class CommonGenerator implements Generator {
                     }
                 
                     @Override
-                    public FlatArrayOpI<FlatArray<E>, E> operator() {
+                    public FlatArrayOpI<%12$s<E>, E> operator() {
                         return new FlatArrayOpI<>() {
                             @Override
-                            public Info.Operations<E> elementOperation() {
+                            public %10$s.Operations<E> elementOperation() {
                                 return operations;
                             }
                 
                             @Override
-                            public FlatArray<E> reinterpret(long length) {
-                                return new FlatArray<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
+                            public %12$s<E> reinterpret(long length) {
+                                return new %12$s<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
                             }
                 
                             @Override
-                            public FlatArray<E> reinterpret(%8$s<?> length) {
+                            public %12$s<E> reinterpret(%8$s<?> length) {
                                 return reinterpret(length.operator().value());
                             }
                 
@@ -1015,7 +1066,7 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
-                            public Ptr<E> pointerAt(%8$s<?> index) {
+                            public %6$s<E> pointerAt(%8$s<?> index) {
                                 return pointerAt(index.operator().value());
                             }
                 
@@ -1029,13 +1080,13 @@ public class CommonGenerator implements Generator {
                 
                                     @Override
                                     public int size() {
-                                        return FlatArray.this.size();
+                                        return %12$s.this.size();
                                     }
                                 };
                             }
                 
                             @Override
-                            public Info.Operations<FlatArray<E>> getOperations() {
+                            public %10$s.Operations<%12$s<E>> getOperations() {
                                 return makeOperations(operations, sizeLong());
                             }
                 
@@ -1077,30 +1128,33 @@ public class CommonGenerator implements Generator {
                     }
                 
                     @Override
-                    public FlatArray<E> subList(int fromIndex, int toIndex) {
+                    public %12$s<E> subList(int fromIndex, int toIndex) {
                         Objects.checkFromToIndex(fromIndex, toIndex, size());
-                        return new FlatArray<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
+                        return new %12$s<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
                                 (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
                     }
                 
-                    public FlatArray<E> subList(I64I<?> fromIndex, I64I<?> toIndex) {
+                    public %12$s<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
                         Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
-                        return new FlatArray<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
+                        return new %12$s<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
                                 (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
                     }
                 }
                 """.formatted(path.makePackage(), imports,
-                CommonTypes.SpecificTypes.FlatArrayOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.ValueInterface.PtrI.typeName(TypeAttr.NameType.RAW), // 5
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.ValueInterface.I32I.typeName(TypeAttr.NameType.RAW) // 9
+                SpecificTypes.FlatArrayOp.typeName(NameType.RAW),
+                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW),
+                ValueInterface.PtrI.typeName(NameType.RAW), // 5
+                BindTypes.Ptr.typeName(NameType.RAW),
+                BindTypes.I64.typeName(NameType.RAW), // 7
+                ValueInterface.I64I.typeName(NameType.RAW), // 8
+                ValueInterface.I32I.typeName(NameType.RAW), // 9
+                BasicOperations.Info.typeName(NameType.RAW), // 10
+                SpecificTypes.MemoryUtils.typeName(NameType.RAW), // 11
+                SpecificTypes.FlatArray.typeName(NameType.RAW) // 12
         ));
     }
 
-    private static void genNstr(PackagePath packagePath, String imports) {
+    private static void genStr(PackagePath packagePath, String imports) {
         Utils.write(packagePath, """
                 %1$s
                 
@@ -1114,20 +1168,20 @@ public class CommonGenerator implements Generator {
                 import java.util.List;
                 import java.util.stream.Stream;
                 
-                public class %5$s extends %3$s.AbstractRandomAccessList<I8> implements %3$s<%5$s, I8>, Info<%5$s> {
-                    public static final Info.Operations<%5$s> OPERATIONS = new Info.Operations<>(
+                public class %5$s extends %3$s.AbstractRandomAccessList<%11$s> implements %3$s<%5$s, %11$s>, %10$s<%5$s> {
+                    public static final %10$s.Operations<%5$s> OPERATIONS = new %10$s.Operations<>(
                             (param, offset) -> new %5$s(fitByteSize(param.get(ValueLayout.ADDRESS, offset))),
                             (source, dest, offset) -> dest.set(ValueLayout.ADDRESS, offset, source.ptr), ValueLayout.ADDRESS);
                     private final MemorySegment ptr;
                 
                     @Override
-                    public I8 get(int index) {
-                        return new I8(ptr.getAtIndex(ValueLayout.JAVA_BYTE, index));
+                    public %11$s get(int index) {
+                        return new %11$s(ptr.getAtIndex(ValueLayout.JAVA_BYTE, index));
                     }
                 
-                    private static Array<%5$s> makeArray(SegmentAllocator allocator, Stream<String> ss) {
+                    private static %12$s<%5$s> makeArray(SegmentAllocator allocator, Stream<String> ss) {
                         List<%5$s> list = ss.map(s -> new %5$s(allocator, s)).toList();
-                        return new Array<>(allocator, list.getFirst(), list);
+                        return new %12$s<>(allocator, list.getFirst(), list);
                     }
                 
                     private static final long HIMAGIC_FOR_BYTES = 0x8080_8080_8080_8080L;
@@ -1154,16 +1208,16 @@ public class CommonGenerator implements Generator {
                     }
                 
                 
-                    public static Array<%5$s> list(SegmentAllocator allocator, String[] strings) {
+                    public static %12$s<%5$s> list(SegmentAllocator allocator, String[] strings) {
                         return makeArray(allocator, Arrays.stream(strings));
                     }
                 
-                    public static Array<%5$s> list(SegmentAllocator allocator, Collection<String> strings) {
+                    public static %12$s<%5$s> list(SegmentAllocator allocator, Collection<String> strings) {
                         return makeArray(allocator, strings.stream());
                     }
                 
-                    public static Single<%5$s> single(SegmentAllocator allocator, String string) {
-                        return new Single<>(allocator, new %5$s(allocator, string));
+                    public static %13$s<%5$s> single(SegmentAllocator allocator, String string) {
+                        return new %13$s<>(allocator, new %5$s(allocator, string));
                     }
                 
                     protected %5$s(MemorySegment ptr) {
@@ -1195,11 +1249,11 @@ public class CommonGenerator implements Generator {
                     }
                 
                     @Override
-                    public ArrayOpI<%5$s, I8> operator() {
+                    public ArrayOpI<%5$s, %11$s> operator() {
                         return new ArrayOpI<>() {
                             @Override
-                            public Info.Operations<I8> elementOperation() {
-                                return I8.OPERATIONS;
+                            public %10$s.Operations<%11$s> elementOperation() {
+                                return %11$s.OPERATIONS;
                             }
                 
                             @Override
@@ -1213,35 +1267,35 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
-                            public %4$s<I8> pointerAt(%8$s<?> index) {
+                            public %4$s<%11$s> pointerAt(%8$s<?> index) {
                                 return pointerAt(index.operator().value());
                             }
                 
                             @Override
-                            public %4$s<I8> pointerAt(long index) {
-                                return new %4$s<>(ptr.asSlice(index, 1), I8.OPERATIONS);
+                            public %4$s<%11$s> pointerAt(long index) {
+                                return new %4$s<>(ptr.asSlice(index, 1), %11$s.OPERATIONS);
                             }
                 
                             @Override
-                            public Info.Operations<%5$s> getOperations() {
+                            public %10$s.Operations<%5$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
                             @Override
-                            public I8 pointee() {
+                            public %11$s pointee() {
                                 return get(0);
                             }
                 
                             @Override
-                            public void setPointee(I8 pointee) {
+                            public void setPointee(%11$s pointee) {
                                 set(0, pointee);
                             }
                 
                             @Override
-                            public List<%4$s<I8>> pointerList() {
+                            public List<%4$s<%11$s>> pointerList() {
                                 return new %3$s.AbstractRandomAccessList<>() {
                                     @Override
-                                    public %4$s<I8> get(int index) {
+                                    public %4$s<%11$s> get(int index) {
                                         return pointerAt(index);
                                     }
                 
@@ -1265,17 +1319,21 @@ public class CommonGenerator implements Generator {
                     }
                 }
                 """.formatted(packagePath.makePackage(), imports,
-                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW),// 3
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.SpecificTypes.Str.typeName(TypeAttr.NameType.RAW),// 5
-                CommonTypes.ValueInterface.PtrI.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.ValueInterface.I8I.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW),//8
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW)
-        ));// 7
+                SpecificTypes.ArrayOp.typeName(NameType.RAW),// 3
+                BindTypes.Ptr.typeName(NameType.RAW),
+                SpecificTypes.Str.typeName(NameType.RAW),// 5
+                ValueInterface.PtrI.typeName(NameType.RAW),
+                ValueInterface.I8I.typeName(NameType.RAW),
+                ValueInterface.I64I.typeName(NameType.RAW),//8
+                BindTypes.I64.typeName(NameType.RAW),
+                BasicOperations.Info.typeName(NameType.RAW), // 10
+                BindTypes.I8.typeName(NameType.RAW), // 11
+                SpecificTypes.Array.typeName(NameType.RAW), // 12
+                SpecificTypes.Single.typeName(NameType.RAW) // 13
+        ));
     }
 
-    private void genValueInterface(PackagePath path, CommonTypes.ValueInterface type, String imports) {
+    private void genValueInterface(PackagePath path, ValueInterface type, String imports) {
         if (type.getPrimitive().noJavaPrimitive()) {
             Utils.write(path, """
                     %1$s
@@ -1283,20 +1341,23 @@ public class CommonGenerator implements Generator {
                     import java.lang.foreign.MemorySegment;
                     
                     public interface %3$s<I> {
-                        Value.ValueOp<MemorySegment> operator();
+                        %4$s.ValueOp<MemorySegment> operator();
                     }
-                    """.formatted(path.makePackage(), imports, type.typeName(TypeAttr.NameType.RAW))); // 3
+                    """.formatted(path.makePackage(), imports,
+                    type.typeName(NameType.RAW),
+                    BasicOperations.Value.typeName(NameType.RAW) // 4
+            ));
             return;
         }
         Utils.write(path, """
                 %1$s
                 %2$s
                 
-                public interface %3$s<I> extends Value<%4$s> {
+                public interface %3$s<I> extends %6$s<%4$s> {
                     static <I> %3$s<I> of(%5$s value) {
                         return new %3$s<>() {
                             @Override
-                            public ValueOp<%4$s> operator() {
+                            public %6$s.ValueOp<%4$s> operator() {
                                 return () -> value;
                             }
                 
@@ -1311,15 +1372,17 @@ public class CommonGenerator implements Generator {
                         return of(value.operator().value());
                     }
                 }
-                """.formatted(path.makePackage(), imports, type.typeName(TypeAttr.NameType.RAW),
-                type.getPrimitive().getBoxedTypeName(), type.getPrimitive().getPrimitiveTypeName())); // 5
+                """.formatted(path.makePackage(), imports, type.typeName(NameType.RAW),
+                type.getPrimitive().getBoxedTypeName(), type.getPrimitive().getPrimitiveTypeName(), // 5
+                BasicOperations.Value.typeName(NameType.RAW)
+        ));
     }
 
     public static final String PTR_MAKE_OPERATION_METHOD = "makeOperations";
 
-    private void genBindTypes(PackagePath path, CommonTypes.BindTypes bindTypes, String imports) {
-        if (bindTypes != CommonTypes.BindTypes.Ptr) {
-            genValueBasedTypes(path, bindTypes, imports, bindTypes.typeName(TypeAttr.NameType.RAW));
+    private void genBindTypes(PackagePath path, BindTypes bindTypes, String imports) {
+        if (bindTypes != BindTypes.Ptr) {
+            genValueBasedTypes(path, bindTypes, imports, bindTypes.typeName(NameType.RAW));
             return;
         }
         var str = """
@@ -1328,21 +1391,21 @@ public class CommonGenerator implements Generator {
                 %2$s
                 import java.util.Objects;
                 
-                public class %3$s<E> implements %5$s<%3$s<E>, E>, Info<%3$s<E>> {
-                    public static <I> Info.Operations<%3$s<I>> makeOperations(Info.Operations<I> operation) {
-                        return new Info.Operations<>(
-                                (param, offset) -> new %3$s<>(MemoryUtils.getAddr(param, offset), operation),
-                                (source, dest, offset) -> MemoryUtils.setAddr(dest, offset, source.segment), ValueLayout.ADDRESS);
+                public class %3$s<E> implements %5$s<%3$s<E>, E>, %8$s<%3$s<E>> {
+                    public static <I> %8$s.Operations<%3$s<I>> makeOperations(%8$s.Operations<I> operation) {
+                        return new %8$s.Operations<>(
+                                (param, offset) -> new %3$s<>(%10$s.getAddr(param, offset), operation),
+                                (source, dest, offset) -> %10$s.setAddr(dest, offset, source.segment), ValueLayout.ADDRESS);
                     }
                 
                     private final MemorySegment segment;
-                    private final Info.Operations<E> operation;
+                    private final %8$s.Operations<E> operation;
                 
                     private MemorySegment fitByteSize(MemorySegment segment) {
                         return segment.byteSize() == operation.memoryLayout().byteSize() ? segment : segment.reinterpret(operation.memoryLayout().byteSize());
                     }
                 
-                    public %3$s(MemorySegment segment, Info.Operations<E> operation) {
+                    public %3$s(MemorySegment segment, %8$s.Operations<E> operation) {
                         this.operation = operation;
                         this.segment = fitByteSize(segment);
                     }
@@ -1352,7 +1415,7 @@ public class CommonGenerator implements Generator {
                         this.segment = fitByteSize(arr.operator().value());
                     }
                 
-                    public %3$s(%4$s<E> pointee, Info.Operations<E> operation) {
+                    public %3$s(%4$s<E> pointee, %8$s.Operations<E> operation) {
                         this.operation = operation;
                         this.segment = fitByteSize(pointee.operator().value());
                     }
@@ -1364,7 +1427,7 @@ public class CommonGenerator implements Generator {
                                 '}';
                     }
                 
-                    public Info.Operations<E> getElementOperation() {
+                    public %8$s.Operations<E> getElementOperation() {
                         return operation;
                     }
                 
@@ -1380,7 +1443,7 @@ public class CommonGenerator implements Generator {
                     public %7$s<%3$s<E>, E> operator() {
                         return new %7$s<>() {
                             @Override
-                            public Info.Operations<E> elementOperation() {
+                            public %8$s.Operations<E> elementOperation() {
                                 return operation;
                             }
                 
@@ -1395,7 +1458,7 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
-                            public Info.Operations<%3$s<E>> getOperations() {
+                            public %8$s.Operations<%3$s<E>> getOperations() {
                                 return makeOperations(operation);
                             }
                 
@@ -1408,7 +1471,7 @@ public class CommonGenerator implements Generator {
                 
                     @Override
                     public boolean equals(Object o) {
-                        if (!(o instanceof Ptr<?> ptr)) return false;
+                        if (!(o instanceof %9$s<?> ptr)) return false;
                         return Objects.equals(segment, ptr.segment);
                     }
                 
@@ -1418,16 +1481,20 @@ public class CommonGenerator implements Generator {
                     }
                 }
                 """.formatted(path.makePackage(), imports,
-                bindTypes.typeName(TypeAttr.NameType.RAW),
-                bindTypes.getOperations().getValue().typeName(TypeAttr.NameType.RAW), // 4
-                bindTypes.getOperations().typeName(TypeAttr.NameType.RAW),
-                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW), // 6
-                bindTypes.getOperations().operatorTypeName());// 7
+                bindTypes.typeName(NameType.RAW),
+                bindTypes.getOperations().getValue().typeName(NameType.RAW), // 4
+                bindTypes.getOperations().typeName(NameType.RAW),
+                SpecificTypes.ArrayOp.typeName(NameType.RAW), // 6
+                bindTypes.getOperations().operatorTypeName(),
+                BasicOperations.Info.typeName(NameType.RAW), // 8
+                BindTypes.Ptr.typeName(NameType.RAW), // 9
+                SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 10
+        );
         Utils.write(path, str);
     }
 
-    static void genValueBasedTypes(PackagePath path, CommonTypes.BindTypes bindTypes, String imports, String typeName) {
-        Assert(bindTypes != CommonTypes.BindTypes.Ptr);
+    static void genValueBasedTypes(PackagePath path, BindTypes bindTypes, String imports, String typeName) {
+        Assert(bindTypes != BindTypes.Ptr);
         if (bindTypes.getOperations().getValue().getPrimitive().noJavaPrimitive()) {
             Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16, " sizeof %s must be 16".formatted(bindTypes));
             var str = """
@@ -1439,9 +1506,9 @@ public class CommonGenerator implements Generator {
                     import java.nio.ByteOrder;
                     import java.util.Arrays;
                     
-                    public class %3$s implements %4$s<%3$s>, Info<%3$s> {
-                        public static final Operations<%3$s> OPERATIONS = new Operations<>((param, offset) -> new %3$s(param.asSlice(offset)),
-                                (source, dest, offset) -> MemoryUtils.memcpy(source.val, 0, dest, offset, %5$s.byteSize()), %5$s);
+                    public class %3$s implements %4$s<%3$s>, %8$s<%3$s> {
+                        public static final %8$s.Operations<%3$s> OPERATIONS = new %8$s.Operations<>((param, offset) -> new %3$s(param.asSlice(offset)),
+                                (source, dest, offset) -> %12$s.memcpy(source.val, 0, dest, offset, %5$s.byteSize()), %5$s);
                         private final MemorySegment val;
                     
                         public %3$s(MemorySegment val) {
@@ -1457,23 +1524,23 @@ public class CommonGenerator implements Generator {
                             val.asByteBuffer().order(ByteOrder.nativeOrder()).putLong(low).putLong(high);
                         }
                     
-                        public static Array<%3$s> list(SegmentAllocator allocator, %7$s<?> len) {
+                        public static %9$s<%3$s> list(SegmentAllocator allocator, %7$s<?> len) {
                             return list(allocator, len.operator().value());
                         }
                     
-                        public static Array<%3$s> list(SegmentAllocator allocator, long len) {
-                            return new Array<>(allocator, OPERATIONS, len);
+                        public static %9$s<%3$s> list(SegmentAllocator allocator, long len) {
+                            return new %9$s<>(allocator, OPERATIONS, len);
                         }
                     
-                        public static Single<%3$s> single(SegmentAllocator allocator) {
-                            return new Single<>(allocator, OPERATIONS);
+                        public static %10$s<%3$s> single(SegmentAllocator allocator) {
+                            return new %10$s<>(allocator, OPERATIONS);
                         }
                     
                         @Override
-                        public %4$sI<%3$s> operator() {
-                            return new %4$sI<>() {
+                        public %11$s<%3$s> operator() {
+                            return new %11$s<>() {
                                 @Override
-                                public Operations<%3$s> getOperations() {
+                                public %8$s.Operations<%3$s> getOperations() {
                                     return OPERATIONS;
                                 }
                     
@@ -1501,10 +1568,16 @@ public class CommonGenerator implements Generator {
                         }
                     }
                     """.formatted(path.makePackage(), imports, typeName, // 3
-                    bindTypes.getOperations().typeName(TypeAttr.NameType.RAW),
+                    bindTypes.getOperations().typeName(NameType.RAW),
                     bindTypes.getOperation().getCommonOperation().makeDirectMemoryLayout().getMemoryLayout(), //5
-                    bindTypes.getOperations().getValue().typeName(TypeAttr.NameType.RAW), //6
-                    CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW));
+                    bindTypes.getOperations().getValue().typeName(NameType.RAW), //6
+                    ValueInterface.I64I.typeName(NameType.RAW), // 7
+                    BasicOperations.Info.typeName(NameType.RAW), // 8
+                    SpecificTypes.Array.typeName(NameType.RAW), // 9
+                    SpecificTypes.Single.typeName(NameType.RAW), // 10
+                    bindTypes.getOperations().operatorTypeName(), // 11
+                    SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 12
+            );
             Utils.write(path, str);
             return;
         }
@@ -1514,8 +1587,8 @@ public class CommonGenerator implements Generator {
                 %2$s
                 import java.util.Objects;
                 
-                public class %3$s implements %5$s<%3$s>, Info<%3$s> {
-                    public static final Info.Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);;
+                public class %3$s implements %5$s<%3$s>, %10$s<%3$s> {
+                    public static final %10$s.Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);;
                     private final %6$s val;
                 
                     public %3$s(%6$s val) {
@@ -1526,23 +1599,23 @@ public class CommonGenerator implements Generator {
                         this.val = val.operator().value();
                     }
                 
-                    public static Array<%3$s> list(SegmentAllocator allocator, %9$s<?> len) {
+                    public static %11$s<%3$s> list(SegmentAllocator allocator, %9$s<?> len) {
                         return list(allocator, len.operator().value());
                     }
                 
-                    public static Array<%3$s> list(SegmentAllocator allocator, long len) {
-                        return new Array<>(allocator, OPERATIONS, len);
+                    public static %11$s<%3$s> list(SegmentAllocator allocator, long len) {
+                        return new %11$s<>(allocator, OPERATIONS, len);
                     }
                 
-                    public static Single<%3$s> single(SegmentAllocator allocator) {
-                        return new Single<>(allocator, OPERATIONS);
+                    public static %12$s<%3$s> single(SegmentAllocator allocator) {
+                        return new %12$s<>(allocator, OPERATIONS);
                     }
                 
                     @Override
-                    public %5$sI<%3$s> operator() {
-                        return new %5$sI<>() {
+                    public %13$s<%3$s> operator() {
+                        return new %13$s<>() {
                             @Override
-                            public Info.Operations<%3$s> getOperations() {
+                            public %10$s.Operations<%3$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
@@ -1575,11 +1648,16 @@ public class CommonGenerator implements Generator {
                 }
                 """.formatted(path.makePackage(), imports, typeName,
                 bindTypes.getPrimitiveType().getMemoryLayout().getMemoryLayout(), // 4
-                bindTypes.getOperations().typeName(TypeAttr.NameType.RAW), // 5
+                bindTypes.getOperations().typeName(NameType.RAW), // 5
                 bindTypes.getPrimitiveType().getPrimitiveTypeName(),
                 bindTypes.getPrimitiveType().getBoxedTypeName(),// 7
-                bindTypes.getOperations().getValue().typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW));
+                bindTypes.getOperations().getValue().typeName(NameType.RAW), // 8
+                ValueInterface.I64I.typeName(NameType.RAW), // 9
+                BasicOperations.Info.typeName(NameType.RAW), // 10
+                SpecificTypes.Array.typeName(NameType.RAW), // 11
+                SpecificTypes.Single.typeName(NameType.RAW), // 12
+                bindTypes.getOperations().operatorTypeName() // 13
+        );
         Utils.write(path, str);
     }
 
@@ -1664,7 +1742,7 @@ public class CommonGenerator implements Generator {
                                 : Linker.nativeLinker().downcallHandle(ms, fd);
                     }
                 }
-                """.formatted(path.makePackage(), CommonTypes.SpecificTypes.FunctionUtils.getRawName()));
+                """.formatted(path.makePackage(), SpecificTypes.FunctionUtils.typeName(NameType.RAW)));
     }
 
     private void genMemoryUtils(PackagePath path, String imports) {

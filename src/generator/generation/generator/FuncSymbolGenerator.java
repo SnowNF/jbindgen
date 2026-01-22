@@ -8,6 +8,7 @@ import generator.generation.FuncSymbols;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
 import generator.types.SymbolProviderType;
+import generator.types.TypeAttr;
 
 import java.util.stream.Collectors;
 
@@ -54,7 +55,7 @@ public class FuncSymbolGenerator implements Generator {
                 FuncPtrUtils.makeFuncDescriptor(type), symbolClassName, // 4
                 FuncPtrUtils.makeRawStrBeforeInvoke(type), FuncPtrUtils.makeRawInvokeStr(type),
                 FuncPtrUtils.makeRawPara(type, false), // 7
-                CommonTypes.SpecificTypes.FunctionUtils.getRawName()
+                CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW)
         );
     }
 

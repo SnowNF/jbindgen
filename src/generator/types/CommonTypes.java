@@ -373,10 +373,6 @@ public class CommonTypes {
             return name() + "<? extends %s>".formatted(t);
         }
 
-        public String getRawName() {
-            return name();
-        }
-
         @Override
         public String typeName(TypeAttr.NameType nameType) {
             if(Generator.DEBUG)
