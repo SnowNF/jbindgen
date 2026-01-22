@@ -46,7 +46,7 @@ public class EnumGenerator implements Generator {
                         return new Array<>(allocator, OPERATIONS, len);
                     }
                 
-                    public static Array<%1$s> list(SegmentAllocator allocator, %7$s len) {
+                    public static Array<%1$s> list(SegmentAllocator allocator, %7$s<?> len) {
                         return new Array<>(allocator, OPERATIONS, len);
                     }
                 
