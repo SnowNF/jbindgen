@@ -73,6 +73,10 @@ public class ValueBasedGenerator implements Generator {
                         return new Array<>(allocator, %3$s.OPERATIONS, len);
                     }
                 
+                    public static Single<%3$s> single(SegmentAllocator allocator) {
+                        return new Single<>(allocator, %3$s.OPERATIONS);
+                    }
+                
                     @Override
                     public String toString() {
                         return "%3$s{" +

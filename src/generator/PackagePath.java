@@ -47,11 +47,11 @@ public class PackagePath {
     public PackagePath end(String className) {
         Assert(this.className == null);
         Assert(Utils.isValidClassName(className), "invalid class name: " + className);
-//        if (!packages.getFirst().equals("java")) {
-//            ArrayList<String> strings = new ArrayList<>(packages);
-//            strings.add(className.toLowerCase());
-//            return new PackagePath(root, strings, className);
-//        }
+        if (Generator.DEBUG && !packages.getFirst().equals("java")) {
+            ArrayList<String> strings = new ArrayList<>(packages);
+            strings.add(className.toLowerCase());
+            return new PackagePath(root, strings, className);
+        }
         return new PackagePath(root, packages, className);
     }
 

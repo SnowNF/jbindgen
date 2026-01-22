@@ -38,6 +38,7 @@ public class CommonGenerator implements Generator {
                 case CommonTypes.SpecificTypes specificTypes -> {
                     switch (specificTypes) {
                         case Array -> genArray(packagePath, imports);
+                        case Single -> genSingle(packagePath, imports);
                         case FlatArray -> genFlatArray(packagePath, imports);
                         case Str -> genNstr(packagePath, imports);
                         case FunctionUtils -> genFunctionUtils(packagePath);
@@ -420,6 +421,224 @@ public class CommonGenerator implements Generator {
 
     public static final String ARRAY_MAKE_OPERATION_METHOD = "makeOperations";
 
+    private void genSingle(PackagePath path, String imports) {
+        Utils.write(path, """
+            %1$s
+            
+            %2$s
+            import java.util.List;
+            import java.util.Objects;
+            
+            public class Single<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<Single<E>, E>, Info<Single<E>> {
+                public static <I> Info.Operations<Single<I>> makeOperations(Operations<I> operation) {
+                    return new Info.Operations<>((param, offset) -> new Single<>(MemoryUtils.getAddr(param, offset),
+                            operation), (source, dest, offset) -> MemoryUtils.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
+                }
+            
+                protected final MemorySegment ptr;
+                protected final Info.Operations<E> operations;
+            
+                public Single(%5$s<E> ptr, Info<E> info) {
+                    this(ptr, info.operator().getOperations());
+                }
+            
+                public Single(%6$s<E> ptr) {
+                    this(ptr, ptr.operator().elementOperation());
+                }
+            
+                public Single(%5$s<E> ptr, Info.Operations<E> operations) {
+                    this.ptr = ptr.operator().value();
+                    this.operations = operations;
+                }
+            
+                public Single(%4$s<?, E> ptr) {
+                    this.ptr = ptr.operator().value();
+                    this.operations = ptr.operator().elementOperation();
+                }
+            
+                public Single(MemorySegment ptr, Info.Operations<E> operations) {
+                    this.ptr = ptr;
+                    this.operations = operations;
+                }
+            
+                public Single(SegmentAllocator allocator, Info<E> info, E element) {
+                    this(allocator, info.operator().getOperations(), element);
+                }
+            
+                public Single(SegmentAllocator allocator, Info.Operations<E> operations, E element) {
+                    this.operations = operations;
+                    this.ptr = allocator.allocate(operations.memoryLayout());
+                    operations.copy().copyTo(element, ptr, 0);
+                }
+            
+                public Single(SegmentAllocator allocator, Info<E> info) {
+                    this(allocator, info.operator().getOperations());
+                }
+            
+                public Single(SegmentAllocator allocator, Info.Operations<E> operations) {
+                    this.operations = operations;
+                    this.ptr = allocator.allocate(operations.memoryLayout());
+                }
+            
+                public E get(int index) {
+                    Objects.checkIndex(index, size());
+                    return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
+                }
+            
+                private E get(long index) {
+                    Objects.checkIndex(index, sizeLong());
+                    return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
+                }
+            
+                public E get(%9$s<?> index) {
+                    return get(index.operator().value());
+                }
+            
+                public E get(%8$s<?> index) {
+                    return get(index.operator().value());
+                }
+            
+                @Override
+                public E set(int index, E element) {
+                    Objects.checkIndex(index, size());
+                    operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
+                    return element;
+                }
+            
+                public E set(%9$s<?> index, E element) {
+                    return set(index.operator().value(), element);
+                }
+            
+                public E set(%8$s<?> index, E element) {
+                    return set(index.operator().value(), element);
+                }
+            
+                public E set(long index, E element) {
+                    Objects.checkIndex(index, sizeLong());
+                    operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
+                    return element;
+                }
+            
+                @Override
+                public ArrayOpI<Single<E>, E> operator() {
+                    return new ArrayOpI<>() {
+                        @Override
+                        public Info.Operations<E> elementOperation() {
+                            return operations;
+                        }
+            
+                        @Override
+                        public void setPointee(E pointee) {
+                            set(0, pointee);
+                        }
+            
+                        @Override
+                        public Single<E> reinterpret(long length) {
+                            return new Single<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
+                        }
+            
+                        @Override
+                        public Single<E> reinterpret(%8$s<?> length) {
+                            return reinterpret(length.operator().value());
+                        }
+            
+                        @Override
+                        public Ptr<E> pointerAt(long index) {
+                            Objects.checkIndex(index, size());
+                            return new %6$s<>(ptr.asSlice(index * operations.memoryLayout().byteSize(), operations.memoryLayout()), operations);
+                        }
+            
+                        @Override
+                        public Ptr<E> pointerAt(%8$s<?> index) {
+                            return pointerAt(index.operator().value());
+                        }
+            
+                        @Override
+                        public List<Ptr<E>> pointerList() {
+                            return new %3$s.AbstractRandomAccessList<>() {
+                                @Override
+                                public Ptr<E> get(int index) {
+                                    return pointerAt(index);
+                                }
+            
+                                @Override
+                                public int size() {
+                                    return Single.this.size();
+                                }
+                            };
+                        }
+            
+                        @Override
+                        public Info.Operations<Single<E>> getOperations() {
+                            return makeOperations(operations);
+                        }
+            
+                        @Override
+                        public E pointee() {
+                            return get(0);
+                        }
+            
+                        @Override
+                        public MemorySegment value() {
+                            return ptr;
+                        }
+            
+                        @Override
+                        public %7$s longSize() {
+                            return new %7$s(ptr.byteSize() / operations.memoryLayout().byteSize());
+                        }
+                    };
+                }
+            
+                public %6$s<E> pointerAt(long index) {
+                    return operator().pointerAt(index);
+                }
+            
+                public %6$s<E> pointerAt(%8$s<?> index) {
+                    return operator().pointerAt(index.operator().value());
+                }
+            
+                public List<%6$s<E>> pointerList() {
+                    return operator().pointerList();
+                }
+            
+                @Override
+                public int size() {
+                    return (int) (ptr.byteSize() / operations.memoryLayout().byteSize());
+                }
+            
+                private long sizeLong() {
+                    return longSize().operator().value();
+                }
+            
+                public %7$s longSize() {
+                    return operator().longSize();
+                }
+            
+                @Override
+                public Single<E> subList(int fromIndex, int toIndex) {
+                    Objects.checkFromToIndex(fromIndex, toIndex, size());
+                    return new Single<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
+                            (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
+                }
+            
+                public Single<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
+                    Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
+                    return new Single<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
+                            (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
+                }
+            }
+            """.formatted(path.makePackage(), imports,
+                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW),
+                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW),
+                CommonTypes.ValueInterface.PtrI.typeName(TypeAttr.NameType.RAW), // 5
+                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),  // 6
+                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 7
+                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 8
+                CommonTypes.ValueInterface.I32I.typeName(TypeAttr.NameType.RAW) // 9
+        ));
+    }
+
     private void genArray(PackagePath path, String imports) {
         Utils.write(path, """
                 %1$s
@@ -589,7 +808,7 @@ public class CommonGenerator implements Generator {
                 
                             @Override
                             public Info.Operations<Array<E>> getOperations() {
-                                return makeOperations(operations, ptr.byteSize());
+                                return makeOperations(operations, sizeLong());
                             }
                 
                             @Override
@@ -641,7 +860,7 @@ public class CommonGenerator implements Generator {
                                 (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
                     }
                 
-                    public Array<E> subList(I64I<?> fromIndex, I64I<?> toIndex) {
+                    public Array<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
                         Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
                         return new Array<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
                                 (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
@@ -817,7 +1036,7 @@ public class CommonGenerator implements Generator {
                 
                             @Override
                             public Info.Operations<FlatArray<E>> getOperations() {
-                                return makeOperations(operations, ptr.byteSize());
+                                return makeOperations(operations, sizeLong());
                             }
                 
                             @Override
@@ -941,6 +1160,10 @@ public class CommonGenerator implements Generator {
                 
                     public static Array<%5$s> list(SegmentAllocator allocator, Collection<String> strings) {
                         return makeArray(allocator, strings.stream());
+                    }
+                
+                    public static Single<%5$s> single(SegmentAllocator allocator, String string) {
+                        return new Single<>(allocator, new %5$s(allocator, string));
                     }
                 
                     protected %5$s(MemorySegment ptr) {
@@ -1242,6 +1465,10 @@ public class CommonGenerator implements Generator {
                             return new Array<>(allocator, OPERATIONS, len);
                         }
                     
+                        public static Single<%3$s> single(SegmentAllocator allocator) {
+                            return new Single<>(allocator, OPERATIONS);
+                        }
+                    
                         @Override
                         public %4$sI<%3$s> operator() {
                             return new %4$sI<>() {
@@ -1305,6 +1532,10 @@ public class CommonGenerator implements Generator {
                 
                     public static Array<%3$s> list(SegmentAllocator allocator, long len) {
                         return new Array<>(allocator, OPERATIONS, len);
+                    }
+                
+                    public static Single<%3$s> single(SegmentAllocator allocator) {
+                        return new Single<>(allocator, OPERATIONS);
                     }
                 
                     @Override

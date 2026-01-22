@@ -101,6 +101,10 @@ public class StructGenerator implements Generator {
                         return new Array<>(allocator, %1$s.OPERATIONS, len);
                     }
                 
+                    public static Single<%1$s> single(SegmentAllocator allocator) {
+                        return new Single<>(allocator, %1$s.OPERATIONS);
+                    }
+                
                     @Override
                     public StructOpI<%1$s> operator() {
                         return new StructOpI<>() {

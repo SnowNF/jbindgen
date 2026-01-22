@@ -40,6 +40,7 @@ public final class EnumType extends AbstractGenerationType {
         return new TypeImports()
                 .addImport(type.getOperations().getUseImportTypes())
                 .addUseImports(CommonTypes.BasicOperations.Info)
+                .addUseImports(CommonTypes.SpecificTypes.Single)
                 .addUseImports(CommonTypes.SpecificTypes.Array);
     }
 

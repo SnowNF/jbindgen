@@ -47,7 +47,11 @@ public class EnumGenerator implements Generator {
                     }
                 
                     public static Array<%1$s> list(SegmentAllocator allocator, %7$s<?> len) {
-                        return new Array<>(allocator, OPERATIONS, len);
+                        return list(allocator, len.operator().value());
+                    }
+                
+                    public static Single<%1$s> single(SegmentAllocator allocator) {
+                        return new Single<>(allocator, OPERATIONS);
                     }
                 
                     public int value() {
