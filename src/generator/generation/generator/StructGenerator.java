@@ -30,8 +30,10 @@ public class StructGenerator implements Generator {
                     stringBuilder.append(getterAndSetter.getter)
                             .append(System.lineSeparator())
                             .append(getterAndSetter.setter));
+            stringBuilder.append("\n");
         }
         String out = structure.getTypePkg().packagePath().makePackage();
+        out += "\n";
         out += Generator.extractImports(structure, dependency);
         out += getMain(Generator.getTypeName(structType), structType.getMemoryLayout(),
                 stringBuilder + toString(structType));
@@ -81,28 +83,28 @@ public class StructGenerator implements Generator {
         return """
                 import java.util.Objects;
                 
-                public final class %1$s implements %5$s<%1$s>, %7$s<%1$s> {
+                public final class %1$s implements %4$s<%1$s>, %6$s<%1$s> {
                     private final MemorySegment ms;
-                    public static final %7$s.Operations<%1$s> OPERATIONS = %5$s.makeOperations(%1$s::new, %2$s);
+                    public static final %6$s.Operations<%1$s> OPERATIONS = %4$s.makeOperations(%1$s::new, %2$s);
                 
                     public %1$s(MemorySegment ms) {
                         this.ms = ms;
                     }
                 
-                    public %1$s(SegmentAllocator allocator) {
-                        this.ms = allocator.allocate(OPERATIONS.memoryLayout().byteSize());
+                    public %1$s() {
+                        this.ms = %9$s.onHeapAllocator().allocate(OPERATIONS.memoryLayout());
                     }
                 
-                    public static %8$s<%1$s> list(SegmentAllocator allocator, %6$s<?> len) {
+                    public static %7$s<%1$s> list(SegmentAllocator allocator, %5$s<?> len) {
                         return list(allocator, len.operator().value());
                     }
                 
-                    public static %8$s<%1$s> list(SegmentAllocator allocator, long len) {
-                        return new %8$s<>(allocator, %1$s.OPERATIONS, len);
+                    public static %7$s<%1$s> list(SegmentAllocator allocator, long len) {
+                        return new %7$s<>(allocator, %1$s.OPERATIONS, len);
                     }
                 
-                    public static %9$s<%1$s> single(SegmentAllocator allocator) {
-                        return new %9$s<>(allocator, %1$s.OPERATIONS);
+                    public static %8$s<%1$s> single(SegmentAllocator allocator) {
+                        return new %8$s<>(allocator, %1$s.OPERATIONS);
                     }
                 
                     @Override
@@ -114,12 +116,7 @@ public class StructGenerator implements Generator {
                             }
                 
                             @Override
-                            public %4$s<%1$s> getPointer() {
-                                return new %4$s<>(ms, OPERATIONS);
-                            }
-                
-                            @Override
-                            public %7$s.Operations<%1$s> getOperations() {
+                            public %6$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
@@ -143,12 +140,12 @@ public class StructGenerator implements Generator {
                 
                 %3$s
                 }""".formatted(className, layout.getMemoryLayout(), ext,
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.SpecificTypes.StructOp.typeName(TypeAttr.NameType.RAW),//5
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW),
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW) // 9
+                CommonTypes.SpecificTypes.StructOp.typeName(TypeAttr.NameType.RAW), // 4
+                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 5
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 6
+                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 7
+                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW), // 8
+                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW) // 9
         );
     }
 }

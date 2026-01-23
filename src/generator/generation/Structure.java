@@ -18,7 +18,6 @@ public final class Structure extends AbstractGeneration<StructType> {
     public TypeImports getDefineImportTypes() {
         TypeImports imports = super.getDefineImportTypes().addUseImports(CommonTypes.FFMTypes.MEMORY_SEGMENT)
                 .addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR)
-                .addUseImports(CommonTypes.SpecificTypes.MemoryUtils)
                 .addUseImports(CommonTypes.ValueInterface.I64I);
         for (StructType.Member member : getTypePkg().type().getMembers()) {
             OperationAttr.Operation operation = ((TypeAttr.OperationType) member.type()).getOperation();

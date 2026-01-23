@@ -110,7 +110,7 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if(Generator.DEBUG)
+            if (Generator.DEBUG)
                 return name() + Generator.DEBUG_NAME_APPEND;
             return name();
         }
@@ -161,7 +161,7 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if(Generator.DEBUG)
+            if (Generator.DEBUG)
                 return name() + Generator.DEBUG_NAME_APPEND;
             return name();
         }
@@ -227,7 +227,7 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if(Generator.DEBUG)
+            if (Generator.DEBUG)
                 return name() + Generator.DEBUG_NAME_APPEND;
             return name();
         }
@@ -308,7 +308,7 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if(Generator.DEBUG)
+            if (Generator.DEBUG)
                 return name() + Generator.DEBUG_NAME_APPEND;
             return name();
         }
@@ -320,7 +320,7 @@ public class CommonTypes {
 
     public enum SpecificTypes implements BaseType {
         FunctionUtils(false, Set::of),
-        MemoryUtils(false, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.VALUE_LAYOUT)),
+        MemoryUtils(false, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.VALUE_LAYOUT, FFMTypes.ARENA, FFMTypes.SEGMENT_ALLOCATOR)),
         ArrayOp(true, () -> Set.of(BindTypeOperations.PtrOp, BasicOperations.Value, BasicOperations.Info,
                 FFMTypes.MEMORY_SEGMENT, BasicOperations.ArrayI, BindTypes.Ptr, ValueInterface.I64I, ValueInterface.I32I, BindTypes.I64)),
         Array(true, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.VALUE_LAYOUT, FFMTypes.SEGMENT_ALLOCATOR, ArrayOp,
@@ -334,7 +334,7 @@ public class CommonTypes {
         FlatArray(true, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.MEMORY_LAYOUT, FFMTypes.SEGMENT_ALLOCATOR,
                 FlatArrayOp, BasicOperations.Info, ValueInterface.PtrI, BindTypes.Ptr, BindTypeOperations.PtrOp,
                 SpecificTypes.MemoryUtils, ValueInterface.I64I, ValueInterface.I32I, BindTypes.I64)),
-        StructOp(true, () -> Set.of(BindTypes.Ptr, BasicOperations.Value, BasicOperations.Info,
+        StructOp(true, () -> Set.of(BasicOperations.Value, BasicOperations.Info,
                 FFMTypes.MEMORY_SEGMENT, FFMTypes.MEMORY_LAYOUT, BasicOperations.StructI)),
         Str(false, () -> Set.of(ArrayOp, BasicOperations.Info, Array, Single, BindTypes.I8, BindTypes.Ptr,
                 ValueInterface.PtrI, ValueInterface.I8I, ValueInterface.I64I, BindTypes.I64)),
@@ -375,7 +375,7 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if(Generator.DEBUG)
+            if (Generator.DEBUG)
                 return name() + Generator.DEBUG_NAME_APPEND;
             return name();
         }

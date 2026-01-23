@@ -140,7 +140,7 @@ public final class StructType implements SingleGenerationType {
         TypeImports imports = CommonTypes.SpecificTypes.Array.getUseImportTypes()
                 .addUseImports(CommonTypes.SpecificTypes.Single)
                 .addUseImports(CommonTypes.SpecificTypes.StructOp)
-                .addUseImports(CommonTypes.BindTypes.Ptr)
+                .addUseImports(CommonTypes.SpecificTypes.MemoryUtils)
                 .addUseImports(CommonTypes.BasicOperations.Info);
         for (Member member : members) {
             imports.addUseImports(member.type);
