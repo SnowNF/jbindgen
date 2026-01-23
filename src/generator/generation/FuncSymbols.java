@@ -45,8 +45,18 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
         TypeImports imports = symbolProvider.getUseImportTypes();
         for (var fun : functions) {
             FunctionPtrType function = fun.type();
-            if (function.allocatorType() != CommonOperation.AllocatorType.NONE) {
+            if (function.allocatorType() == CommonOperation.AllocatorType.ON_HEAP) {
+                imports.addUseImports(CommonTypes.FFMTypes.ARENA);
+            }
+            if (function.allocatorType() == CommonOperation.AllocatorType.STANDARD) {
+                imports.addUseImports(CommonTypes.FFMTypes.ARENA);
                 imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+                imports.addUseImports(CommonTypes.SpecificTypes.Single);
+                function.getReturnType().ifPresent(type -> {
+                    // used to make Single(MemorySegment, OPERATIONS)
+                    TypeImports typeImports = type.getOperation().getCommonOperation().makeOperation().imports();
+                    imports.addImport(typeImports);
+                });
             }
             for (MemoryLayouts memoryLayout : function.getMemoryLayouts()) {
                 imports.addImport(memoryLayout.getTypeImports());

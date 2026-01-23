@@ -19,8 +19,19 @@ public final class FuncPointer extends AbstractGeneration<FunctionPtrType> {
     public TypeImports getDefineImportTypes() {
         TypeImports imports = super.getDefineImportTypes();
         FunctionPtrType function = typePkg.type();
-        if (function.allocatorType() != CommonOperation.AllocatorType.NONE) {
+        // we need implement invokeRaw() and invoke()
+        if (function.allocatorType() == CommonOperation.AllocatorType.ON_HEAP) {
+            imports.addUseImports(CommonTypes.SpecificTypes.MemoryUtils);
+        }
+        if (function.allocatorType() == CommonOperation.AllocatorType.STANDARD) {
+            imports.addUseImports(CommonTypes.SpecificTypes.MemoryUtils);
+            imports.addUseImports(CommonTypes.FFMTypes.ARENA);
             imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+            imports.addUseImports(CommonTypes.SpecificTypes.Single);
+            function.getReturnType().ifPresent(type -> {
+                TypeImports typeImports = type.getOperation().getCommonOperation().makeOperation().imports();
+                imports.addImport(typeImports);
+            });
         }
         for (MemoryLayouts memoryLayout : function.getMemoryLayouts()) {
             imports.addImport(memoryLayout.getTypeImports());

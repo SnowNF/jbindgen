@@ -121,8 +121,8 @@ public interface CommonOperation {
 
     enum AllocatorType {
         NONE,
-        STANDARD,
-        ON_HEAP
+        STANDARD, // return Single<T>, need explicit SegmentAllocator
+        ON_HEAP // return int128, on heap struct etc.
     }
 
     default AllocatorType getAllocatorType() {
