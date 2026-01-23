@@ -53,20 +53,26 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
                 imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
                 imports.addUseImports(CommonTypes.BindTypes.Ptr);
                 function.getReturnType().ifPresent(type -> {
-                    // used to make Single(MemorySegment, OPERATIONS)
+                    // used to make OPERATIONS
                     TypeImports typeImports = type.getOperation().getCommonOperation().makeOperation().imports();
                     imports.addImport(typeImports);
                 });
             }
+            // imports for memory layout
             for (MemoryLayouts memoryLayout : function.getMemoryLayouts()) {
                 imports.addImport(memoryLayout.getTypeImports());
             }
+            // imports for raw java signature
+            for (TypeAttr.TypeRefer type : function.getFunctionSignatureTypes()) {
+                OperationAttr.Operation operation = ((TypeAttr.OperationType) type).getOperation();
+                operation.getFuncOperation().getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
+            }
+            // imports for construct return type
             function.getReturnType().ifPresent(type -> {
                 OperationAttr.Operation operation = type.getOperation();
-                imports.addImport(operation.getFuncOperation().destructToPara("").imports());
                 imports.addImport(operation.getFuncOperation().constructFromRet("").imports());
-                operation.getFuncOperation().getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
             });
+            // imports for destruct upper args
             for (FunctionPtrType.Arg arg : function.getArgs()) {
                 CommonOperation.UpperType upperType = ((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().getUpperType();
                 imports.addImport(upperType.typeImports());

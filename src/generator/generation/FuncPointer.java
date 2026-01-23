@@ -36,12 +36,14 @@ public final class FuncPointer extends AbstractGeneration<FunctionPtrType> {
         for (MemoryLayouts memoryLayout : function.getMemoryLayouts()) {
             imports.addImport(memoryLayout.getTypeImports());
         }
+        // destruct for downcall. construct for upcall & raw java signature
         for (TypeAttr.TypeRefer type : function.getFunctionSignatureTypes()) {
             OperationAttr.Operation operation = ((TypeAttr.OperationType) type).getOperation();
             imports.addImport(operation.getFuncOperation().constructFromRet("").imports());
             imports.addImport(operation.getFuncOperation().destructToPara("").imports());
             operation.getFuncOperation().getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
         }
+        // downcall destruct upper args
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             CommonOperation.UpperType upperType = ((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().getUpperType();
             imports.addImport(upperType.typeImports());

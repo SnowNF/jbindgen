@@ -34,6 +34,7 @@ public class VoidBasedGenerator implements Generator {
                     public static final %2$s.Operations<%1$s> OPERATIONS = %2$s.makeOperations();
                 }
                 """.formatted(className,
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW));
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW) // 2
+        );
     }
 }

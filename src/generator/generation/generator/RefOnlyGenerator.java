@@ -18,24 +18,23 @@ public class RefOnlyGenerator implements Generator {
     @Override
     public void generate() {
         String out = refOnly.getTypePkg().packagePath().makePackage();
-        out += makeContent(refOnly.getTypePkg().type().typeName(TypeAttr.NameType.GENERIC), Generator.extractImports(refOnly, dependency));
+        out += Generator.extractImports(refOnly, dependency);
+        out += makeContent(refOnly.getTypePkg().type().typeName(TypeAttr.NameType.GENERIC));
         Utils.write(refOnly.getTypePkg().packagePath(), out);
     }
 
 
-    private static String makeContent(String className, String imports) {
+    private static String makeContent(String className) {
         return """
-                %2$s
-                
                 public class %1$s {
                     private %1$s() {
                         throw new UnsupportedOperationException();
                     }
                 
-                    public static final %3$s.Operations<%1$s> OPERATIONS = %3$s.makeOperations();
+                    public static final %2$s.Operations<%1$s> OPERATIONS = %2$s.makeOperations();
                 }
-                """.formatted(className, imports,
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW) // 3
+                """.formatted(className,
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW) // 2
         );
     }
 }
