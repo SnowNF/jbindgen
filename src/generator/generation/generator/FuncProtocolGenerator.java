@@ -75,8 +75,8 @@ public class FuncProtocolGenerator implements Generator {
                         }
                     }
                 
-                    public %1$s(Arena funcLifeTime, %4$s function) {
-                        this(funcLifeTime, (%4$sRaw) (%2$s)
+                    public static %1$s of(Arena funcLifeTime, %4$s function) {
+                        return new %1$s(funcLifeTime, (%4$sRaw) (%2$s)
                                 -> %3$s);
                     }
                 """.formatted(className, FuncPtrUtils.makeParaNameStr(lambdaType),
