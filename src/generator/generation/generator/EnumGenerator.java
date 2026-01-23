@@ -42,15 +42,15 @@ public class EnumGenerator implements Generator {
                         this.val = val.operator().value();
                     }
                 
-                    public static %11$s<%1$s> list(SegmentAllocator allocator, long len) {
+                    public static %11$s<%1$s> array(SegmentAllocator allocator, long len) {
                         return new %11$s<>(allocator, OPERATIONS, len);
                     }
                 
-                    public static %11$s<%1$s> list(SegmentAllocator allocator, %7$s<?> len) {
-                        return list(allocator, len.operator().value());
+                    public static %11$s<%1$s> array(SegmentAllocator allocator, %7$s<?> len) {
+                        return array(allocator, len.operator().value());
                     }
                 
-                    public static %12$s<%1$s> single(SegmentAllocator allocator) {
+                    public static %12$s<%1$s> ptr(SegmentAllocator allocator) {
                         return new %12$s<>(allocator, OPERATIONS);
                     }
                 

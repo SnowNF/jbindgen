@@ -95,15 +95,15 @@ public class StructGenerator implements Generator {
                         this.ms = %9$s.onHeapAllocator().allocate(OPERATIONS.memoryLayout());
                     }
                 
-                    public static %7$s<%1$s> list(SegmentAllocator allocator, %5$s<?> len) {
-                        return list(allocator, len.operator().value());
+                    public static %7$s<%1$s> array(SegmentAllocator allocator, %5$s<?> len) {
+                        return array(allocator, len.operator().value());
                     }
                 
-                    public static %7$s<%1$s> list(SegmentAllocator allocator, long len) {
+                    public static %7$s<%1$s> array(SegmentAllocator allocator, long len) {
                         return new %7$s<>(allocator, %1$s.OPERATIONS, len);
                     }
                 
-                    public static %8$s<%1$s> single(SegmentAllocator allocator) {
+                    public static %8$s<%1$s> ptr(SegmentAllocator allocator) {
                         return new %8$s<>(allocator, %1$s.OPERATIONS);
                     }
                 

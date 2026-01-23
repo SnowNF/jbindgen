@@ -65,15 +65,15 @@ public class ValueBasedGenerator implements Generator {
                         this.segment = fitByteSize(pointee.operator().value());
                     }
                 
-                    public static %12$s<%3$s> list(SegmentAllocator allocator, %10$s<?> len) {
-                        return list(allocator, len.operator().value());
+                    public static %12$s<%3$s> array(SegmentAllocator allocator, %10$s<?> len) {
+                        return array(allocator, len.operator().value());
                     }
                 
-                    public static %12$s<%3$s> list(SegmentAllocator allocator, long len) {
+                    public static %12$s<%3$s> array(SegmentAllocator allocator, long len) {
                         return new %12$s<>(allocator, %3$s.OPERATIONS, len);
                     }
                 
-                    public static %13$s<%3$s> single(SegmentAllocator allocator) {
+                    public static %13$s<%3$s> ptr(SegmentAllocator allocator) {
                         return new %13$s<>(allocator, %3$s.OPERATIONS);
                     }
                 

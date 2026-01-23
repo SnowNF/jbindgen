@@ -1180,15 +1180,15 @@ public class CommonGenerator implements Generator {
                     }
                 
                 
-                    public static %12$s<%5$s> list(SegmentAllocator allocator, String[] strings) {
+                    public static %12$s<%5$s> array(SegmentAllocator allocator, String[] strings) {
                         return makeArray(allocator, Arrays.stream(strings));
                     }
                 
-                    public static %12$s<%5$s> list(SegmentAllocator allocator, Collection<String> strings) {
+                    public static %12$s<%5$s> array(SegmentAllocator allocator, Collection<String> strings) {
                         return makeArray(allocator, strings.stream());
                     }
                 
-                    public static %13$s<%5$s> single(SegmentAllocator allocator, String string) {
+                    public static %13$s<%5$s> ptr(SegmentAllocator allocator, String string) {
                         return new %13$s<>(allocator, new %5$s(allocator, string));
                     }
                 
@@ -1535,15 +1535,15 @@ public class CommonGenerator implements Generator {
                             val.asByteBuffer().order(ByteOrder.nativeOrder()).putLong(low).putLong(high);
                         }
                     
-                        public static %9$s<%3$s> list(SegmentAllocator allocator, %7$s<?> len) {
-                            return list(allocator, len.operator().value());
+                        public static %9$s<%3$s> array(SegmentAllocator allocator, %7$s<?> len) {
+                            return array(allocator, len.operator().value());
                         }
                     
-                        public static %9$s<%3$s> list(SegmentAllocator allocator, long len) {
+                        public static %9$s<%3$s> array(SegmentAllocator allocator, long len) {
                             return new %9$s<>(allocator, OPERATIONS, len);
                         }
                     
-                        public static %10$s<%3$s> single(SegmentAllocator allocator) {
+                        public static %10$s<%3$s> ptr(SegmentAllocator allocator) {
                             return new %10$s<>(allocator, OPERATIONS);
                         }
                     
@@ -1615,15 +1615,15 @@ public class CommonGenerator implements Generator {
                         this.val = val.operator().value();
                     }
                 
-                    public static %11$s<%3$s> list(SegmentAllocator allocator, %9$s<?> len) {
-                        return list(allocator, len.operator().value());
+                    public static %11$s<%3$s> array(SegmentAllocator allocator, %9$s<?> len) {
+                        return array(allocator, len.operator().value());
                     }
                 
-                    public static %11$s<%3$s> list(SegmentAllocator allocator, long len) {
+                    public static %11$s<%3$s> array(SegmentAllocator allocator, long len) {
                         return new %11$s<>(allocator, OPERATIONS, len);
                     }
                 
-                    public static %12$s<%3$s> single(SegmentAllocator allocator) {
+                    public static %12$s<%3$s> ptr(SegmentAllocator allocator) {
                         return new %12$s<>(allocator, OPERATIONS);
                     }
                 
