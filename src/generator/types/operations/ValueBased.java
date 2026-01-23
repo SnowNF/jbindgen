@@ -41,14 +41,19 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
             @Override
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "MemoryUtils.get%s(%s, %s)".formatted(primitives.getMemoryUtilName(), ms, offset)), new TypeImports().addUseImports(type));
+                        "%s.get%s(%s, %s)".formatted(CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                primitives.getMemoryUtilName(), ms, offset)),
+                        new TypeImports().addUseImports(type).addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
             }
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
-                        "MemoryUtils.set%s(%s, %s, %s.operator().value())".formatted(primitives.getMemoryUtilName(), ms, offset, varName), upperType.typeImports());
+                        "%s.set%s(%s, %s, %s.operator().value())".formatted(
+                                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                primitives.getMemoryUtilName(), ms, offset, varName),
+                        upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
             }
         };
     }

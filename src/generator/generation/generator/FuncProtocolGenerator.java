@@ -117,8 +117,8 @@ public class FuncProtocolGenerator implements Generator {
 
     private String make(String className, FunctionPtrType type, String interfaces, String constructors, String invokes, String ext) {
         return """
-                public class %1$s implements PtrOp<%1$s, %1$s.Function>, Info<%1$s> {
-                    public static final Operations<%1$s> OPERATIONS = PtrOp.makeOperations(%1$s::new);
+                public class %1$s implements %9$s<%1$s, %1$s.Function>, %8$s<%1$s> {
+                    public static final %8$s.Operations<%1$s> OPERATIONS = %9$s.makeOperations(%1$s::new);
                     public static final FunctionDescriptor FUNCTIONDESCRIPTOR = %2$s;
                 
                 %3$s
@@ -139,10 +139,10 @@ public class FuncProtocolGenerator implements Generator {
                 %5$s
                 
                     @Override
-                    public PtrOpI<%1$s, Function> operator() {
-                        return new PtrOpI<>() {
+                    public %10$s<%1$s, Function> operator() {
+                        return new %10$s<>() {
                             @Override
-                            public Operations<Function> elementOperation() {
+                            public %8$s.Operations<Function> elementOperation() {
                                 throw new UnsupportedOperationException();
                             }
                 
@@ -152,7 +152,7 @@ public class FuncProtocolGenerator implements Generator {
                             }
                 
                             @Override
-                            public Operations<%1$s> getOperations() {
+                            public %8$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
@@ -171,7 +171,10 @@ public class FuncProtocolGenerator implements Generator {
                 %6$s
                 }""".formatted(className, FuncPtrUtils.makeFuncDescriptor(type),
                 interfaces, constructors, invokes, ext, // 6
-                utilsClassName
+                utilsClassName, // 7
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 8
+                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW), // 9
+                CommonTypes.BindTypeOperations.PtrOp.operatorTypeName() // 10
         );
     }
 }

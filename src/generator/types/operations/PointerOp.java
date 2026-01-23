@@ -42,15 +42,19 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
             @Override
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s, %s)".formatted(typeName,
-                        "MemoryUtils.getAddr(%s, %s)".formatted(ms, offset),
-                        pointeeType.getOperation().getCommonOperation().makeOperation().str()), new TypeImports().addUseImports(pointerType));
+                        "%s.getAddr(%s, %s)".formatted(
+                                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW), ms, offset),
+                        pointeeType.getOperation().getCommonOperation().makeOperation().str()),
+                        new TypeImports().addUseImports(pointerType).addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
             }
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
-                        "MemoryUtils.setAddr(%s, %s, %s.operator().value())".formatted(ms, offset, varName), upperType.typeImports());
+                        "%s.setAddr(%s, %s, %s.operator().value())".formatted(
+                                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                ms, offset, varName), upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
             }
         };
     }

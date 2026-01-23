@@ -3,6 +3,8 @@ package generator.types.operations;
 import generator.generation.generator.FuncProtocolGenerator;
 import generator.types.*;
 
+import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
+
 public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
 
     private final FunctionPtrType functionPtrType;
@@ -39,14 +41,18 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
             @Override
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "MemoryUtils.getAddr(%s, %s)".formatted(ms, offset)), new TypeImports().addUseImports(functionPtrType));
+                        "%s.getAddr(%s, %s)".formatted(
+                                MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                ms, offset)), new TypeImports().addUseImports(functionPtrType).addUseImports(MemoryUtils));
             }
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
-                        "MemoryUtils.setAddr(%s, %s, %s.operator().value())".formatted(ms, offset, varName), upperType.typeImports());
+                        "%s.setAddr(%s, %s, %s.operator().value())".formatted(
+                                MemoryUtils.typeName(TypeAttr.NameType.RAW), ms, offset, varName),
+                        upperType.typeImports().addUseImports(MemoryUtils));
             }
         };
     }

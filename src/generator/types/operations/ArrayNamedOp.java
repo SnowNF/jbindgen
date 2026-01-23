@@ -5,6 +5,8 @@ import generator.types.CommonTypes;
 import generator.types.TypeAttr;
 import generator.types.TypeImports;
 
+import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
+
 public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
     private final String typeName;
     private final ArrayTypeNamed arrayType;
@@ -52,9 +54,10 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
-                        "MemoryUtils.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
+                        "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
+                                MemoryUtils.typeName(TypeAttr.NameType.RAW),
                                 varName, 0, ms, offset, memoryLayout),
-                        upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
+                        upperType.typeImports().addUseImports(MemoryUtils));
             }
         };
     }

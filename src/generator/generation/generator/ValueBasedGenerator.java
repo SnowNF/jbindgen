@@ -40,8 +40,8 @@ public class ValueBasedGenerator implements Generator {
                 import java.util.Objects;
                 
                 public class %3$s implements %5$s<%3$s, %4$s>, %11$s<%3$s> {
-                    public static final Operations<%4$s> ELEMENT_OPERATIONS = %6$s;
-                    public static final Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);
+                    public static final %11$s.Operations<%4$s> ELEMENT_OPERATIONS = %6$s;
+                    public static final %11$s.Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);
                 
                     private final MemorySegment segment;
                 
@@ -57,7 +57,7 @@ public class ValueBasedGenerator implements Generator {
                         this.segment = fitByteSize(arrayOperation.operator().value());
                     }
                 
-                    public %3$s(Value<MemorySegment> pointee) {
+                    public %3$s(%14$s<MemorySegment> pointee) {
                         this.segment = fitByteSize(pointee.operator().value());
                     }
                 
@@ -65,16 +65,16 @@ public class ValueBasedGenerator implements Generator {
                         this.segment = fitByteSize(pointee.operator().value());
                     }
                 
-                    public static Array<%3$s> list(SegmentAllocator allocator, %10$s<?> len) {
+                    public static %12$s<%3$s> list(SegmentAllocator allocator, %10$s<?> len) {
                         return list(allocator, len.operator().value());
                     }
                 
-                    public static Array<%3$s> list(SegmentAllocator allocator, long len) {
-                        return new Array<>(allocator, %3$s.OPERATIONS, len);
+                    public static %12$s<%3$s> list(SegmentAllocator allocator, long len) {
+                        return new %12$s<>(allocator, %3$s.OPERATIONS, len);
                     }
                 
-                    public static Single<%3$s> single(SegmentAllocator allocator) {
-                        return new Single<>(allocator, %3$s.OPERATIONS);
+                    public static %13$s<%3$s> single(SegmentAllocator allocator) {
+                        return new %13$s<>(allocator, %3$s.OPERATIONS);
                     }
                 
                     @Override
@@ -106,12 +106,12 @@ public class ValueBasedGenerator implements Generator {
                             }
                 
                             @Override
-                            public Operations<%3$s> getOperations() {
+                            public %11$s.Operations<%3$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
                             @Override
-                            public Operations<%4$s> elementOperation() {
+                            public %11$s.Operations<%4$s> elementOperation() {
                                 return ELEMENT_OPERATIONS;
                             }
                 
@@ -140,7 +140,10 @@ public class ValueBasedGenerator implements Generator {
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(), // 8
                 CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW), // 9
                 CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 10
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW) // 11
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 11
+                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 12
+                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW), // 13
+                CommonTypes.BasicOperations.Value.typeName(TypeAttr.NameType.RAW) // 14
         ));
     }
 }

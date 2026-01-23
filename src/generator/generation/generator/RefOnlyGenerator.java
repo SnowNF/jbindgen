@@ -3,6 +3,7 @@ package generator.generation.generator;
 import generator.Dependency;
 import generator.Utils;
 import generator.generation.RefOnly;
+import generator.types.CommonTypes;
 import generator.types.TypeAttr;
 
 public class RefOnlyGenerator implements Generator {
@@ -31,8 +32,10 @@ public class RefOnlyGenerator implements Generator {
                         throw new UnsupportedOperationException();
                     }
                 
-                    public static final Info.Operations<%1$s> OPERATIONS = Info.makeOperations();
+                    public static final %3$s.Operations<%1$s> OPERATIONS = %3$s.makeOperations();
                 }
-                """.formatted(className, imports);
+                """.formatted(className, imports,
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW) // 3
+        );
     }
 }

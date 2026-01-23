@@ -45,19 +45,18 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
         TypeImports imports = symbolProvider.getUseImportTypes();
         for (var fun : functions) {
             FunctionPtrType function = fun.type();
-            imports.addDefineImports(function);
             if (function.allocatorType() != CommonOperation.AllocatorType.NONE) {
                 imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
             }
             for (MemoryLayouts memoryLayout : function.getMemoryLayouts()) {
                 imports.addImport(memoryLayout.getTypeImports());
             }
-            for (TypeAttr.TypeRefer type : function.getFunctionSignatureTypes()) {
-                OperationAttr.Operation operation = ((TypeAttr.OperationType) type).getOperation();
+            function.getReturnType().ifPresent(type -> {
+                OperationAttr.Operation operation = type.getOperation();
                 imports.addImport(operation.getFuncOperation().destructToPara("").imports());
                 imports.addImport(operation.getFuncOperation().constructFromRet("").imports());
                 operation.getFuncOperation().getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
-            }
+            });
             for (FunctionPtrType.Arg arg : function.getArgs()) {
                 CommonOperation.UpperType upperType = ((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().getUpperType();
                 imports.addImport(upperType.typeImports());

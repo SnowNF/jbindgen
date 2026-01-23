@@ -473,6 +473,7 @@ public class CommonGenerator implements Generator {
                 %2$s
                 import java.util.List;
                 import java.util.Objects;
+                import java.util.function.Consumer;
                 
                 public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
                     public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation) {
@@ -671,6 +672,15 @@ public class CommonGenerator implements Generator {
                         Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
                         return new %12$s<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
                                 (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
+                    }
+
+                    public %12$s<E> apply(Consumer<E> consumer) {
+                        consumer.accept(getFirst());
+                        return this;
+                    }
+                
+                    public E get() {
+                        return getFirst();
                     }
                 }
                 """.formatted(path.makePackage(), imports,

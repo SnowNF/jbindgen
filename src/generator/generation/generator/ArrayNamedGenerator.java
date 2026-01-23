@@ -31,12 +31,12 @@ public class ArrayNamedGenerator implements Generator {
                 import java.util.List;
                 import java.util.Objects;
                 
-                public class %1$s extends ArrayOp.AbstractRandomAccessList<%2$s> implements ArrayOp<%1$s, %2$s>, Info<%1$s> {
-                    public static final Operations<%2$s> ELE_OPERATIONS = %3$s;
+                public class %1$s extends %11$s.AbstractRandomAccessList<%2$s> implements %11$s<%1$s, %2$s>, %8$s<%1$s> {
+                    public static final %8$s.Operations<%2$s> ELE_OPERATIONS = %3$s;
                     public static final long LENGTH = %5$s;
-                    public static final Operations<%1$s> OPERATIONS = new Operations<>(
-                            (param, offset) -> new %1$s(MemoryUtils.getAddr(param, offset).reinterpret(LENGTH * ELE_OPERATIONS.memoryLayout().byteSize())),
-                            (source, dest, offset) -> MemoryUtils.setAddr(dest, offset, source.ms),
+                    public static final %8$s.Operations<%1$s> OPERATIONS = new %8$s.Operations<>(
+                            (param, offset) -> new %1$s(%9$s.getAddr(param, offset).reinterpret(LENGTH * ELE_OPERATIONS.memoryLayout().byteSize())),
+                            (source, dest, offset) -> %9$s.setAddr(dest, offset, source.ms),
                             ValueLayout.ADDRESS);
                 
                     private final MemorySegment ms;
@@ -54,7 +54,7 @@ public class ArrayNamedGenerator implements Generator {
                             }
                 
                             @Override
-                            public %1$s reinterpret(%6$S<?> length) {
+                            public %1$s reinterpret(%6$s<?> length) {
                                 return reinterpret(length.operator().value());
                             }
                 
@@ -64,21 +64,21 @@ public class ArrayNamedGenerator implements Generator {
                             }
                 
                             @Override
-                            public Ptr<%2$s> pointerAt(%6$S<?> index) {
+                            public %10$s<%2$s> pointerAt(%6$s<?> index) {
                                 return pointerAt(index.operator().value());
                             }
                 
                             @Override
-                            public Ptr<%2$s> pointerAt(long index) {
+                            public %10$s<%2$s> pointerAt(long index) {
                                 Objects.checkIndex(index, size());
-                                return new Ptr<>(ms.asSlice(index * ELE_OPERATIONS.memoryLayout().byteSize(), ELE_OPERATIONS.memoryLayout().byteSize()), ELE_OPERATIONS);
+                                return new %10$s<>(ms.asSlice(index * ELE_OPERATIONS.memoryLayout().byteSize(), ELE_OPERATIONS.memoryLayout().byteSize()), ELE_OPERATIONS);
                             }
                 
                             @Override
-                            public List<Ptr<%2$s>> pointerList() {
+                            public List<%10$s<%2$s>> pointerList() {
                                 return new AbstractRandomAccessList<>() {
                                     @Override
-                                    public Ptr<%2$s> get(int index) {
+                                    public %10$s<%2$s> get(int index) {
                                         return pointerAt(index);
                                     }
                 
@@ -90,7 +90,7 @@ public class ArrayNamedGenerator implements Generator {
                             }
                 
                             @Override
-                            public Operations<%2$s> elementOperation() {
+                            public %8$s.Operations<%2$s> elementOperation() {
                                 return ELE_OPERATIONS;
                             }
                 
@@ -100,7 +100,7 @@ public class ArrayNamedGenerator implements Generator {
                             }
                 
                             @Override
-                            public Operations<%1$s> getOperations() {
+                            public %8$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
@@ -142,6 +142,11 @@ public class ArrayNamedGenerator implements Generator {
                 ((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation().str(), // 3
                 type.getOperation().getCommonOperation().makeDirectMemoryLayout(), type.length(), //5
                 CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), //6
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW));
+                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 7
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 8
+                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW), // 9
+                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW), // 10
+                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW) // 11
+                );
     }
 }

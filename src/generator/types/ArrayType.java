@@ -7,7 +7,7 @@ import static utils.CommonUtils.Assert;
 
 public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) implements
         TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer {
-    public static final CommonTypes.SpecificTypes LIST_TYPE = CommonTypes.SpecificTypes.Array;
+    public static final CommonTypes.SpecificTypes ARRAY_TYPE = CommonTypes.SpecificTypes.Array;
 
     public ArrayType {
         Assert(length > 0, "length must be greater than zero");
@@ -20,22 +20,22 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
 
     @Override
     public TypeImports getDefineImportTypes() {
-        return element.getUseImportTypes().addUseImports(LIST_TYPE);
+        return element.getUseImportTypes().addUseImports(ARRAY_TYPE);
     }
 
     @Override
     public TypeImports getUseImportTypes() {
-        return element.getUseImportTypes().addUseImports(LIST_TYPE);
+        return element.getUseImportTypes().addUseImports(ARRAY_TYPE);
     }
 
     @Override
     public String typeName(TypeAttr.NameType nameType) {
         return switch (nameType) {
             case WILDCARD ->
-                    LIST_TYPE.getWildcardName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.WILDCARD));
+                    ARRAY_TYPE.getWildcardName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.WILDCARD));
             case GENERIC ->
-                    LIST_TYPE.getGenericName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.GENERIC));
-            case RAW -> LIST_TYPE.typeName(TypeAttr.NameType.RAW);
+                    ARRAY_TYPE.getGenericName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.GENERIC));
+            case RAW -> ARRAY_TYPE.typeName(TypeAttr.NameType.RAW);
         };
     }
 

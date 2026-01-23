@@ -266,11 +266,11 @@ public class CommonTypes {
         }
 
         public static String makePtrGenericName(String t) {
-            return Ptr.name() + "<%s>".formatted(t);
+            return Ptr.typeName(TypeAttr.NameType.RAW) + "<%s>".formatted(t);
         }
 
         public static String makePtrWildcardName(String t) {
-            return Ptr.name() + "<? extends %s>".formatted(t);
+            return Ptr.typeName(TypeAttr.NameType.RAW) + "<? extends %s>".formatted(t);
         }
 
         @Override
@@ -293,7 +293,7 @@ public class CommonTypes {
             if (operations.getValue().primitive.noJavaPrimitive) {
                 return new NoJavaPrimitiveType<>(this, this);
             }
-            return new ValueBased<>(this, name(), this);
+            return new ValueBased<>(this, typeName(TypeAttr.NameType.RAW), this);
         }
 
         @Override
@@ -363,14 +363,14 @@ public class CommonTypes {
             if (!generic) {
                 throw new IllegalStateException("Cannot get generic name for non-generic type");
             }
-            return name() + "<%s>".formatted(t);
+            return typeName(TypeAttr.NameType.RAW) + "<%s>".formatted(t);
         }
 
         public String getWildcardName(String t) {
             if (!generic) {
                 throw new IllegalStateException("Cannot get wildcard name for non-generic type");
             }
-            return name() + "<? extends %s>".formatted(t);
+            return typeName(TypeAttr.NameType.RAW) + "<? extends %s>".formatted(t);
         }
 
         @Override

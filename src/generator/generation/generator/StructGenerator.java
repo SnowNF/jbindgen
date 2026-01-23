@@ -81,9 +81,9 @@ public class StructGenerator implements Generator {
         return """
                 import java.util.Objects;
                 
-                public final class %1$s implements %5$s<%1$s>, Info<%1$s> {
+                public final class %1$s implements %5$s<%1$s>, %7$s<%1$s> {
                     private final MemorySegment ms;
-                    public static final Operations<%1$s> OPERATIONS = %5$s.makeOperations(%1$s::new, %2$s);
+                    public static final %7$s.Operations<%1$s> OPERATIONS = %5$s.makeOperations(%1$s::new, %2$s);
                 
                     public %1$s(MemorySegment ms) {
                         this.ms = ms;
@@ -93,16 +93,16 @@ public class StructGenerator implements Generator {
                         this.ms = allocator.allocate(OPERATIONS.memoryLayout().byteSize());
                     }
                 
-                    public static Array<%1$s> list(SegmentAllocator allocator, %6$s<?> len) {
+                    public static %8$s<%1$s> list(SegmentAllocator allocator, %6$s<?> len) {
                         return list(allocator, len.operator().value());
                     }
                 
-                    public static Array<%1$s> list(SegmentAllocator allocator, long len) {
-                        return new Array<>(allocator, %1$s.OPERATIONS, len);
+                    public static %8$s<%1$s> list(SegmentAllocator allocator, long len) {
+                        return new %8$s<>(allocator, %1$s.OPERATIONS, len);
                     }
                 
-                    public static Single<%1$s> single(SegmentAllocator allocator) {
-                        return new Single<>(allocator, %1$s.OPERATIONS);
+                    public static %9$s<%1$s> single(SegmentAllocator allocator) {
+                        return new %9$s<>(allocator, %1$s.OPERATIONS);
                     }
                 
                     @Override
@@ -119,7 +119,7 @@ public class StructGenerator implements Generator {
                             }
                 
                             @Override
-                            public Operations<%1$s> getOperations() {
+                            public %7$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
@@ -145,7 +145,10 @@ public class StructGenerator implements Generator {
                 }""".formatted(className, layout.getMemoryLayout(), ext,
                 CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW),
                 CommonTypes.SpecificTypes.StructOp.typeName(TypeAttr.NameType.RAW),//5
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW)
+                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW),
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 7
+                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 8
+                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW) // 9
         );
     }
 }

@@ -3,6 +3,7 @@ package generator.generation.generator;
 import generator.Dependency;
 import generator.Utils;
 import generator.generation.VoidBased;
+import generator.types.CommonTypes;
 import generator.types.TypeAttr;
 
 public class VoidBasedGenerator implements Generator {
@@ -30,8 +31,9 @@ public class VoidBasedGenerator implements Generator {
                         throw new UnsupportedOperationException();
                     }
                 
-                    public static final Info.Operations<%1$s> OPERATIONS = Info.makeOperations();
+                    public static final %2$s.Operations<%1$s> OPERATIONS = %2$s.makeOperations();
                 }
-                """.formatted(className);
+                """.formatted(className,
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW));
     }
 }

@@ -30,8 +30,8 @@ public class EnumGenerator implements Generator {
                 
                 import java.lang.foreign.SegmentAllocator;
                 
-                public final class %1$s implements I32Op<%1$s>, Info<%1$s> {
-                    public static final Info.Operations<%1$s> OPERATIONS = I32Op.makeOperations(%1$s::new);
+                public final class %1$s implements %9$s<%1$s>, %8$s<%1$s> {
+                    public static final %8$s.Operations<%1$s> OPERATIONS = %9$s.makeOperations(%1$s::new);
                     private final int val;
                 
                     public %1$s(int val) {
@@ -42,16 +42,16 @@ public class EnumGenerator implements Generator {
                         this.val = val.operator().value();
                     }
                 
-                    public static Array<%1$s> list(SegmentAllocator allocator, long len) {
-                        return new Array<>(allocator, OPERATIONS, len);
+                    public static %11$s<%1$s> list(SegmentAllocator allocator, long len) {
+                        return new %11$s<>(allocator, OPERATIONS, len);
                     }
                 
-                    public static Array<%1$s> list(SegmentAllocator allocator, %7$s<?> len) {
+                    public static %11$s<%1$s> list(SegmentAllocator allocator, %7$s<?> len) {
                         return list(allocator, len.operator().value());
                     }
                 
-                    public static Single<%1$s> single(SegmentAllocator allocator) {
-                        return new Single<>(allocator, OPERATIONS);
+                    public static %12$s<%1$s> single(SegmentAllocator allocator) {
+                        return new %12$s<>(allocator, OPERATIONS);
                     }
                 
                     public int value() {
@@ -59,10 +59,10 @@ public class EnumGenerator implements Generator {
                     }
                 
                     @Override
-                    public I32OpI<%1$s> operator() {
-                        return new I32OpI<>() {
+                    public %10$s<%1$s> operator() {
+                        return new %10$s<>() {
                             @Override
-                            public Info.Operations<%1$s> getOperations() {
+                            public %8$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
                 
@@ -98,8 +98,12 @@ public class EnumGenerator implements Generator {
                 Generator.extractImports(e, dependency), String.join("\n    ", members), // 4
                 CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW), // 5
                 e.getTypePkg().type().getType().getOperations().getValue().typeName(TypeAttr.NameType.RAW), // 6
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW) // 7
-
+                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 7
+                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 8
+                CommonTypes.BindTypeOperations.I32Op.typeName(TypeAttr.NameType.RAW), // 9
+                CommonTypes.BindTypeOperations.I32Op.operatorTypeName(), // 10
+                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 11
+                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW) // 12
         );
     }
 }
