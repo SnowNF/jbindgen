@@ -111,6 +111,11 @@ public class ValueBasedGenerator implements Generator {
                             }
                 
                             @Override
+                            public %3$s self() {
+                                return %3$s.this;
+                            }
+
+                            @Override
                             public %11$s.Operations<%4$s> elementOperation() {
                                 return ELEMENT_OPERATIONS;
                             }

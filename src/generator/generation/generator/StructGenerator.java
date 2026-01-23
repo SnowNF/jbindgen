@@ -119,7 +119,12 @@ public class StructGenerator implements Generator {
                             public %6$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
-                
+
+                            @Override
+                            public %1$s self() {
+                                return %1$s.this;
+                            }
+
                             @Override
                             public MemorySegment value() {
                                 return ms;

@@ -17,6 +17,7 @@ public final class ArrayNamed extends AbstractGeneration<ArrayTypeNamed> {
         return super.getDefineImportTypes()
                 .addUseImports(CommonTypes.FFMTypes.MEMORY_SEGMENT)
                 .addUseImports(CommonTypes.FFMTypes.VALUE_LAYOUT)
+                .addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR)
                 .addUseImports(CommonTypes.SpecificTypes.ArrayOp)
                 .addUseImports(CommonTypes.SpecificTypes.MemoryUtils);
     }

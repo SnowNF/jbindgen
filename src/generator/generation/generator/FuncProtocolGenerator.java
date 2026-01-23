@@ -160,7 +160,12 @@ public class FuncProtocolGenerator implements Generator {
                             public %8$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
-                
+
+                            @Override
+                            public %1$s self() {
+                                return %1$s.this;
+                            }
+
                             @Override
                             public Function pointee() {
                                 throw new UnsupportedOperationException();

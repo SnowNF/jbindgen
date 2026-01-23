@@ -44,7 +44,11 @@ public class ArrayNamedGenerator implements Generator {
                     public %1$s(MemorySegment ms) {
                         this.ms = ms;
                     }
-                
+
+                    public %1$s(SegmentAllocator allocator) {
+                        this.ms = allocator.allocate(OPERATIONS.memoryLayout(), LENGTH);
+                    }
+
                     @Override
                     public FixedArrayOpI<%1$s, %2$s> operator() {
                         return new FixedArrayOpI<>() {
@@ -104,6 +108,11 @@ public class ArrayNamedGenerator implements Generator {
                                 return OPERATIONS;
                             }
                 
+                            @Override
+                            public %1$s self() {
+                                return %1$s.this;
+                            }
+
                             @Override
                             public %2$s pointee() {
                                 return get(0);

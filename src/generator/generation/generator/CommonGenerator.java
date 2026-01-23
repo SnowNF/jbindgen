@@ -424,8 +424,10 @@ public class CommonGenerator implements Generator {
                 %2$s
                 
                 public interface %3$s<T> extends %4$s {
-                    interface InfoOp<T> {
-                        Operations<T> getOperations();
+                    interface InfoOp<S> {
+                        Operations<S> getOperations();
+                
+                        S self();
                     }
                 
                     record Operations<T>(Constructor<? extends T, MemorySegment> constructor, Copy<? super T> copy, MemoryLayout memoryLayout) {
@@ -474,14 +476,6 @@ public class CommonGenerator implements Generator {
                     protected final MemorySegment ptr;
                     protected final %10$s.Operations<E> operations;
                 
-                    public %12$s(%5$s<E> ptr, %10$s<E> info) {
-                        this(ptr, info.operator().getOperations());
-                    }
-                
-                    public %12$s(%6$s<E> ptr) {
-                        this(ptr, ptr.operator().elementOperation());
-                    }
-                
                     public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
                         this.ptr = ptr.operator().value();
                         this.operations = operations;
@@ -497,10 +491,6 @@ public class CommonGenerator implements Generator {
                         this.operations = operations;
                     }
                 
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info, E element) {
-                        this(allocator, info.operator().getOperations(), element);
-                    }
-                
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, E element) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout());
@@ -508,7 +498,7 @@ public class CommonGenerator implements Generator {
                     }
                 
                     public %12$s(SegmentAllocator allocator, %10$s<E> info) {
-                        this(allocator, info.operator().getOperations());
+                        this(allocator, info.operator().getOperations(), info.operator().self());
                     }
                 
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations) {
@@ -608,7 +598,12 @@ public class CommonGenerator implements Generator {
                             public %10$s.Operations<%12$s<E>> getOperations() {
                                 return makeOperations(operations);
                             }
-                
+
+                            @Override
+                            public %12$s<E> self() {
+                                return %12$s.this;
+                            }
+
                             @Override
                             public E pointee() {
                                 return get(0);
@@ -712,14 +707,6 @@ public class CommonGenerator implements Generator {
                     protected final MemorySegment ptr;
                     protected final %10$s.Operations<E> operations;
                 
-                    public %12$s(%5$s<E> ptr, %10$s<E> info) {
-                        this(ptr, info.operator().getOperations());
-                    }
-                
-                    public %12$s(%6$s<E> ptr) {
-                        this(ptr, ptr.operator().elementOperation());
-                    }
-                
                     public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
                         this.ptr = ptr.operator().value();
                         this.operations = operations;
@@ -735,10 +722,6 @@ public class CommonGenerator implements Generator {
                         this.operations = operations;
                     }
                 
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info, Collection<E> elements) {
-                        this(allocator, info.operator().getOperations(), elements);
-                    }
-                
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, Collection<E> elements) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), elements.size());
@@ -749,17 +732,13 @@ public class CommonGenerator implements Generator {
                         }
                     }
                 
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info, long len) {
-                        this(allocator, info.operator().getOperations(), len);
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info, %8$s<?> len) {
-                        this(allocator, info, len.operator().value());
-                    }
-                
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, long len) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), len);
+                    }
+                
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %9$s<?> len) {
+                        this(allocator, operations, len.operator().value());
                     }
                 
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %8$s<?> len) {
@@ -860,6 +839,11 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
+                            public %12$s<E> self() {
+                                return %12$s.this;
+                            }
+                
+                            @Override
                             public E pointee() {
                                 return get(0);
                             }
@@ -948,14 +932,6 @@ public class CommonGenerator implements Generator {
                     protected final MemorySegment ptr;
                     protected final %10$s.Operations<E> operations;
                 
-                    public %12$s(%5$s<E> ptr, %10$s<E> info) {
-                        this(ptr, info.operator().getOperations());
-                    }
-                
-                    public %12$s(%6$s<E> ptr) {
-                        this(ptr, ptr.operator().elementOperation());
-                    }
-                
                     public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
                         this.ptr = ptr.operator().value();
                         this.operations = operations;
@@ -971,10 +947,6 @@ public class CommonGenerator implements Generator {
                         this.operations = operations;
                     }
                 
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info, Collection<E> elements) {
-                        this(allocator, info.operator().getOperations(), elements);
-                    }
-                
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, Collection<E> elements) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), elements.size());
@@ -984,15 +956,11 @@ public class CommonGenerator implements Generator {
                             i++;
                         }
                     }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info, long len) {
-                        this(allocator, info.operator().getOperations(), len);
+
+                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %9$s<?> len) {
+                        this(allocator, operations, len.operator().value());
                     }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info, %8$s<?> len) {
-                        this(allocator, info, len.operator().value());
-                    }
-                
+
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, long len) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), len);
@@ -1089,7 +1057,12 @@ public class CommonGenerator implements Generator {
                             public %10$s.Operations<%12$s<E>> getOperations() {
                                 return makeOperations(operations, sizeLong());
                             }
-                
+
+                            @Override
+                            public %12$s<E> self() {
+                                return %12$s.this;
+                            }
+
                             @Override
                             public MemorySegment value() {
                                 return ptr;
@@ -1181,7 +1154,7 @@ public class CommonGenerator implements Generator {
                 
                     private static %12$s<%5$s> makeArray(SegmentAllocator allocator, Stream<String> ss) {
                         List<%5$s> list = ss.map(s -> new %5$s(allocator, s)).toList();
-                        return new %12$s<>(allocator, list.getFirst(), list);
+                        return new %12$s<>(allocator, list.getFirst().operator().getOperations(), list);
                     }
                 
                     private static final long HIMAGIC_FOR_BYTES = 0x8080_8080_8080_8080L;
@@ -1281,6 +1254,11 @@ public class CommonGenerator implements Generator {
                                 return OPERATIONS;
                             }
                 
+                            @Override
+                            public %5$s self() {
+                                return %5$s.this;
+                            }
+
                             @Override
                             public %11$s pointee() {
                                 return get(0);
@@ -1390,6 +1368,7 @@ public class CommonGenerator implements Generator {
                 
                 %2$s
                 import java.util.Objects;
+                import java.util.function.Consumer;
                 
                 public class %3$s<E> implements %5$s<%3$s<E>, E>, %8$s<%3$s<E>> {
                     public static <I> %8$s.Operations<%3$s<I>> makeOperations(%8$s.Operations<I> operation) {
@@ -1415,9 +1394,23 @@ public class CommonGenerator implements Generator {
                         this.segment = fitByteSize(arr.operator().value());
                     }
                 
-                    public %3$s(%4$s<E> pointee, %8$s.Operations<E> operation) {
+                    public %3$s(%4$s<E> ptr, %8$s.Operations<E> operation) {
                         this.operation = operation;
-                        this.segment = fitByteSize(pointee.operator().value());
+                        this.segment = fitByteSize(ptr.operator().value());
+                    }
+                
+                    public %3$s(SegmentAllocator allocator, %8$s.Operations<E> operations, E element) {
+                        this(allocator, operations);
+                        operations.copy().copyTo(element, segment, 0);
+                    }
+                
+                    public %3$s(SegmentAllocator allocator, %8$s.Operations<E> operations) {
+                        this.operation = operations;
+                        this.segment = allocator.allocate(operations.memoryLayout());
+                    }
+                
+                    public %3$s(SegmentAllocator allocator, %8$s<E> info) {
+                        this(allocator, info.operator().getOperations(), info.operator().self());
                     }
                 
                     @Override
@@ -1437,6 +1430,16 @@ public class CommonGenerator implements Generator {
                 
                     public E pointee() {
                         return operator().pointee();
+                    }
+                
+                    public %3$s<E> pointee(E element) {
+                        operator().setPointee(element);
+                        return this;
+                    }
+                
+                    public %3$s<E> apply(Consumer<E> element) {
+                        element.accept(pointee());
+                        return this;
                     }
                 
                     @Override
@@ -1460,6 +1463,11 @@ public class CommonGenerator implements Generator {
                             @Override
                             public %8$s.Operations<%3$s<E>> getOperations() {
                                 return makeOperations(operation);
+                            }
+                
+                            @Override
+                            public %9$s<E> self() {
+                                return %9$s.this;
                             }
                 
                             @Override
@@ -1545,6 +1553,11 @@ public class CommonGenerator implements Generator {
                                 }
                     
                                 @Override
+                                public %3$s self() {
+                                    return %3$s.this;
+                                }
+                    
+                                @Override
                                 public MemorySegment value() {
                                     return val;
                                 }
@@ -1618,7 +1631,12 @@ public class CommonGenerator implements Generator {
                             public %10$s.Operations<%3$s> getOperations() {
                                 return OPERATIONS;
                             }
-                
+
+                            @Override
+                            public %3$s self() {
+                                return %3$s.this;
+                            }
+
                             @Override
                             public %7$s value() {
                                 return val;

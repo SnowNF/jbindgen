@@ -67,6 +67,11 @@ public class EnumGenerator implements Generator {
                             }
                 
                             @Override
+                            public %1$s self() {
+                                return %1$s.this;
+                            }
+
+                            @Override
                             public Integer value() {
                                 return val;
                             }
