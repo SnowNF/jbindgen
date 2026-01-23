@@ -27,7 +27,7 @@ public final class FuncPointer extends AbstractGeneration<FunctionPtrType> {
             imports.addUseImports(CommonTypes.SpecificTypes.MemoryUtils);
             imports.addUseImports(CommonTypes.FFMTypes.ARENA);
             imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-            imports.addUseImports(CommonTypes.SpecificTypes.Single);
+            imports.addUseImports(CommonTypes.BindTypes.Ptr);
             function.getReturnType().ifPresent(type -> {
                 TypeImports typeImports = type.getOperation().getCommonOperation().makeOperation().imports();
                 imports.addImport(typeImports);

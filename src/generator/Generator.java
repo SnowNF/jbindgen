@@ -10,7 +10,7 @@ import java.util.Set;
 import static utils.CommonUtils.Assert;
 
 public class Generator {
-    public static final boolean DEBUG = true;
+    public static final boolean DEBUG = false;
     public static final String DEBUG_NAME_APPEND = "Debug";
 
     public interface GenerationProvider {

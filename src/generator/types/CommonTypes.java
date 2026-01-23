@@ -237,6 +237,11 @@ public class CommonTypes {
         }
     }
 
+
+    private static final Supplier<Set<TypeAttr.TypeRefer>> BIND_TYPE_COMMON_REF = () ->
+            Set.of(ValueInterface.I64I, FFMTypes.SEGMENT_ALLOCATOR,
+                    BasicOperations.Info, SpecificTypes.Array, BindTypes.Ptr);
+
     public enum BindTypes implements BaseType, SingleGenerationType {
         I8(BindTypeOperations.I8Op),
         I16(BindTypeOperations.I16Op),
@@ -244,25 +249,26 @@ public class CommonTypes {
         I64(BindTypeOperations.I64Op),
         FP32(BindTypeOperations.FP32Op),
         FP64(BindTypeOperations.FP64Op),
-        Ptr(BindTypeOperations.PtrOp, Set.of(FFMTypes.MEMORY_SEGMENT, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
+        Ptr(BindTypeOperations.PtrOp, () -> Set.of(FFMTypes.MEMORY_SEGMENT, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
                 FFMTypes.VALUE_LAYOUT, BasicOperations.Info, SpecificTypes.ArrayOp, ValueInterface.PtrI)),
         FP16(BindTypeOperations.FP16Op),
-        FP128(BindTypeOperations.FP128Op, Set.of(ValueInterface.I64I, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
-                BasicOperations.Info, SpecificTypes.Array, SpecificTypes.Single)),
-        I128(BindTypeOperations.I128Op, Set.of(ValueInterface.I64I, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
-                BasicOperations.Info, SpecificTypes.Array, SpecificTypes.Single));
+        FP128(BindTypeOperations.FP128Op, () -> Set.of(ValueInterface.I64I, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
+                BasicOperations.Info, SpecificTypes.Array, BindTypes.Ptr)),
+        I128(BindTypeOperations.I128Op, () -> Set.of(ValueInterface.I64I, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
+                BasicOperations.Info, SpecificTypes.Array, BindTypes.Ptr));
         private final BindTypeOperations operations;
-        private final Set<TypeAttr.TypeRefer> referenceTypes;
+        // lazy init
+        private final Supplier<Set<TypeAttr.TypeRefer>> referenceTypes;
 
-        BindTypes(BindTypeOperations operations, Set<TypeAttr.TypeRefer> referenceTypes) {
+
+        BindTypes(BindTypeOperations operations, Supplier<Set<TypeAttr.TypeRefer>> referenceTypes) {
             this.operations = operations;
             this.referenceTypes = referenceTypes;
         }
 
         BindTypes(BindTypeOperations operations) {
             this.operations = operations;
-            this.referenceTypes = Set.of(ValueInterface.I64I, FFMTypes.SEGMENT_ALLOCATOR,
-                    BasicOperations.Info, SpecificTypes.Array, SpecificTypes.Single);
+            this.referenceTypes = BIND_TYPE_COMMON_REF;
         }
 
         public static String makePtrGenericName(String t) {
@@ -281,7 +287,7 @@ public class CommonTypes {
         @Override
         public TypeImports getDefineImportTypes() {
             return operations.getUseImportTypes()
-                    .addUseImports(referenceTypes)
+                    .addUseImports(referenceTypes.get())
                     .addUseImports(operations.value);
         }
 
@@ -326,9 +332,6 @@ public class CommonTypes {
         Array(true, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.VALUE_LAYOUT, FFMTypes.SEGMENT_ALLOCATOR, ArrayOp,
                 BasicOperations.Info, ValueInterface.PtrI, BindTypes.Ptr, BindTypeOperations.PtrOp,
                 SpecificTypes.MemoryUtils, ValueInterface.I64I, BindTypes.I64, ValueInterface.I32I)),
-        Single(true, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.VALUE_LAYOUT, FFMTypes.SEGMENT_ALLOCATOR, ArrayOp,
-                BasicOperations.Info, ValueInterface.PtrI, BindTypes.Ptr, BindTypeOperations.PtrOp,
-                SpecificTypes.MemoryUtils, ValueInterface.I64I, BindTypes.I64, ValueInterface.I32I)),
         FlatArrayOp(true, () -> Set.of(BasicOperations.Value, BasicOperations.Info,
                 FFMTypes.MEMORY_SEGMENT, BasicOperations.ArrayI, BindTypes.Ptr, ValueInterface.I64I, BindTypes.I64, ValueInterface.I32I)),
         FlatArray(true, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.MEMORY_LAYOUT, FFMTypes.SEGMENT_ALLOCATOR,
@@ -336,12 +339,12 @@ public class CommonTypes {
                 SpecificTypes.MemoryUtils, ValueInterface.I64I, ValueInterface.I32I, BindTypes.I64)),
         StructOp(true, () -> Set.of(BasicOperations.Value, BasicOperations.Info,
                 FFMTypes.MEMORY_SEGMENT, FFMTypes.MEMORY_LAYOUT, BasicOperations.StructI)),
-        Str(false, () -> Set.of(ArrayOp, BasicOperations.Info, Array, Single, BindTypes.I8, BindTypes.Ptr,
+        Str(false, () -> Set.of(ArrayOp, BasicOperations.Info, Array, BindTypes.I8, BindTypes.Ptr,
                 ValueInterface.PtrI, ValueInterface.I8I, ValueInterface.I64I, BindTypes.I64)),
         ;
 
         final boolean generic;
-        // late init
+        // lazy init
         private final Supplier<Set<TypeAttr.TypeRefer>> referenceTypes;
 
         SpecificTypes(boolean generic, Supplier<Set<TypeAttr.TypeRefer>> referenceTypes) {

@@ -51,7 +51,7 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
             if (function.allocatorType() == CommonOperation.AllocatorType.STANDARD) {
                 imports.addUseImports(CommonTypes.FFMTypes.ARENA);
                 imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-                imports.addUseImports(CommonTypes.SpecificTypes.Single);
+                imports.addUseImports(CommonTypes.BindTypes.Ptr);
                 function.getReturnType().ifPresent(type -> {
                     // used to make Single(MemorySegment, OPERATIONS)
                     TypeImports typeImports = type.getOperation().getCommonOperation().makeOperation().imports();

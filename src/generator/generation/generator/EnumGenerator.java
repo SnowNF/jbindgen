@@ -108,7 +108,7 @@ public class EnumGenerator implements Generator {
                 CommonTypes.BindTypeOperations.I32Op.typeName(TypeAttr.NameType.RAW), // 9
                 CommonTypes.BindTypeOperations.I32Op.operatorTypeName(), // 10
                 CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 11
-                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW) // 12
+                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW) // 12
         );
     }
 }

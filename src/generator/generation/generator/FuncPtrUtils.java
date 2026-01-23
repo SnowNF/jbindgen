@@ -40,7 +40,7 @@ public class FuncPtrUtils {
         var r = Generator.getTypeName((TypeAttr.TypeRefer) retType);
         if (allocatorType == AllocatorType.STANDARD) {
             // warp Single<T>
-            return CommonTypes.SpecificTypes.Single.getGenericName(r);
+            return CommonTypes.BindTypes.makePtrGenericName(r);
         }
         return r;
     }
@@ -53,7 +53,7 @@ public class FuncPtrUtils {
             TypeAttr.OperationType retType = function.getReturnType().get();
             var r = Generator.getTypeName((TypeAttr.TypeRefer) retType);
             // warp Single<T>
-            return "return new " + CommonTypes.SpecificTypes.Single.getGenericName(r) + "(%s, %s)"
+            return "return new " + CommonTypes.BindTypes.makePtrGenericName(r) + "(%s, %s)"
                     .formatted(invokeStr, retType.getOperation().getCommonOperation().makeOperation().str());
         }
         return "return " + makeWrappedRetConstruct(invokeStr, function);

@@ -149,7 +149,7 @@ public class StructGenerator implements Generator {
                 CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 5
                 CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 6
                 CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW), // 8
+                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW), // 8
                 CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW) // 9
         );
     }

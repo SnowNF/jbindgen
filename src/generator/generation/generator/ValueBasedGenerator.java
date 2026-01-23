@@ -147,7 +147,7 @@ public class ValueBasedGenerator implements Generator {
                 CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 10
                 CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 11
                 CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 12
-                CommonTypes.SpecificTypes.Single.typeName(TypeAttr.NameType.RAW), // 13
+                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW), // 13
                 CommonTypes.BasicOperations.Value.typeName(TypeAttr.NameType.RAW) // 14
         ));
     }

@@ -26,16 +26,6 @@ public class TypeImports {
         return this;
     }
 
-    public TypeImports addDefineImports(TypeAttr.TypeRefer type) {
-        addImport(type.getDefineImportTypes());
-        return this;
-    }
-
-    public TypeImports addDefineImports(Collection<TypeAttr.TypeRefer> type) {
-        type.forEach(this::addDefineImports);
-        return this;
-    }
-
     public TypeImports addUseImports(TypeAttr.TypeRefer type) {
         addImport(type.getUseImportTypes());
         return this;

@@ -36,7 +36,6 @@ public class CommonGenerator implements Generator {
                 case SpecificTypes specificTypes -> {
                     switch (specificTypes) {
                         case Array -> genArray(packagePath, imports);
-                        case Single -> genSingle(packagePath, imports);
                         case FlatArray -> genFlatArray(packagePath, imports);
                         case Str -> genStr(packagePath, imports);
                         case FunctionUtils -> genFunctionUtils(packagePath);
@@ -598,12 +597,12 @@ public class CommonGenerator implements Generator {
                             public %10$s.Operations<%12$s<E>> getOperations() {
                                 return makeOperations(operations);
                             }
-
+                
                             @Override
                             public %12$s<E> self() {
                                 return %12$s.this;
                             }
-
+                
                             @Override
                             public E pointee() {
                                 return get(0);
@@ -678,7 +677,7 @@ public class CommonGenerator implements Generator {
                 ValueInterface.I32I.typeName(NameType.RAW), // 9
                 BasicOperations.Info.typeName(NameType.RAW), // 10
                 SpecificTypes.MemoryUtils.typeName(NameType.RAW), // 11
-                SpecificTypes.Single.typeName(NameType.RAW) // 12
+                CommonTypes.BindTypes.Ptr.typeName(NameType.RAW) // 12
         ));
     }
 
@@ -956,11 +955,11 @@ public class CommonGenerator implements Generator {
                             i++;
                         }
                     }
-
+                
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %9$s<?> len) {
                         this(allocator, operations, len.operator().value());
                     }
-
+                
                     public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, long len) {
                         this.operations = operations;
                         this.ptr = allocator.allocate(operations.memoryLayout(), len);
@@ -1057,12 +1056,12 @@ public class CommonGenerator implements Generator {
                             public %10$s.Operations<%12$s<E>> getOperations() {
                                 return makeOperations(operations, sizeLong());
                             }
-
+                
                             @Override
                             public %12$s<E> self() {
                                 return %12$s.this;
                             }
-
+                
                             @Override
                             public MemorySegment value() {
                                 return ptr;
@@ -1258,7 +1257,7 @@ public class CommonGenerator implements Generator {
                             public %5$s self() {
                                 return %5$s.this;
                             }
-
+                
                             @Override
                             public %11$s pointee() {
                                 return get(0);
@@ -1307,7 +1306,7 @@ public class CommonGenerator implements Generator {
                 BasicOperations.Info.typeName(NameType.RAW), // 10
                 BindTypes.I8.typeName(NameType.RAW), // 11
                 SpecificTypes.Array.typeName(NameType.RAW), // 12
-                SpecificTypes.Single.typeName(NameType.RAW) // 13
+                CommonTypes.BindTypes.Ptr.typeName(NameType.RAW) // 13
         ));
     }
 
@@ -1429,6 +1428,10 @@ public class CommonGenerator implements Generator {
                     }
                 
                     public E pointee() {
+                        return operator().pointee();
+                    }
+
+                    public E get() {
                         return operator().pointee();
                     }
                 
@@ -1587,7 +1590,7 @@ public class CommonGenerator implements Generator {
                     ValueInterface.I64I.typeName(NameType.RAW), // 7
                     BasicOperations.Info.typeName(NameType.RAW), // 8
                     SpecificTypes.Array.typeName(NameType.RAW), // 9
-                    SpecificTypes.Single.typeName(NameType.RAW), // 10
+                    CommonTypes.BindTypes.Ptr.typeName(NameType.RAW), // 10
                     bindTypes.getOperations().operatorTypeName(), // 11
                     SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 12
             );
@@ -1631,12 +1634,12 @@ public class CommonGenerator implements Generator {
                             public %10$s.Operations<%3$s> getOperations() {
                                 return OPERATIONS;
                             }
-
+                
                             @Override
                             public %3$s self() {
                                 return %3$s.this;
                             }
-
+                
                             @Override
                             public %7$s value() {
                                 return val;
@@ -1673,7 +1676,7 @@ public class CommonGenerator implements Generator {
                 ValueInterface.I64I.typeName(NameType.RAW), // 9
                 BasicOperations.Info.typeName(NameType.RAW), // 10
                 SpecificTypes.Array.typeName(NameType.RAW), // 11
-                SpecificTypes.Single.typeName(NameType.RAW), // 12
+                CommonTypes.BindTypes.Ptr.typeName(NameType.RAW), // 12
                 bindTypes.getOperations().operatorTypeName() // 13
         );
         Utils.write(path, str);
