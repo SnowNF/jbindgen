@@ -1427,21 +1427,22 @@ public class CommonGenerator implements Generator {
                         return segment;
                     }
                 
-                    public E pointee() {
+                    public E pte() {
                         return operator().pointee();
                     }
 
-                    public E get() {
-                        return operator().pointee();
-                    }
-                
-                    public %3$s<E> pointee(E element) {
+                    public %3$s<E> pte(E element) {
                         operator().setPointee(element);
                         return this;
                     }
                 
                     public %3$s<E> apply(Consumer<E> element) {
-                        element.accept(pointee());
+                        element.accept(pte());
+                        return this;
+                    }
+
+                    public %3$s<E> self(Consumer<%3$s<E>> element) {
+                        element.accept(this);
                         return this;
                     }
                 
