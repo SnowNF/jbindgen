@@ -2,6 +2,7 @@ package generator.types.operations;
 
 import generator.types.*;
 import generator.types.CommonTypes.SpecificTypes;
+import utils.CommonUtils;
 
 import java.util.Optional;
 
@@ -72,7 +73,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
         if (dst == CommonTypes.Primitives.JAVA_LONG) {
             return "%s.toUnsignedLong(%s)".formatted(src.getBoxedTypeName(), content);
         }
-        throw new UnsupportedOperationException();
+        throw CommonUtils.shouldNotReachHere();
     }
 
     @Override

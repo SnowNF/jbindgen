@@ -49,7 +49,7 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
                 return CXChildVisitResult.CXChildVisit_Continue;
             }
             if (CXCursorKind.CXCursor_FunctionDecl.equals(kind)) {
-                DeclaredFunctionBuilder(cursor);
+                declaredFunctionBuilder(cursor);
                 return CXChildVisitResult.CXChildVisit_Continue;
             }
             if (CXCursorKind.CXCursor_EnumDecl.equals(kind)) {
@@ -382,7 +382,7 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         typePool.close();
     }
 
-    private void DeclaredFunctionBuilder(CXCursor cur) {
+    private void declaredFunctionBuilder(CXCursor cur) {
         CXType cxType = LibclangFunctionSymbols.clang_getCursorType(mem, cur);
         var cxTypeName = LibclangFunctionSymbols.clang_getTypeSpelling(mem, cxType);
         var typeName = Utils.cXString2String(cxTypeName);

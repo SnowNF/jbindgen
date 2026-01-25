@@ -37,6 +37,14 @@ public class CommonUtils {
         }
     }
 
+    public static Error shouldNotReachHere() {
+        throw new AssertionError("should not reach here");
+    }
+
+    public static Error shouldNotReachHere(String msg) {
+        throw new AssertionError("should not reach here: " + msg);
+    }
+
     public static String getStackString() {
         StringBuilder builder = new StringBuilder();
         StackWalker.getInstance().forEach(stackFrame -> builder.append(stackFrame.toString()).append("\n"));
@@ -44,9 +52,8 @@ public class CommonUtils {
     }
 
     public static String getLibClangName() {
-        if (IS_WINDOWS)
-            return "libclang";
-        return "libclang-17.so.1";
+        String libClangName = IS_WINDOWS ? "libclang" : "libclang-17.so.1";
+        return System.getProperty("jbindgen.libclang.name", libClangName);
     }
 
 
