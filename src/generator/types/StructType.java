@@ -50,7 +50,7 @@ public final class StructType implements SingleGenerationType {
         }
 
         public boolean bitField() {
-            return ((TypeAttr.SizedType) type).byteSize() * 8 != bitSize;
+            return ((TypeAttr.SizedType) type).byteSize() * 8 != bitSize || offset % 8 != 0;
         }
     }
 
@@ -63,16 +63,36 @@ public final class StructType implements SingleGenerationType {
         List<Member> provide(StructType structType);
     }
 
-    public StructType(long byteSize, String typeName, MemberProvider memberProvider) {
+    public StructType(long byteSize, long byteAlign, String typeName, MemberProvider memberProvider) {
         this.byteSize = byteSize;
         this.typeName = typeName;
         this.members = List.copyOf(memberProvider.provide(this));
-        memoryLayout = makeMemoryLayout(members, byteSize);
+        memoryLayout = makeMemoryLayout(members, byteSize, byteAlign);
     }
 
-    private static MemoryLayouts makeMemoryLayout(List<Member> members, long byteSize) {
-        if (members.isEmpty() || members.stream().anyMatch(Member::bitField))
-            return MemoryLayouts.structLayout(List.of(MemoryLayouts.sequenceLayout(CommonTypes.Primitives.JAVA_BYTE.getMemoryLayout(), byteSize)));
+    private static MemoryLayouts makeMemoryLayouts(CommonTypes.Primitives primitives, long len, long bytePadding) {
+        if (bytePadding != 0) {
+            return MemoryLayouts.structLayout(List.of(
+                    MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(), len),
+                    MemoryLayouts.paddingLayout(bytePadding)));
+        }
+        return MemoryLayouts.structLayout(List.of(MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(), len)));
+    }
+
+    private static MemoryLayouts makeMemoryLayout(List<Member> members, long byteSize, long byteAlign) {
+        if (members.isEmpty() || members.stream().anyMatch(Member::bitField)) {
+            if (byteAlign == 1)
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_BYTE, byteSize, 0);
+            if (byteAlign == 2)
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_SHORT, byteSize / 2, byteSize % 2);
+            if (byteAlign == 4)
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_INT, byteSize / 4, byteSize % 4);
+            if (byteAlign == 8)
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_LONG, byteSize / 8, byteSize % 8);
+            if (byteAlign == 16)
+                return makeMemoryLayouts(CommonTypes.Primitives.Integer128, byteSize / 16, byteSize % 16);
+            throw new IllegalArgumentException("unknown byteAlign: " + byteAlign);
+        }
 
         // merge union via same offset
         HashMap<Long, List<Member>> memberOffset = new HashMap<>();

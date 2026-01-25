@@ -9,42 +9,48 @@ import generator.types.operations.ValueBased;
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.nio.ByteOrder;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
 public class CommonTypes {
     public enum Primitives implements TypeAttr.SizedType {
-        JAVA_BOOLEAN(MemoryLayouts.JAVA_BOOLEAN, "boolean", "Boolean", null, AddressLayout.JAVA_BOOLEAN.byteSize(), false, "Byte"),
-        JAVA_BYTE(MemoryLayouts.JAVA_BYTE, "byte", "Byte", null, AddressLayout.JAVA_BYTE.byteSize(), false, "Byte"),
-        JAVA_SHORT(MemoryLayouts.JAVA_SHORT, "short", "Short", null, AddressLayout.JAVA_SHORT.byteSize(), false, "Short"),
-        JAVA_CHAR(MemoryLayouts.JAVA_CHAR, "char", "Character", null, AddressLayout.JAVA_CHAR.byteSize(), false, "Char"),
-        JAVA_INT(MemoryLayouts.JAVA_INT, "int", "Integer", null, AddressLayout.JAVA_INT.byteSize(), false, "Int"),
-        JAVA_LONG(MemoryLayouts.JAVA_LONG, "long", "Long", null, AddressLayout.JAVA_LONG.byteSize(), false, "Long"),
-        JAVA_FLOAT(MemoryLayouts.JAVA_FLOAT, "float", "Float", null, AddressLayout.JAVA_FLOAT.byteSize(), false, "Float"),
-        JAVA_DOUBLE(MemoryLayouts.JAVA_DOUBLE, "double", "Double", null, AddressLayout.JAVA_DOUBLE.byteSize(), false, "Double"),
-        ADDRESS(MemoryLayouts.ADDRESS, "MemorySegment", "MemorySegment", FFMTypes.MEMORY_SEGMENT, AddressLayout.ADDRESS.byteSize(), false, "Addr"),
-        FLOAT16(MemoryLayouts.JAVA_SHORT, "short", "Short", null, AddressLayout.JAVA_SHORT.byteSize(), false, "Short"),
-        LONG_DOUBLE(MemoryLayouts.structLayout(List.of(MemoryLayouts.JAVA_LONG, MemoryLayouts.JAVA_LONG)), null, null, null, AddressLayout.JAVA_LONG.byteSize() * 2, true, null),
-        Integer128(MemoryLayouts.structLayout(List.of(MemoryLayouts.JAVA_LONG, MemoryLayouts.JAVA_LONG)), null, null, null, AddressLayout.JAVA_LONG.byteSize() * 2, true, null);
+        JAVA_BOOLEAN(MemoryLayouts.JAVA_BOOLEAN, "boolean", "Boolean", null, AddressLayout.JAVA_BOOLEAN, false, "Byte", false),
+        JAVA_BYTE(MemoryLayouts.JAVA_BYTE, "byte", "Byte", null, AddressLayout.JAVA_BYTE, false, "Byte", true),
+        JAVA_SHORT(MemoryLayouts.JAVA_SHORT, "short", "Short", null, AddressLayout.JAVA_SHORT, false, "Short", true),
+        JAVA_CHAR(MemoryLayouts.JAVA_CHAR, "char", "Character", null, AddressLayout.JAVA_CHAR, false, "Char", false),
+        JAVA_INT(MemoryLayouts.JAVA_INT, "int", "Integer", null, AddressLayout.JAVA_INT, false, "Int", true),
+        JAVA_LONG(MemoryLayouts.JAVA_LONG, "long", "Long", null, AddressLayout.JAVA_LONG, false, "Long", true),
+        JAVA_FLOAT(MemoryLayouts.JAVA_FLOAT, "float", "Float", null, AddressLayout.JAVA_FLOAT, false, "Float", false),
+        JAVA_DOUBLE(MemoryLayouts.JAVA_DOUBLE, "double", "Double", null, AddressLayout.JAVA_DOUBLE, false, "Double", false),
+        ADDRESS(MemoryLayouts.ADDRESS, "MemorySegment", "MemorySegment", FFMTypes.MEMORY_SEGMENT, AddressLayout.ADDRESS, false, "Addr", false),
+        FLOAT16(MemoryLayouts.JAVA_SHORT, "short", "Short", null, AddressLayout.JAVA_SHORT, false, "Short", false),
+        LONG_DOUBLE(MemoryLayouts.structLayout(List.of(MemoryLayouts.JAVA_LONG, MemoryLayouts.JAVA_LONG)), null, null, null, MemoryLayout.structLayout(AddressLayout.JAVA_LONG, AddressLayout.JAVA_LONG), true, null, false),
+        Integer128(MemoryLayouts.structLayout(List.of(MemoryLayouts.JAVA_LONG, MemoryLayouts.JAVA_LONG)), null, null, null, MemoryLayout.structLayout(AddressLayout.JAVA_LONG, AddressLayout.JAVA_LONG), true, null, false);
 
         private final MemoryLayouts memoryLayout;
         private final String primitiveTypeName;
         private final String boxedTypeName;
         private final FFMTypes ffmType;
         private final long byteSize;
+        private final long alignment;
         private final boolean noJavaPrimitive;
         private final String memoryUtilName;
+        private final boolean nativeIntegral;
 
-        Primitives(MemoryLayouts memoryLayouts, String primitiveTypeName, String boxedTypeName, FFMTypes ffmType, long byteSize, boolean noJavaPrimitive, String memoryUtilName) {
+        Primitives(MemoryLayouts memoryLayouts, String primitiveTypeName, String boxedTypeName, FFMTypes ffmType, MemoryLayout memoryLayout, boolean noJavaPrimitive, String memoryUtilName, boolean nativeIntegral) {
             this.memoryLayout = memoryLayouts;
             this.primitiveTypeName = primitiveTypeName;
             this.boxedTypeName = boxedTypeName;
             this.ffmType = ffmType;
-            this.byteSize = byteSize;
+            this.byteSize = memoryLayout.byteSize();
+            this.alignment = memoryLayout.byteAlignment();
             this.noJavaPrimitive = noJavaPrimitive;
             this.memoryUtilName = memoryUtilName;
+            this.nativeIntegral = nativeIntegral;
         }
 
         public MemoryLayouts getMemoryLayout() {
@@ -52,11 +58,11 @@ public class CommonTypes {
         }
 
         public String getPrimitiveTypeName() {
-            return primitiveTypeName;
+            return Objects.requireNonNull(primitiveTypeName);
         }
 
         public String getBoxedTypeName() {
-            return boxedTypeName;
+            return Objects.requireNonNull(boxedTypeName);
         }
 
         public Optional<FFMTypes> getExtraPrimitiveImportType() {
@@ -68,7 +74,15 @@ public class CommonTypes {
         }
 
         public String getMemoryUtilName() {
-            return memoryUtilName;
+            return Objects.requireNonNull(memoryUtilName);
+        }
+
+        public long alignment() {
+            return alignment;
+        }
+
+        public boolean nativeIntegral() {
+            return nativeIntegral;
         }
 
         @Override
@@ -394,6 +408,7 @@ public class CommonTypes {
         METHOD_HANDLES(MethodHandles.class),
         FUNCTION_DESCRIPTOR(FunctionDescriptor.class),
         SEGMENT_ALLOCATOR(SegmentAllocator.class),
+        BYTE_ORDER(ByteOrder.class),
         METHOD_HANDLE(MethodHandle.class);
 
         private final Class<?> type;

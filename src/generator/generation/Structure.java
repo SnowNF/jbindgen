@@ -7,6 +7,7 @@ import generator.types.CommonTypes;
 import generator.types.StructType;
 import generator.types.TypeAttr;
 import generator.types.TypeImports;
+import generator.types.operations.MemoryOperation;
 import generator.types.operations.OperationAttr;
 
 public final class Structure extends AbstractGeneration<StructType> {
@@ -21,8 +22,17 @@ public final class Structure extends AbstractGeneration<StructType> {
                 .addUseImports(CommonTypes.ValueInterface.I64I);
         for (StructType.Member member : getTypePkg().type().getMembers()) {
             OperationAttr.Operation operation = ((TypeAttr.OperationType) member.type()).getOperation();
-            imports.addImport(operation.getMemoryOperation().setter("", 0, "").imports());
-            imports.addImport(operation.getMemoryOperation().getter("", 0).imports());
+            MemoryOperation memoryOperation = operation.getMemoryOperation();
+            if (member.bitField()) {
+                memoryOperation.setterBitfield("", 0, 0, "").ifPresent(getter -> {
+                    imports.addImport(getter.imports());
+                });
+                memoryOperation.getterBitfield("", 0, 0).ifPresent(getter -> {
+                    imports.addImport(getter.imports());
+                });
+            }
+            imports.addImport(memoryOperation.setter("", 0, "").imports());
+            imports.addImport(memoryOperation.getter("", 0).imports());
         }
         imports.addImport(typePkg.type().getMemoryLayout().getTypeImports());
         return imports;

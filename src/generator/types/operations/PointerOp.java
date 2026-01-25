@@ -26,7 +26,8 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
             @Override
             public Result constructFromRet(String varName) {
                 CommonOperation.Operation operation = pointeeType.getOperation().getCommonOperation().makeOperation();
-                return new Result("new %s(%s, %s)".formatted(typeName, varName, operation.str()), operation.imports());
+                return new Result("new %s(%s, %s)".formatted(typeName, varName, operation.str()),
+                        operation.imports().addUseImports(CommonTypes.BindTypes.Ptr));
             }
 
             @Override

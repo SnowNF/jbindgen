@@ -3,9 +3,9 @@ package processor;
 import analyser.Declare;
 import analyser.Para;
 import analyser.PrimitiveTypes;
+import analyser.types.*;
 import analyser.types.Enum;
 import analyser.types.Record;
-import analyser.types.*;
 import generator.PackagePath;
 import generator.generation.*;
 import generator.types.*;
@@ -70,7 +70,7 @@ public class Utils {
         return members;
     }
 
-    private static StructType getStruct(long byteSize, String typeName, Record record, HashMap<String, StructValue> structMap) {
+    private static StructType getStruct(long byteSize, long align, String typeName, Record record, HashMap<String, StructValue> structMap) {
         if (structMap.containsKey(typeName)) {
             if (!Objects.equals(record, structMap.get(typeName).r)) {
                 throw new RuntimeException();
@@ -78,7 +78,7 @@ public class Utils {
             return structMap.get(typeName).s;
         }
 
-        return new StructType(byteSize, typeName, structType -> {
+        return new StructType(byteSize, align, typeName, structType -> {
             structMap.put(typeName, new StructValue(structType, record));
             return solveMembers(record, structMap);
         });
@@ -188,13 +188,13 @@ public class Utils {
             }
             case Complex complex -> {
                 String n = getName(name, complex.getDisplayName());
-                return new StructType(complex.getSizeof(), n, _ -> List.of());
+                return new StructType(complex.getSizeof(), complex.getAlign(), n, _ -> List.of());
             }
             case Record record -> {
                 String typeName = getName(name, record.getDisplayName());
                 if (record.isIncomplete())
                     return new RefOnlyType(typeName);
-                return getStruct(record.getSizeof(), typeName, record, structMap);
+                return getStruct(record.getSizeof(), record.getAlign(), typeName, record, structMap);
             }
             case TypeDef typeDef -> {
                 // Checks case-insensitive equality of def name and struct's display name

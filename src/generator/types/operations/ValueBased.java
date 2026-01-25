@@ -1,6 +1,9 @@
 package generator.types.operations;
 
 import generator.types.*;
+import generator.types.CommonTypes.SpecificTypes;
+
+import java.util.Optional;
 
 public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.ValueBasedOperation {
     private final T type;
@@ -35,15 +38,87 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
         };
     }
 
+    private Optional<CommonTypes.Primitives> selectFitBitSize(long bitOffset, long bitSize) {
+        if (!primitives.nativeIntegral())
+            return Optional.empty();
+        for (CommonTypes.Primitives primitiveType : CommonTypes.Primitives.values()) {
+            if (!primitiveType.nativeIntegral()) continue;
+            long typeBitSize = primitiveType.byteSize() * 8;
+            long typeBitAlign = primitiveType.alignment() * 8;
+            long shift = bitOffset % typeBitAlign;
+            if (shift + bitSize <= typeBitSize) {
+                return Optional.of(primitiveType);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static String longToString(long value) {
+        if (value > Integer.MAX_VALUE)
+            return value + "L";
+        return String.valueOf(value);
+    }
+
+    private static String unsignedCast(CommonTypes.Primitives src, CommonTypes.Primitives dst, String content) {
+        if (src.byteSize() >= dst.byteSize()) return "(" + dst.getPrimitiveTypeName() + ") (" + content + ")";
+        // dst > src
+        content = "(" + src.getPrimitiveTypeName() + ") (" + content + ")";
+        if (dst == CommonTypes.Primitives.JAVA_INT) {
+            return "%s.toUnsignedInt(%s)".formatted(src.getBoxedTypeName(), content);
+        }
+        if (dst == CommonTypes.Primitives.JAVA_SHORT) {
+            return "(short) %s.toUnsignedInt(%s)".formatted(src.getBoxedTypeName(), content);
+        }
+        if (dst == CommonTypes.Primitives.JAVA_LONG) {
+            return "%s.toUnsignedLong(%s)".formatted(src.getBoxedTypeName(), content);
+        }
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public MemoryOperation getMemoryOperation() {
         return new MemoryOperation() {
             @Override
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.get%s(%s, %s)".formatted(CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                        "%s.get%s(%s, %s)".formatted(SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
                                 primitives.getMemoryUtilName(), ms, offset)),
-                        new TypeImports().addUseImports(type).addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
+                        new TypeImports().addUseImports(type).addUseImports(SpecificTypes.MemoryUtils));
+            }
+
+            @Override
+            public Optional<Getter> getterBitfield(String ms, long bitOffset, long bitSize) {
+                Optional<CommonTypes.Primitives> type_ = selectFitBitSize(bitOffset, bitSize);
+                if (type_.isEmpty())
+                    return Optional.empty();
+                CommonTypes.Primitives p = type_.get();
+                long typeBitSize = p.byteSize() * 8;
+                long bitAlign = p.alignment() * 8;
+                long mask = bitSize == typeBitSize ? -1L : (1L << bitSize) - 1L;
+                long shift = bitOffset % bitAlign;
+                if (mask == -1 && shift == 0) {
+                    String value = "%s.get%s(%s, %s)".formatted(
+                            SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                            p.getMemoryUtilName(), ms, bitOffset / 8);
+                    value = unsignedCast(p, primitives, value);
+                    return Optional.of(new Getter("", typeName, "        return new %s(%s);".formatted(typeName, value),
+                            new TypeImports().addUseImports(type).addUseImports(SpecificTypes.MemoryUtils)));
+                }
+                long offset = bitOffset - shift;
+                //long get = ms.get(ValueLayout.JAVA_LONG, offset / 8);
+                //result = (get >>> shift) & mask;
+                String checkByteOrder = """
+                                if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) throw new UnsupportedOperationException();
+                        """;
+                String value = "%s.get%s(%s, %s)".formatted(
+                        SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                        p.getMemoryUtilName(), ms, offset / 8);
+                value = "(%s >>> %s) & %s".formatted(value, shift, longToString(mask));
+                value = unsignedCast(p, primitives, value);
+                var ret = "        return new %s(%s);".formatted(typeName, value);
+                return Optional.of(new Getter("", typeName, checkByteOrder + ret,
+                        new TypeImports().addUseImports(type).addUseImports(SpecificTypes.MemoryUtils)
+                                .addUseImports(CommonTypes.FFMTypes.BYTE_ORDER)));
             }
 
             @Override
@@ -51,9 +126,45 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.set%s(%s, %s, %s.operator().value())".formatted(
-                                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
                                 primitives.getMemoryUtilName(), ms, offset, varName),
-                        upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
+                        upperType.typeImports().addUseImports(SpecificTypes.MemoryUtils));
+            }
+
+            @Override
+            public Optional<Setter> setterBitfield(String ms, long bitOffset, long bitSize, String varName) {
+                Optional<CommonTypes.Primitives> type_ = selectFitBitSize(bitOffset, bitSize);
+                if (type_.isEmpty())
+                    return Optional.empty();
+                CommonTypes.Primitives p = type_.get();
+                long typeBitSize = p.byteSize() * 8;
+                long bitAlign = p.alignment() * 8;
+                long mask = bitSize == typeBitSize ? -1L : (1L << bitSize) - 1L;
+                long shift = bitOffset % bitAlign;
+                if (mask == -1 && shift == 0) {
+                    var typeValue = p == primitives ? "" : ".%sValue() ".formatted(p.getPrimitiveTypeName());
+                    CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                    return Optional.of(new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
+                            "        %s.set%s(%s, %s, %s.operator().value()%s);".formatted(
+                                    SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                    p.getMemoryUtilName(), ms, bitOffset / 8, varName, typeValue),
+                            upperType.typeImports().addUseImports(SpecificTypes.MemoryUtils)));
+                }
+                long offset = bitOffset - shift;
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                var get = """
+                                if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) throw new UnsupportedOperationException();
+                        """;
+                var preGet = "%s.get%s(%s, %s)".formatted(SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW), p.getMemoryUtilName(), ms, offset / 8);
+                var userSet = "%s.operator().value()".formatted(varName);
+                var value = "((%s & %s) << %s) | (%s & ~(%s))".formatted(userSet, longToString(mask), shift, preGet, longToString(mask << shift));
+                value = "(%s) (%s)".formatted(p.getPrimitiveTypeName(), value);
+                TypeImports imports = upperType.typeImports().addUseImports(SpecificTypes.MemoryUtils).addUseImports(CommonTypes.FFMTypes.BYTE_ORDER);
+                String set = "        %s.set%s(%s, %s, %s);".formatted(
+                        SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                        p.getMemoryUtilName(), ms, offset / 8, value);
+                return Optional.of(new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
+                        get + set, imports));
             }
         };
     }

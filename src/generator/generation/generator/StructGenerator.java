@@ -10,6 +10,7 @@ import generator.types.TypeAttr;
 import generator.types.operations.MemoryOperation;
 import generator.types.operations.OperationAttr;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 public class StructGenerator implements Generator {
@@ -25,45 +26,62 @@ public class StructGenerator implements Generator {
     public void generate() {
         StringBuilder stringBuilder = new StringBuilder();
         StructType structType = structure.getTypePkg().type();
+        ArrayList<StructType.Member> availableMembers = new ArrayList<>();
         for (StructType.Member member : structType.getMembers()) {
-            makeGetterAndSetter(Generator.getTypeName(structType), member).ifPresent(getterAndSetter ->
-                    stringBuilder.append(getterAndSetter.getter)
-                            .append(System.lineSeparator())
-                            .append(getterAndSetter.setter));
+            makeGetterAndSetter(Generator.getTypeName(structType), member)
+                    .ifPresent(getterAndSetter -> {
+                        availableMembers.add(member);
+                        stringBuilder.append(getterAndSetter.getter)
+                                .append(System.lineSeparator())
+                                .append(getterAndSetter.setter);
+                    });
             stringBuilder.append("\n");
         }
+        stringBuilder.append(toString(Generator.getTypeName(structType), availableMembers));
         String out = structure.getTypePkg().packagePath().makePackage();
         out += "\n";
         out += Generator.extractImports(structure, dependency);
-        out += getMain(Generator.getTypeName(structType), structType.getMemoryLayout(),
-                stringBuilder + toString(structType));
+        out += getMain(Generator.getTypeName(structType), structType.getMemoryLayout(), stringBuilder.toString());
         Utils.write(structure.getTypePkg().packagePath(), out);
     }
 
     record GetterAndSetter(String getter, String setter) {
     }
 
-    private static String toString(StructType s) {
-        var ss = s.getMembers().stream().filter(member -> !member.bitField()).map(member -> """
+    private static String toString(String className, ArrayList<StructType.Member> availableMembers) {
+        var ss = availableMembers.stream().map(member -> """
                 %s=" + %s() +
                 """.formatted(member.name(), member.name())).toList();
         return """
                     @Override
                     public String toString() {
-                        return ms.address() == 0 ? ms.toString()
+                        return (ms.address() == 0 && ms.isNative()) ? ms.toString()
                                 : "%s{" +
-                                %s                '}';
+                                  %s                  '}';
                     }
-                """.formatted(Generator.getTypeName(s), ss.isEmpty() ? "" : "\"" + String.join("                \", ", ss));
+                """.formatted(className, ss.isEmpty() ? "" : "\"" + String.join("                  \", ", ss));
     }
 
     private static Optional<GetterAndSetter> makeGetterAndSetter(String thisName, StructType.Member member) {
-        if (member.bitField()) {
-            // skip this
-            return Optional.empty();
-        }
         OperationAttr.Operation operation = ((TypeAttr.OperationType) member.type()).getOperation();
         String memberName = member.name();
+        if (member.bitField()) {
+            var get = operation.getMemoryOperation().getterBitfield("ms", member.offset(), member.bitSize());
+            var set = operation.getMemoryOperation().setterBitfield("ms", member.offset(), member.bitSize(), memberName);
+            if (get.isEmpty() || set.isEmpty())
+                return Optional.empty();
+            return Optional.of(new GetterAndSetter("""
+                        public %s %s(%s) {
+                    %s
+                        }
+                    """.formatted(get.get().ret(), memberName, get.get().para(), get.get().codeSegment()),
+                    """
+                                public %s %s(%s) {
+                            %s
+                                    return this;
+                                }
+                            """.formatted(thisName, memberName, set.get().para(), set.get().codeSegment())));
+        }
         MemoryOperation.Getter getter = operation.getMemoryOperation().getter("ms", member.offset() / 8);
         MemoryOperation.Setter setter = operation.getMemoryOperation().setter("ms", member.offset() / 8, memberName);
         return Optional.of(new GetterAndSetter("""
@@ -119,12 +137,12 @@ public class StructGenerator implements Generator {
                             public %6$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
-
+                
                             @Override
                             public %1$s self() {
                                 return %1$s.this;
                             }
-
+                
                             @Override
                             public MemorySegment value() {
                                 return ms;
