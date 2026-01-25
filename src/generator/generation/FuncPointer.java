@@ -28,24 +28,21 @@ public final class FuncPointer extends AbstractGeneration<FunctionPtrType> {
             imports.addUseImports(CommonTypes.FFMTypes.ARENA);
             imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
             imports.addUseImports(CommonTypes.BindTypes.Ptr);
-            function.getReturnType().ifPresent(type -> {
-                TypeImports typeImports = type.getOperation().getCommonOperation().makeOperation().imports();
-                imports.addImport(typeImports);
-            });
         }
         for (MemoryLayouts memoryLayout : function.getMemoryLayouts()) {
             imports.addImport(memoryLayout.getTypeImports());
         }
-        // destruct for downcall. construct for upcall & raw java signature
         for (TypeAttr.TypeRefer type : function.getFunctionSignatureTypes()) {
+            // destruct for downcall & construct for upcall
             OperationAttr.Operation operation = ((TypeAttr.OperationType) type).getOperation();
             imports.addImport(operation.getFuncOperation().constructFromRet("").imports());
             imports.addImport(operation.getFuncOperation().destructToPara("").imports());
+
+            // raw java signature
             operation.getFuncOperation().getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
-        }
-        // downcall destruct upper args
-        for (FunctionPtrType.Arg arg : function.getArgs()) {
-            CommonOperation.UpperType upperType = ((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().getUpperType();
+
+            // destruct upper parameters and upper return type
+            CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType();
             imports.addImport(upperType.typeImports());
             imports.addImport(upperType.typeOp().getOperation().getFuncOperation().destructToPara("").imports());
         }

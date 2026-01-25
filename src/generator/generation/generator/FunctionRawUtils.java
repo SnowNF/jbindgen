@@ -1,0 +1,84 @@
+package generator.generation.generator;
+
+import generator.types.CommonTypes;
+import generator.types.FunctionPtrType;
+import generator.types.MemoryLayouts;
+import generator.types.TypeAttr;
+import generator.types.operations.CommonOperation;
+import generator.types.operations.OperationAttr;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static generator.generation.generator.FuncPtrUtils.SEGMENT_ALLOCATOR_PARAMETER_NAME;
+import static generator.generation.generator.FuncPtrUtils.arenaAutoAllocator;
+import static generator.types.CommonTypes.FFMTypes.SEGMENT_ALLOCATOR;
+
+public class FunctionRawUtils {
+    private final FunctionPtrType function;
+
+    public FunctionRawUtils(FunctionPtrType func) {
+        this.function = func;
+    }
+
+    public String getFunctionName() {
+        return Generator.getTypeName(function);
+    }
+
+    public String rawRetType() {
+        return function.getReturnType().map(operationType ->
+                        operationType.getOperation().getFuncOperation().getPrimitiveType().getPrimitiveTypeName())
+                .orElse("void");
+    }
+
+
+    public String funcDescriptor() {
+        List<String> memoryLayout = function.getMemoryLayouts().stream().map(MemoryLayouts::getMemoryLayout).toList();
+        var str = String.join(", ", memoryLayout);
+        return (function.getReturnType().isPresent()
+                ? "FunctionDescriptor.of(%s)"
+                : "FunctionDescriptor.ofVoid(%s)").formatted(str);
+    }
+
+    public String rawReturnCast() {
+        return function.getReturnType().map(normalType -> "return (%s) ".formatted(normalType
+                        .getOperation().getFuncOperation().getPrimitiveType().getPrimitiveTypeName()))
+                .orElse("");
+    }
+
+    public String rawDowncallStr() {
+        List<String> para = new ArrayList<>();
+        if (function.allocatorType() == CommonOperation.AllocatorType.STANDARD) {
+            para.add(SEGMENT_ALLOCATOR_PARAMETER_NAME);
+        }
+        if (function.allocatorType() == CommonOperation.AllocatorType.ON_HEAP) {
+            para.add(arenaAutoAllocator());
+        }
+        para.addAll(function.getArgs().stream().map(FunctionPtrType.Arg::argName).toList());
+        return String.join(", ", para);
+    }
+
+    private void commonInvokeParaStr(List<String> out) {
+        for (FunctionPtrType.Arg arg : function.getArgs()) {
+            OperationAttr.Operation operation = ((TypeAttr.OperationType) arg.type()).getOperation();
+            CommonTypes.Primitives primitiveType = operation.getFuncOperation().getPrimitiveType();
+            String p = primitiveType.getPrimitiveTypeName() + " " + arg.argName();
+            out.add(p);
+        }
+    }
+
+    public String rawDowncallPara() {
+        List<String> out = new ArrayList<>();
+        if (function.allocatorType() == CommonOperation.AllocatorType.STANDARD) {
+            out.add(SEGMENT_ALLOCATOR.typeName(TypeAttr.NameType.RAW) + " " + SEGMENT_ALLOCATOR_PARAMETER_NAME);
+        }
+        commonInvokeParaStr(out);
+        return String.join(", ", out);
+    }
+
+    public String rawUpcallPara() {
+        List<String> out = new ArrayList<>();
+        commonInvokeParaStr(out);
+        return String.join(", ", out);
+    }
+}

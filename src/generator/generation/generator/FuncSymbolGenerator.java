@@ -6,10 +6,8 @@ import generator.TypePkg;
 import generator.Utils;
 import generator.generation.FuncSymbols;
 import generator.types.CommonTypes;
-import generator.types.FunctionPtrType;
 import generator.types.SymbolProviderType;
 import generator.types.TypeAttr;
-import generator.types.operations.CommonOperation.AllocatorType;
 
 import java.util.stream.Collectors;
 
@@ -29,18 +27,16 @@ public class FuncSymbolGenerator implements Generator {
         PackagePath pp = funcSymbols.getPackagePath();
         String out = pp.makePackage();
         out += Generator.extractImports(funcSymbols, dependency);
-        out += "public final class %s {\n%s}".formatted(pp.getClassName(),
-                funcSymbols.getFunctions().stream().map(TypePkg::type)
-                        .map(type ->
-                                makeDirectCall(type, symbolClassName, pp.getClassName())
-                                + System.lineSeparator()
-                                + makeWrappedCall(type))
-                        .collect(Collectors.joining(System.lineSeparator())));
+        String functions = funcSymbols.getFunctions().stream().map(TypePkg::type)
+                .map(type -> makeDirectCall(new FunctionRawUtils(type), symbolClassName, pp.getClassName())
+                             + "\n" + makeWrappedCall(new FunctionWrapUtils(type)))
+                .collect(Collectors.joining(System.lineSeparator()));
+        out += "public final class %s {\n%s}".formatted(pp.getClassName(), functions);
         Utils.write(pp, out);
     }
 
 
-    private static String makeDirectCall(FunctionPtrType type,
+    private static String makeDirectCall(FunctionRawUtils raw,
                                          String symbolClassName, String className) {
         return """
                     private static MethodHandle %1$s;
@@ -55,39 +51,42 @@ public class FuncSymbolGenerator implements Generator {
                             throw new %8$s.InvokeException(e);
                         }
                     }
-                """.formatted(Generator.getTypeName(type), FuncPtrUtils.makeRawRetType(type),
-                FuncPtrUtils.makeFuncDescriptor(type), symbolClassName, // 4
-                FuncPtrUtils.makeRawStrBeforeInvoke(type), FuncPtrUtils.makeRawInvokeStr(type), // 6
-                FuncPtrUtils.makeRawPara(type, type.allocatorType()), // 7
+                """.formatted(
+                raw.getFunctionName(),
+                raw.rawRetType(),
+                raw.funcDescriptor(),
+                symbolClassName, // 4
+                raw.rawReturnCast(),
+                raw.rawDowncallStr(), // 6
+                raw.rawDowncallPara(), // 7
                 CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW),
                 className // 9
         );
     }
 
-    private static String makeWrappedCall(FunctionPtrType type) {
+    private static String makeWrappedCall(FunctionWrapUtils wrap) {
         // only consider AllocatorType.STANDARD and AllocatorType.NONE here
-        AllocatorType allocatorType = type.allocatorType();
-        var out = """     
+        StringBuilder sb = new java.lang.StringBuilder();
+        sb.append("""     
                     public static %2$s %1$s(%3$s) {
                         %4$s;
                     }
-                """.formatted(Generator.getTypeName(type),
-                FuncPtrUtils.makeWrappedRetType(type, allocatorType), FuncPtrUtils.makeUpperWrappedPara(type, allocatorType),
-                FuncPtrUtils.makeWrappedStrForInvoke("%s$Raw(%s)".formatted(Generator.getTypeName(type),
-                        FuncPtrUtils.makeUpperWrappedParaDestruct(type, allocatorType)), type, type.allocatorType()));
-        if (type.allocatorType() == AllocatorType.STANDARD) {
-            // return on heap type (Arena.ofAuto())
-            out += """
+                """.formatted(
+                wrap.getFunctionName(),
+                wrap.downcallRetType(),
+                wrap.downcallUpperPara(),
+                wrap.downcallTypeReturn("%s$Raw(%s)".formatted(wrap.getFunctionName(), wrap.downcallUpperParaDestruct()))));
+        wrap.hasOnHeapReturnVariant().ifPresent(variant -> {
+            sb.append("""
                     
                         public static %2$s %1$s(%3$s) {
                             %4$s;
                         }
-                    """.formatted(Generator.getTypeName(type),
-                    FuncPtrUtils.makeWrappedRetType(type, AllocatorType.ON_HEAP),
-                    FuncPtrUtils.makeUpperWrappedPara(type, AllocatorType.ON_HEAP),
-                    FuncPtrUtils.makeWrappedStrForInvoke("%s$Raw(%s)".formatted(Generator.getTypeName(type),
-                            FuncPtrUtils.makeUpperWrappedParaDestruct(type, AllocatorType.ON_HEAP)), type, AllocatorType.ON_HEAP)); // 3
-        }
-        return out;
+                    """.formatted(variant.getFunctionName(),
+                    variant.downcallRetType(),
+                    variant.downcallUpperPara(), // 3
+                    variant.downcallTypeReturn("%s$Raw(%s)".formatted(variant.getFunctionName(), variant.downcallUpperParaDestruct()))));
+        });
+        return sb.toString();
     }
 }

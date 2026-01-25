@@ -52,11 +52,6 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
                 imports.addUseImports(CommonTypes.FFMTypes.ARENA);
                 imports.addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
                 imports.addUseImports(CommonTypes.BindTypes.Ptr);
-                function.getReturnType().ifPresent(type -> {
-                    // used to make OPERATIONS
-                    TypeImports typeImports = type.getOperation().getCommonOperation().makeOperation().imports();
-                    imports.addImport(typeImports);
-                });
             }
             // imports for memory layout
             for (MemoryLayouts memoryLayout : function.getMemoryLayouts()) {
@@ -72,7 +67,7 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
                 OperationAttr.Operation operation = type.getOperation();
                 imports.addImport(operation.getFuncOperation().constructFromRet("").imports());
             });
-            // imports for destruct upper args
+            // imports for destruct upper parameters
             for (FunctionPtrType.Arg arg : function.getArgs()) {
                 CommonOperation.UpperType upperType = ((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().getUpperType();
                 imports.addImport(upperType.typeImports());
