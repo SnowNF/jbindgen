@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.ValueBasedGenerator;
 import generator.types.ValueBasedType;
@@ -11,7 +12,7 @@ public final class ValueBased extends AbstractGeneration<ValueBasedType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new ValueBasedGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new ValueBasedGenerator(this, dependency, writer).generate();
     }
 }

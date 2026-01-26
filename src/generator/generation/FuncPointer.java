@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.FuncProtocolGenerator;
 import generator.types.*;
@@ -58,7 +59,7 @@ public final class FuncPointer extends AbstractGeneration<FunctionPtrType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new FuncProtocolGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new FuncProtocolGenerator(this, dependency, writer).generate();
     }
 }

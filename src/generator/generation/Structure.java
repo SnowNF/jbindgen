@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.StructGenerator;
 import generator.types.CommonTypes;
@@ -39,7 +40,7 @@ public final class Structure extends AbstractGeneration<StructType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new StructGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new StructGenerator(this, dependency, writer).generate();
     }
 }

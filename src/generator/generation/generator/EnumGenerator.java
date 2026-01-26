@@ -1,7 +1,7 @@
 package generator.generation.generator;
 
 import generator.Dependency;
-import generator.Utils;
+import generator.Generators;
 import generator.generation.Enumerate;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
@@ -9,15 +9,17 @@ import generator.types.TypeAttr;
 public class EnumGenerator implements Generator {
     private final Enumerate enumerate;
     private final Dependency dependency;
+    private final Generators.Writer writer;
 
-    public EnumGenerator(Enumerate enumerate, Dependency dependency) {
+    public EnumGenerator(Enumerate enumerate, Dependency dependency, Generators.Writer writer) {
         this.enumerate = enumerate;
         this.dependency = dependency;
+        this.writer = writer;
     }
 
     @Override
     public void generate() {
-        Utils.write(enumerate.getTypePkg().packagePath(), makeEnum(enumerate, dependency));
+        writer.write(enumerate.getTypePkg().packagePath(), makeEnum(enumerate, dependency));
     }
 
     private static String makeEnum(Enumerate e, Dependency dependency) {
@@ -70,7 +72,7 @@ public class EnumGenerator implements Generator {
                             public %1$s self() {
                                 return %1$s.this;
                             }
-
+                
                             @Override
                             public Integer value() {
                                 return val;

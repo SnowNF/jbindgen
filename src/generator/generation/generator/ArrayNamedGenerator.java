@@ -1,8 +1,8 @@
 package generator.generation.generator;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
-import generator.Utils;
 import generator.generation.ArrayNamed;
 import generator.types.ArrayTypeNamed;
 import generator.types.CommonTypes;
@@ -11,10 +11,12 @@ import generator.types.TypeAttr;
 public class ArrayNamedGenerator implements Generator {
     private final Dependency dependency;
     private final ArrayNamed arrayNamed;
+    private final Generators.Writer writer;
 
-    public ArrayNamedGenerator(ArrayNamed v, Dependency dependency) {
+    public ArrayNamedGenerator(ArrayNamed v, Dependency dependency, Generators.Writer writer) {
         this.dependency = dependency;
         this.arrayNamed = v;
+        this.writer = writer;
     }
 
     @Override
@@ -23,7 +25,7 @@ public class ArrayNamedGenerator implements Generator {
         String out = packagePath.makePackage();
         out += Generator.extractImports(arrayNamed, dependency);
         out += makeValue(packagePath, arrayNamed.getTypePkg().type());
-        Utils.write(packagePath, out);
+        writer.write(packagePath, out);
     }
 
     private String makeValue(PackagePath packagePath, ArrayTypeNamed type) {

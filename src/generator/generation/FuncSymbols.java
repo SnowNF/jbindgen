@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.TypePkg;
 import generator.generation.generator.FuncSymbolGenerator;
@@ -80,8 +81,8 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new FuncSymbolGenerator(this, dependency, symbolProvider).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new FuncSymbolGenerator(this, dependency, symbolProvider, writer).generate();
     }
 
     @Override

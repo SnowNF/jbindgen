@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.TypePkg;
 import generator.types.TypeAttr;
 import generator.types.TypeImports;
@@ -13,5 +14,5 @@ public sealed interface Generation<T extends TypeAttr.GenerationType>
 
     TypeImports getDefineImportTypes();
 
-    void generate(Dependency dependency);
+    void generate(Dependency dependency, Generators.Writer writer);
 }

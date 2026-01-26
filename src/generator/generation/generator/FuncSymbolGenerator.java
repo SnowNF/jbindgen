@@ -1,9 +1,9 @@
 package generator.generation.generator;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.TypePkg;
-import generator.Utils;
 import generator.generation.FuncSymbols;
 import generator.types.CommonTypes;
 import generator.types.SymbolProviderType;
@@ -14,11 +14,13 @@ import java.util.stream.Collectors;
 public class FuncSymbolGenerator implements Generator {
     private final FuncSymbols funcSymbols;
     private final Dependency dependency;
+    private final Generators.Writer writer;
     private final String symbolClassName;
 
-    public FuncSymbolGenerator(FuncSymbols funcSymbols, Dependency dependency, SymbolProviderType symbolProvider) {
+    public FuncSymbolGenerator(FuncSymbols funcSymbols, Dependency dependency, SymbolProviderType symbolProvider, Generators.Writer writer) {
         this.funcSymbols = funcSymbols;
         this.dependency = dependency;
+        this.writer = writer;
         this.symbolClassName = dependency.getTypePackagePath(symbolProvider).getClassName();
     }
 
@@ -32,7 +34,7 @@ public class FuncSymbolGenerator implements Generator {
                              + "\n" + makeWrappedCall(new FunctionWrapUtils(type)))
                 .collect(Collectors.joining(System.lineSeparator()));
         out += "public final class %s {\n%s}".formatted(pp.getClassName(), functions);
-        Utils.write(pp, out);
+        writer.write(pp, out);
     }
 
 

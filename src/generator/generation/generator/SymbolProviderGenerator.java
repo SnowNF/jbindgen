@@ -1,7 +1,7 @@
 package generator.generation.generator;
 
 import generator.Dependency;
-import generator.Utils;
+import generator.Generators;
 import generator.generation.SymbolProvider;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
@@ -9,15 +9,17 @@ import generator.types.TypeAttr;
 public class SymbolProviderGenerator implements Generator {
     private final SymbolProvider symbolProvider;
     private final Dependency dependency;
+    private final Generators.Writer writer;
 
-    public SymbolProviderGenerator(SymbolProvider symbolProvider, Dependency dependency) {
+    public SymbolProviderGenerator(SymbolProvider symbolProvider, Dependency dependency, Generators.Writer writer) {
         this.symbolProvider = symbolProvider;
         this.dependency = dependency;
+        this.writer = writer;
     }
 
     @Override
     public void generate() {
-        Utils.write(symbolProvider.getTypePkg().packagePath(), """
+        writer.write(symbolProvider.getTypePkg().packagePath(), """
                 %1$s
                 
                 %3$s

@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.CommonGenerator;
 import generator.types.CommonTypes;
@@ -58,7 +59,7 @@ public final class Common extends AbstractGeneration<CommonTypes.BaseType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new CommonGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new CommonGenerator(this, dependency, writer).generate();
     }
 }

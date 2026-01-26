@@ -3,6 +3,7 @@ package processor;
 import analyser.*;
 import analyser.types.Enum;
 import analyser.types.Type;
+import generator.Generators;
 import generator.TypePkg;
 import generator.generation.*;
 import generator.types.*;
@@ -145,7 +146,7 @@ public class Processor {
     }
 
     public void generate() {
-        generator.Generator generator = new generator.Generator(mustGenerate, allTypes::get);
-        generator.generate();
+        Generators generators = new Generators(mustGenerate, allTypes::get);
+        generators.generate();
     }
 }

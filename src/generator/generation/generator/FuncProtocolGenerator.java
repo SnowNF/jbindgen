@@ -1,7 +1,7 @@
 package generator.generation.generator;
 
 import generator.Dependency;
-import generator.Utils;
+import generator.Generators;
 import generator.generation.FuncPointer;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
@@ -16,11 +16,13 @@ public class FuncProtocolGenerator implements Generator {
     private final FuncPointer funcPointer;
     private final Dependency dependency;
     private final String utilsClassName;
+    private final Generators.Writer writer;
 
-    public FuncProtocolGenerator(FuncPointer funcPointer, Dependency dependency) {
+    public FuncProtocolGenerator(FuncPointer funcPointer, Dependency dependency, Generators.Writer writer) {
         this.funcPointer = funcPointer;
         this.dependency = dependency;
         utilsClassName = dependency.getTypePackagePath(CommonTypes.SpecificTypes.FunctionUtils).getClassName();
+        this.writer = writer;
     }
 
     private final static List<String> FORBID_LAMBDA_NAMES = List.of("function", "funcLifeTime");
@@ -116,7 +118,7 @@ public class FuncProtocolGenerator implements Generator {
                     }
                 """.formatted(className);
         out += make(className, raw, interfaces, constructors, invokes.toString(), toString);
-        Utils.write(funcPointer.getTypePkg().packagePath(), out);
+        writer.write(funcPointer.getTypePkg().packagePath(), out);
     }
 
     private String make(String className, FunctionRawUtils raw, String interfaces, String constructors, String invokes, String ext) {

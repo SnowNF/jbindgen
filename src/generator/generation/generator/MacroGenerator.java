@@ -1,20 +1,22 @@
 package generator.generation.generator;
 
-import java.util.Set;
-
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
-import generator.Utils;
 import generator.generation.Macros;
+
+import java.util.Set;
 
 public class MacroGenerator implements Generator {
     private final PackagePath packagePath;
 
     private final Set<Macros.Macro> macros;
+    private final Generators.Writer writer;
 
-    public MacroGenerator(PackagePath packagePath, Set<Macros.Macro> macros, Dependency dependency) {
+    public MacroGenerator(PackagePath packagePath, Set<Macros.Macro> macros, Dependency dependency, Generators.Writer writer) {
         this.packagePath = packagePath;
         this.macros = macros;
+        this.writer = writer;
     }
 
     @Override
@@ -37,6 +39,6 @@ public class MacroGenerator implements Generator {
                 %s
                 }
                 """.formatted(packagePath.getClassName(), core.toString());
-        Utils.write(packagePath, out);
+        writer.write(packagePath, out);
     }
 }

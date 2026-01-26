@@ -1,8 +1,8 @@
 package generator.generation.generator;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
-import generator.Utils;
 import generator.generation.ConstValues;
 import generator.types.TypeAttr;
 
@@ -14,12 +14,15 @@ public class ConstGenerator implements Generator {
     private final PackagePath path;
     private final List<ConstValues.Value> values;
     private final Dependency dependency;
+    private final Generators.Writer writer;
 
-    public ConstGenerator(ConstValues constValues, PackagePath path, List<ConstValues.Value> values, Dependency dependency) {
+    public ConstGenerator(ConstValues constValues, PackagePath path,
+                          List<ConstValues.Value> values, Dependency dependency, Generators.Writer writer) {
         this.constValues = constValues;
         this.path = path;
         this.values = values;
         this.dependency = dependency;
+        this.writer = writer;
     }
 
     @Override
@@ -40,7 +43,7 @@ public class ConstGenerator implements Generator {
                     %s
                     }
                     """.formatted(path.getClassName(), core.toString());
-            Utils.write(path, out);
+            writer.write(path, out);
         }
     }
 }

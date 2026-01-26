@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.RefOnlyGenerator;
 import generator.types.CommonTypes;
@@ -18,7 +19,7 @@ public final class RefOnly extends AbstractGeneration<RefOnlyType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new RefOnlyGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new RefOnlyGenerator(this, dependency, writer).generate();
     }
 }

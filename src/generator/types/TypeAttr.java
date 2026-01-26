@@ -34,7 +34,7 @@ public class TypeAttr {
         RAW
     }
 
-    public sealed interface NamedType permits SingleGenerationType, ArrayType, CommonTypes.BaseType, PointerType, RefOnlyType, SymbolProviderType, VoidType {
+    public sealed interface NamedType permits ArrayType, CommonTypes.BaseType, TaggedNamedType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {
 
         /**
          * get the type name in java
@@ -47,10 +47,10 @@ public class TypeAttr {
     /**
      * types have generation
      */
-    public sealed interface GenerationType permits SingleGenerationType, CommonTypes.BaseType, RefOnlyType, SymbolProviderType, VoidType {
+    public sealed interface GenerationType permits CommonTypes.BaseType, TaggedNamedType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {
     }
 
-    public sealed interface TypeRefer permits SingleGenerationType, ArrayType, CommonTypes.BaseType, PointerType, RefOnlyType, SymbolProviderType, VoidType {
+    public sealed interface TypeRefer permits ArrayType, CommonTypes.BaseType, TaggedNamedType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {
         /**
          * @return the types when use this type
          */

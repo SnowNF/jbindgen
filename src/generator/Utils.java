@@ -4,23 +4,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.regex.Pattern;
 
 public class Utils {
     private static final Pattern CLASS_NAME = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
     private static final Pattern PACKAGE_NAME = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
     private static final Pattern VAR_NAME = Pattern.compile("^[a-zA-Z_$][a-zA-Z\\d_$]*$");
-
-    private static final HashSet<PackagePath> WRITING_PATHS = new HashSet<>();
-
-    public static void write(PackagePath path, String content) {
-        if (WRITING_PATHS.contains(path)) {
-            throw new RuntimeException("Path " + path.getFilePath() + " already written");
-        }
-        WRITING_PATHS.add(path);
-        write(path.getFilePath(), content);
-    }
 
     public static void write(Path path, String content) {
         try {

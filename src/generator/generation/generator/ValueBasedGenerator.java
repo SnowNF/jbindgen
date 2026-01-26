@@ -1,8 +1,8 @@
 package generator.generation.generator;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
-import generator.Utils;
 import generator.generation.ValueBased;
 import generator.types.CommonTypes;
 import generator.types.PointerType;
@@ -12,10 +12,12 @@ import generator.types.ValueBasedType;
 public class ValueBasedGenerator implements Generator {
     private final Dependency dependency;
     private final ValueBased valueBased;
+    private final Generators.Writer writer;
 
-    public ValueBasedGenerator(ValueBased v, Dependency dependency) {
+    public ValueBasedGenerator(ValueBased v, Dependency dependency, Generators.Writer writer) {
         this.dependency = dependency;
         this.valueBased = v;
+        this.writer = writer;
     }
 
     @Override
@@ -23,17 +25,17 @@ public class ValueBasedGenerator implements Generator {
         makeValue(valueBased.getTypePkg().packagePath(), valueBased.getTypePkg().type(), Generator.extractImports(valueBased, dependency));
     }
 
-    private static void makeValue(PackagePath path, ValueBasedType type, String imports) {
+    private void makeValue(PackagePath path, ValueBasedType type, String imports) {
         String typeName = Generator.getTypeName(type);
         CommonTypes.BindTypes bindTypes = type.getBindTypes();
         if (bindTypes != CommonTypes.BindTypes.Ptr) {
-            CommonGenerator.genValueBasedTypes(path, type.getBindTypes(), imports, type.typeName(TypeAttr.NameType.RAW));
+            CommonGenerator.genValueBasedTypes(path, type.getBindTypes(), imports, type.typeName(TypeAttr.NameType.RAW), writer);
             return;
         }
         PointerType pointerType = type.getPointerType().orElseThrow();
         var pointee = ((TypeAttr.OperationType) pointerType.pointee());
         String pointeeName = Generator.getTypeName(pointerType.pointee());
-        Utils.write(path, """
+        writer.write(path, """
                 %1$s
                 
                 %2$s
@@ -114,7 +116,7 @@ public class ValueBasedGenerator implements Generator {
                             public %3$s self() {
                                 return %3$s.this;
                             }
-
+                
                             @Override
                             public %11$s.Operations<%4$s> elementOperation() {
                                 return ELEMENT_OPERATIONS;

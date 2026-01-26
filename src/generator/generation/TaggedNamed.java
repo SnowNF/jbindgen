@@ -3,13 +3,12 @@ package generator.generation;
 import generator.Dependency;
 import generator.Generators;
 import generator.PackagePath;
-import generator.generation.generator.VoidBasedGenerator;
 import generator.types.CommonTypes;
+import generator.types.TaggedNamedType;
 import generator.types.TypeImports;
-import generator.types.VoidType;
 
-public final class VoidBased extends AbstractGeneration<VoidType> {
-    public VoidBased(PackagePath packagePath, VoidType type) {
+public final class TaggedNamed extends AbstractGeneration<TaggedNamedType> {
+    public TaggedNamed(PackagePath packagePath, TaggedNamedType type) {
         super(packagePath, type);
     }
 
@@ -20,8 +19,6 @@ public final class VoidBased extends AbstractGeneration<VoidType> {
 
     @Override
     public void generate(Dependency dependency, Generators.Writer writer) {
-        if (typePkg.type().realVoid()) // skip this type
-            return;
-        new VoidBasedGenerator(this, dependency, writer).generate();
+//        new RefOnlyGenerator(this, dependency, writer).generate();
     }
 }

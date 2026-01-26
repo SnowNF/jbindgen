@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.SymbolProviderGenerator;
 import generator.types.CommonTypes;
@@ -18,7 +19,7 @@ public final class SymbolProvider extends AbstractGeneration<SymbolProviderType>
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new SymbolProviderGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new SymbolProviderGenerator(this, dependency, writer).generate();
     }
 }

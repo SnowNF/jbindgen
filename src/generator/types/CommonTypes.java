@@ -1,6 +1,6 @@
 package generator.types;
 
-import generator.Generator;
+import generator.Generators;
 import generator.types.operations.DestructOnlyOp;
 import generator.types.operations.NoJavaPrimitiveType;
 import generator.types.operations.OperationAttr;
@@ -124,8 +124,8 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if (Generator.DEBUG)
-                return name() + Generator.DEBUG_NAME_APPEND;
+            if (Generators.DEBUG)
+                return name() + Generators.DEBUG_NAME_APPEND;
             return name();
         }
 
@@ -175,8 +175,8 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if (Generator.DEBUG)
-                return name() + Generator.DEBUG_NAME_APPEND;
+            if (Generators.DEBUG)
+                return name() + Generators.DEBUG_NAME_APPEND;
             return name();
         }
 
@@ -241,8 +241,8 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if (Generator.DEBUG)
-                return name() + Generator.DEBUG_NAME_APPEND;
+            if (Generators.DEBUG)
+                return name() + Generators.DEBUG_NAME_APPEND;
             return name();
         }
 
@@ -328,8 +328,8 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if (Generator.DEBUG)
-                return name() + Generator.DEBUG_NAME_APPEND;
+            if (Generators.DEBUG)
+                return name() + Generators.DEBUG_NAME_APPEND;
             return name();
         }
 
@@ -392,8 +392,8 @@ public class CommonTypes {
 
         @Override
         public String typeName(TypeAttr.NameType nameType) {
-            if (Generator.DEBUG)
-                return name() + Generator.DEBUG_NAME_APPEND;
+            if (Generators.DEBUG)
+                return name() + Generators.DEBUG_NAME_APPEND;
             return name();
         }
     }

@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.ArrayNamedGenerator;
 import generator.types.ArrayTypeNamed;
@@ -23,7 +24,7 @@ public final class ArrayNamed extends AbstractGeneration<ArrayTypeNamed> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new ArrayNamedGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new ArrayNamedGenerator(this, dependency, writer).generate();
     }
 }

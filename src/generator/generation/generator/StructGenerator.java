@@ -1,7 +1,7 @@
 package generator.generation.generator;
 
 import generator.Dependency;
-import generator.Utils;
+import generator.Generators;
 import generator.generation.Structure;
 import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
@@ -16,10 +16,12 @@ import java.util.Optional;
 public class StructGenerator implements Generator {
     private final Structure structure;
     private final Dependency dependency;
+    private final Generators.Writer writer;
 
-    public StructGenerator(Structure struct, Dependency dependency) {
+    public StructGenerator(Structure struct, Dependency dependency, Generators.Writer writer) {
         this.structure = struct;
         this.dependency = dependency;
+        this.writer = writer;
     }
 
     @Override
@@ -42,7 +44,7 @@ public class StructGenerator implements Generator {
         out += "\n";
         out += Generator.extractImports(structure, dependency);
         out += getMain(Generator.getTypeName(structType), structType.getMemoryLayout(), stringBuilder.toString());
-        Utils.write(structure.getTypePkg().packagePath(), out);
+        writer.write(structure.getTypePkg().packagePath(), out);
     }
 
     record GetterAndSetter(String getter, String setter) {

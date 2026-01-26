@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.TypePkg;
 import generator.types.TypeAttr;
@@ -33,7 +34,7 @@ public final class VarSymbols implements Generation<TypeAttr.GenerationType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
+    public void generate(Dependency dependency, Generators.Writer writer) {
         System.err.println("todo: generate this");
     }
 }

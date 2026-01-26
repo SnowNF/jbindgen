@@ -1,7 +1,7 @@
 package generator.generation.generator;
 
 import generator.Dependency;
-import generator.Utils;
+import generator.Generators;
 import generator.generation.VoidBased;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
@@ -9,10 +9,12 @@ import generator.types.TypeAttr;
 public class VoidBasedGenerator implements Generator {
     private final VoidBased voidType;
     private final Dependency dependency;
+    private final Generators.Writer writer;
 
-    public VoidBasedGenerator(VoidBased voidType, Dependency dependency) {
+    public VoidBasedGenerator(VoidBased voidType, Dependency dependency, Generators.Writer writer) {
         this.voidType = voidType;
         this.dependency = dependency;
+        this.writer = writer;
     }
 
     @Override
@@ -20,7 +22,7 @@ public class VoidBasedGenerator implements Generator {
         String out = voidType.getTypePkg().packagePath().makePackage();
         out += Generator.extractImports(voidType, dependency);
         out += makeContent(voidType.getTypePkg().type().typeName(TypeAttr.NameType.GENERIC));
-        Utils.write(voidType.getTypePkg().packagePath(), out);
+        writer.write(voidType.getTypePkg().packagePath(), out);
     }
 
 

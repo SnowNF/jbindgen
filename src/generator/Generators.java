@@ -9,7 +9,7 @@ import java.util.Set;
 
 import static utils.CommonUtils.Assert;
 
-public class Generator {
+public class Generators {
     public static final boolean DEBUG = false;
     public static final String DEBUG_NAME_APPEND = "Debug";
 
@@ -21,6 +21,7 @@ public class Generator {
 
     private final Dependency dependency;
     private final GenerationProvider provider;
+    private final Writer writer = new Writer();
 
     /**
      * generate java files
@@ -28,7 +29,7 @@ public class Generator {
      * @param provider     provide other generations
      * @param mustGenerate must generate this, when missing symbols, will throw
      */
-    public Generator(Set<Generation<?>> mustGenerate, GenerationProvider provider) {
+    public Generators(Set<Generation<?>> mustGenerate, GenerationProvider provider) {
         this.mustGenerate = mustGenerate;
         dependency = new Dependency()
                 .addType(mustGenerate.stream().map(Generation::getImplTypes).flatMap(Set::stream).toList());
@@ -57,10 +58,22 @@ public class Generator {
                 dependency.addType(generation.getImplTypes());
             }
             for (Generation<?> generation : generations) {
-                generation.generate(dependency);
+                generation.generate(dependency, writer);
             }
             generations.clear();
             generations.addAll(newGen);
         } while (!generations.isEmpty());
+    }
+
+    public static class Writer {
+        private final HashSet<PackagePath> WRITING_PATHS = new HashSet<>();
+
+        public void write(PackagePath path, String content) {
+            if (WRITING_PATHS.contains(path)) {
+                throw new RuntimeException("Path " + path.getFilePath() + " already written");
+            }
+            WRITING_PATHS.add(path);
+            Utils.write(path.getFilePath(), content);
+        }
     }
 }

@@ -1,9 +1,9 @@
 package generator.generation.generator;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.TypePkg;
-import generator.Utils;
 import generator.generation.Common;
 import generator.types.CommonTypes;
 import generator.types.CommonTypes.BasicOperations;
@@ -18,10 +18,12 @@ import static utils.CommonUtils.Assert;
 public class CommonGenerator implements Generator {
     private final Common common;
     private final Dependency dependency;
+    private final Generators.Writer writer;
 
-    public CommonGenerator(Common common, Dependency dependency) {
+    public CommonGenerator(Common common, Dependency dependency, Generators.Writer writer) {
         this.common = common;
         this.dependency = dependency;
+        this.writer = writer;
     }
 
     @Override
@@ -62,7 +64,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genStructI(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 %s
@@ -93,7 +95,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genArrayI(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 %s
@@ -146,7 +148,7 @@ public class CommonGenerator implements Generator {
                     BasicOperations.Value.typeName(NameType.RAW), // 6
                     btOp.operatorTypeName() // 7
             );
-            Utils.write(path, str);
+            writer.write(path, str);
             return;
         }
         String str = """
@@ -215,11 +217,11 @@ public class CommonGenerator implements Generator {
                     BasicOperations.Value.typeName(NameType.RAW), // 8
                     SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 9
             );
-        Utils.write(path, str);
+        writer.write(path, str);
     }
 
     private void genOperation(PackagePath path) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 public interface %s {
@@ -230,7 +232,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genValue(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 %s
@@ -250,7 +252,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genArrayOp(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 %s
@@ -308,7 +310,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genFlatArrayOp(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 %s
@@ -368,7 +370,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genStructOp(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %1$s
                 
                 %2$s
@@ -397,7 +399,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genPointee(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 %s
@@ -417,7 +419,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genInfo(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %1$s
                 
                 %2$s
@@ -458,7 +460,7 @@ public class CommonGenerator implements Generator {
     public static final String ARRAY_MAKE_OPERATION_METHOD = "makeOperations";
 
     private void genSingle(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %1$s
                 
                 %2$s
@@ -682,7 +684,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genArray(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %1$s
                 
                 %2$s
@@ -912,7 +914,7 @@ public class CommonGenerator implements Generator {
     }
 
     private void genFlatArray(PackagePath path, String imports) {
-        Utils.write(path, """
+        writer.write(path, """
                 %1$s
                 
                 %2$s
@@ -1126,8 +1128,8 @@ public class CommonGenerator implements Generator {
         ));
     }
 
-    private static void genStr(PackagePath packagePath, String imports) {
-        Utils.write(packagePath, """
+    private void genStr(PackagePath packagePath, String imports) {
+        writer.write(packagePath, """
                 %1$s
                 
                 %2$s
@@ -1336,7 +1338,7 @@ public class CommonGenerator implements Generator {
 
     private void genValueInterface(PackagePath path, ValueInterface type, String imports) {
         if (type.getPrimitive().noJavaPrimitive()) {
-            Utils.write(path, """
+            writer.write(path, """
                     %1$s
                     %2$s
                     import java.lang.foreign.MemorySegment;
@@ -1350,7 +1352,7 @@ public class CommonGenerator implements Generator {
             ));
             return;
         }
-        Utils.write(path, """
+        writer.write(path, """
                 %1$s
                 %2$s
                 
@@ -1383,7 +1385,7 @@ public class CommonGenerator implements Generator {
 
     private void genBindTypes(PackagePath path, BindTypes bindTypes, String imports) {
         if (bindTypes != BindTypes.Ptr) {
-            genValueBasedTypes(path, bindTypes, imports, bindTypes.typeName(NameType.RAW));
+            genValueBasedTypes(path, bindTypes, imports, bindTypes.typeName(NameType.RAW), writer);
             return;
         }
         var str = """
@@ -1454,7 +1456,7 @@ public class CommonGenerator implements Generator {
                     public E pte() {
                         return operator().pointee();
                     }
-
+                
                     public %3$s<E> pte(E element) {
                         operator().setPointee(element);
                         return this;
@@ -1464,7 +1466,7 @@ public class CommonGenerator implements Generator {
                         element.accept(pte());
                         return this;
                     }
-
+                
                     public %3$s<E> self(Consumer<%3$s<E>> element) {
                         element.accept(this);
                         return this;
@@ -1526,10 +1528,10 @@ public class CommonGenerator implements Generator {
                 BindTypes.Ptr.typeName(NameType.RAW), // 9
                 SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 10
         );
-        Utils.write(path, str);
+        writer.write(path, str);
     }
 
-    static void genValueBasedTypes(PackagePath path, BindTypes bindTypes, String imports, String typeName) {
+    static void genValueBasedTypes(PackagePath path, BindTypes bindTypes, String imports, String typeName, Generators.Writer writer) {
         Assert(bindTypes != BindTypes.Ptr);
         if (bindTypes.getOperations().getValue().getPrimitive().noJavaPrimitive()) {
             Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16, " sizeof %s must be 16".formatted(bindTypes));
@@ -1619,7 +1621,7 @@ public class CommonGenerator implements Generator {
                     bindTypes.getOperations().operatorTypeName(), // 11
                     SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 12
             );
-            Utils.write(path, str);
+            writer.write(path, str);
             return;
         }
         var str = """
@@ -1704,11 +1706,11 @@ public class CommonGenerator implements Generator {
                 CommonTypes.BindTypes.Ptr.typeName(NameType.RAW), // 12
                 bindTypes.getOperations().operatorTypeName() // 13
         );
-        Utils.write(path, str);
+        writer.write(path, str);
     }
 
     private void genFunctionUtils(PackagePath path) {
-        Utils.write(path, """
+        writer.write(path, """
                 %s
                 
                 import java.lang.foreign.Arena;
@@ -1792,221 +1794,221 @@ public class CommonGenerator implements Generator {
     }
 
     private void genMemoryUtils(PackagePath path, String imports) {
-        Utils.write(path, """
-                                  %1$s
-                                  
-                                  %3$s
-                                  import java.util.Objects;
-                                  
-                                  public final class %2$s {
-                                  """.formatted(path.makePackage(), path.getClassName(), imports) + """
-                                      public interface MemorySupport {
-                                          void setByte(MemorySegment ms, long offset, byte val);
-                                  
-                                          void setShort(MemorySegment ms, long offset, short val);
-                                  
-                                          void setInt(MemorySegment ms, long offset, int val);
-                                  
-                                          void setLong(MemorySegment ms, long offset, long val);
-                                  
-                                          void setAddr(MemorySegment ms, long offset, MemorySegment val);
-                                  
-                                          void setFloat(MemorySegment ms, long offset, float val);
-                                  
-                                          void setDouble(MemorySegment ms, long offset, double val);
-                                  
-                                          byte getByte(MemorySegment ms, long offset);
-                                  
-                                          short getShort(MemorySegment ms, long offset);
-                                  
-                                          int getInt(MemorySegment ms, long offset);
-                                  
-                                          long getLong(MemorySegment ms, long offset);
-                                  
-                                          MemorySegment getAddr(MemorySegment ms, long offset);
-                                  
-                                          float getFloat(MemorySegment ms, long offset);
-                                  
-                                          double getDouble(MemorySegment ms, long offset);
-                                  
-                                          void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize);
-                                      }
-                                  
-                                      public static MemorySupport memorySupport = new MemorySupport() {
-                                          @Override
-                                          public void setByte(MemorySegment ms, long offset, byte val) {
-                                              ms.set(ValueLayout.JAVA_BYTE, offset, val);
-                                          }
-                                  
-                                          @Override
-                                          public void setShort(MemorySegment ms, long offset, short val) {
-                                              ms.set(ValueLayout.JAVA_SHORT, offset, val);
-                                          }
-                                  
-                                          @Override
-                                          public void setInt(MemorySegment ms, long offset, int val) {
-                                              ms.set(ValueLayout.JAVA_INT, offset, val);
-                                          }
-                                  
-                                          @Override
-                                          public void setLong(MemorySegment ms, long offset, long val) {
-                                              ms.set(ValueLayout.JAVA_LONG, offset, val);
-                                          }
-                                  
-                                          @Override
-                                          public void setAddr(MemorySegment ms, long offset, MemorySegment val) {
-                                              ms.set(ValueLayout.ADDRESS, offset, val);
-                                          }
-                                  
-                                          @Override
-                                          public void setFloat(MemorySegment ms, long offset, float val) {
-                                              ms.set(ValueLayout.JAVA_FLOAT, offset, val);
-                                          }
-                                  
-                                          @Override
-                                          public void setDouble(MemorySegment ms, long offset, double val) {
-                                              ms.set(ValueLayout.JAVA_DOUBLE, offset, val);
-                                          }
-                                  
-                                          @Override
-                                          public byte getByte(MemorySegment ms, long offset) {
-                                              return ms.get(ValueLayout.JAVA_BYTE, offset);
-                                          }
-                                  
-                                          @Override
-                                          public short getShort(MemorySegment ms, long offset) {
-                                              return ms.get(ValueLayout.JAVA_SHORT, offset);
-                                          }
-                                  
-                                          @Override
-                                          public int getInt(MemorySegment ms, long offset) {
-                                              return ms.get(ValueLayout.JAVA_INT, offset);
-                                          }
-                                  
-                                          @Override
-                                          public long getLong(MemorySegment ms, long offset) {
-                                              return ms.get(ValueLayout.JAVA_LONG, offset);
-                                          }
-                                  
-                                          @Override
-                                          public MemorySegment getAddr(MemorySegment ms, long offset) {
-                                              return ms.get(ValueLayout.ADDRESS, offset);
-                                          }
-                                  
-                                          @Override
-                                          public float getFloat(MemorySegment ms, long offset) {
-                                              return ms.get(ValueLayout.JAVA_FLOAT, offset);
-                                          }
-                                  
-                                          @Override
-                                          public double getDouble(MemorySegment ms, long offset) {
-                                              return ms.get(ValueLayout.JAVA_DOUBLE, offset);
-                                          }
-                                  
-                                          @Override
-                                          public void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
-                                              MemorySegment.copy(src, srcOffset, dest, destOffset, byteSize);
-                                          }
-                                      };
-                                  
-                                      private static final class MemorySupportHolder {
-                                          private static final MemorySupport MEMORY_SUPPORT = Objects.requireNonNull(memorySupport);
-                                      }
-                                  
-                                      public static void setByte(MemorySegment ms, long offset, byte val) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.setByte(ms, offset, val);
-                                      }
-                                  
-                                      public static void setShort(MemorySegment ms, long offset, short val) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.setShort(ms, offset, val);
-                                      }
-                                  
-                                      public static void setInt(MemorySegment ms, long offset, int val) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.setInt(ms, offset, val);
-                                      }
-                                  
-                                      public static void setLong(MemorySegment ms, long offset, long val) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.setLong(ms, offset, val);
-                                      }
-                                  
-                                      public static void setAddr(MemorySegment ms, long offset, MemorySegment val) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.setAddr(ms, offset, val);
-                                      }
-                                  
-                                      public static void setFloat(MemorySegment ms, long offset, float val) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.setFloat(ms, offset, val);
-                                      }
-                                  
-                                      public static void setDouble(MemorySegment ms, long offset, double val) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.setDouble(ms, offset, val);
-                                      }
-                                  
-                                      public static byte getByte(MemorySegment ms, long offset) {
-                                          return MemorySupportHolder.MEMORY_SUPPORT.getByte(ms, offset);
-                                      }
-                                  
-                                      public static short getShort(MemorySegment ms, long offset) {
-                                          return MemorySupportHolder.MEMORY_SUPPORT.getShort(ms, offset);
-                                      }
-                                  
-                                      public static int getInt(MemorySegment ms, long offset) {
-                                          return MemorySupportHolder.MEMORY_SUPPORT.getInt(ms, offset);
-                                      }
-                                  
-                                      public static long getLong(MemorySegment ms, long offset) {
-                                          return MemorySupportHolder.MEMORY_SUPPORT.getLong(ms, offset);
-                                      }
-                                  
-                                      public static MemorySegment getAddr(MemorySegment ms, long offset) {
-                                          return MemorySupportHolder.MEMORY_SUPPORT.getAddr(ms, offset);
-                                      }
-                                  
-                                      public static float getFloat(MemorySegment ms, long offset) {
-                                          return MemorySupportHolder.MEMORY_SUPPORT.getFloat(ms, offset);
-                                      }
-                                  
-                                      public static double getDouble(MemorySegment ms, long offset) {
-                                          return MemorySupportHolder.MEMORY_SUPPORT.getDouble(ms, offset);
-                                      }
-                                  
-                                      public static void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
-                                          MemorySupportHolder.MEMORY_SUPPORT.memcpy(src, srcOffset, dest, destOffset, byteSize);
-                                      }
-                                  
-                                      private static final class OnHeapAllocatorHolder {
-                                          private static final SegmentAllocator ON_HEAP_ALLOCATOR = Objects.requireNonNull(onHeapAllocator);
-                                      }
-                                  
-                                      public static SegmentAllocator onHeapAllocator() {
-                                          return OnHeapAllocatorHolder.ON_HEAP_ALLOCATOR;
-                                      }
-                                  
-                                      public static SegmentAllocator onHeapAllocator = new SegmentAllocator() {
-                                          @Override
-                                          public MemorySegment allocate(long byteSize, long byteAlignment) {
-                                              if (byteAlignment <= 0 || (byteAlignment & (byteAlignment - 1)) != 0) {
-                                                  throw new IllegalArgumentException("Alignment must be a power of two: " + byteAlignment);
-                                              }
-                                              if (byteSize % byteAlignment != 0) {
-                                                  throw new IllegalArgumentException("Size must be multiple of alignment: size=" + byteSize + ", alignment=" + byteAlignment);
-                                              }
-                                              try {
-                                                  return switch ((int) byteAlignment) {
-                                                      case 1 -> MemorySegment.ofArray(new byte[Math.toIntExact(byteSize)]);
-                                                      case 2 -> MemorySegment.ofArray(new short[Math.toIntExact(byteSize / 2)]);
-                                                      case 4 -> MemorySegment.ofArray(new int[Math.toIntExact(byteSize / 4)]);
-                                                      case 8 -> MemorySegment.ofArray(new long[Math.toIntExact(byteSize / 8)]);
-                                                      // fallback to auto arena
-                                                      default -> Arena.ofAuto().allocate(byteSize, byteAlignment);
-                                                  };
-                                              } catch (ArithmeticException e) {
-                                                  throw new OutOfMemoryError("Requested memory size too large: " + byteSize + " bytes");
-                                              } catch (NegativeArraySizeException e) {
-                                                  throw new OutOfMemoryError("Negative array size: " + byteSize);
-                                              }
-                                          }
-                                      };
-                                  }
-                                  """);
+        writer.write(path, """
+                                   %1$s
+                                   
+                                   %3$s
+                                   import java.util.Objects;
+                                   
+                                   public final class %2$s {
+                                   """.formatted(path.makePackage(), path.getClassName(), imports) + """
+                                       public interface MemorySupport {
+                                           void setByte(MemorySegment ms, long offset, byte val);
+                                   
+                                           void setShort(MemorySegment ms, long offset, short val);
+                                   
+                                           void setInt(MemorySegment ms, long offset, int val);
+                                   
+                                           void setLong(MemorySegment ms, long offset, long val);
+                                   
+                                           void setAddr(MemorySegment ms, long offset, MemorySegment val);
+                                   
+                                           void setFloat(MemorySegment ms, long offset, float val);
+                                   
+                                           void setDouble(MemorySegment ms, long offset, double val);
+                                   
+                                           byte getByte(MemorySegment ms, long offset);
+                                   
+                                           short getShort(MemorySegment ms, long offset);
+                                   
+                                           int getInt(MemorySegment ms, long offset);
+                                   
+                                           long getLong(MemorySegment ms, long offset);
+                                   
+                                           MemorySegment getAddr(MemorySegment ms, long offset);
+                                   
+                                           float getFloat(MemorySegment ms, long offset);
+                                   
+                                           double getDouble(MemorySegment ms, long offset);
+                                   
+                                           void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize);
+                                       }
+                                   
+                                       public static MemorySupport memorySupport = new MemorySupport() {
+                                           @Override
+                                           public void setByte(MemorySegment ms, long offset, byte val) {
+                                               ms.set(ValueLayout.JAVA_BYTE, offset, val);
+                                           }
+                                   
+                                           @Override
+                                           public void setShort(MemorySegment ms, long offset, short val) {
+                                               ms.set(ValueLayout.JAVA_SHORT, offset, val);
+                                           }
+                                   
+                                           @Override
+                                           public void setInt(MemorySegment ms, long offset, int val) {
+                                               ms.set(ValueLayout.JAVA_INT, offset, val);
+                                           }
+                                   
+                                           @Override
+                                           public void setLong(MemorySegment ms, long offset, long val) {
+                                               ms.set(ValueLayout.JAVA_LONG, offset, val);
+                                           }
+                                   
+                                           @Override
+                                           public void setAddr(MemorySegment ms, long offset, MemorySegment val) {
+                                               ms.set(ValueLayout.ADDRESS, offset, val);
+                                           }
+                                   
+                                           @Override
+                                           public void setFloat(MemorySegment ms, long offset, float val) {
+                                               ms.set(ValueLayout.JAVA_FLOAT, offset, val);
+                                           }
+                                   
+                                           @Override
+                                           public void setDouble(MemorySegment ms, long offset, double val) {
+                                               ms.set(ValueLayout.JAVA_DOUBLE, offset, val);
+                                           }
+                                   
+                                           @Override
+                                           public byte getByte(MemorySegment ms, long offset) {
+                                               return ms.get(ValueLayout.JAVA_BYTE, offset);
+                                           }
+                                   
+                                           @Override
+                                           public short getShort(MemorySegment ms, long offset) {
+                                               return ms.get(ValueLayout.JAVA_SHORT, offset);
+                                           }
+                                   
+                                           @Override
+                                           public int getInt(MemorySegment ms, long offset) {
+                                               return ms.get(ValueLayout.JAVA_INT, offset);
+                                           }
+                                   
+                                           @Override
+                                           public long getLong(MemorySegment ms, long offset) {
+                                               return ms.get(ValueLayout.JAVA_LONG, offset);
+                                           }
+                                   
+                                           @Override
+                                           public MemorySegment getAddr(MemorySegment ms, long offset) {
+                                               return ms.get(ValueLayout.ADDRESS, offset);
+                                           }
+                                   
+                                           @Override
+                                           public float getFloat(MemorySegment ms, long offset) {
+                                               return ms.get(ValueLayout.JAVA_FLOAT, offset);
+                                           }
+                                   
+                                           @Override
+                                           public double getDouble(MemorySegment ms, long offset) {
+                                               return ms.get(ValueLayout.JAVA_DOUBLE, offset);
+                                           }
+                                   
+                                           @Override
+                                           public void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
+                                               MemorySegment.copy(src, srcOffset, dest, destOffset, byteSize);
+                                           }
+                                       };
+                                   
+                                       private static final class MemorySupportHolder {
+                                           private static final MemorySupport MEMORY_SUPPORT = Objects.requireNonNull(memorySupport);
+                                       }
+                                   
+                                       public static void setByte(MemorySegment ms, long offset, byte val) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.setByte(ms, offset, val);
+                                       }
+                                   
+                                       public static void setShort(MemorySegment ms, long offset, short val) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.setShort(ms, offset, val);
+                                       }
+                                   
+                                       public static void setInt(MemorySegment ms, long offset, int val) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.setInt(ms, offset, val);
+                                       }
+                                   
+                                       public static void setLong(MemorySegment ms, long offset, long val) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.setLong(ms, offset, val);
+                                       }
+                                   
+                                       public static void setAddr(MemorySegment ms, long offset, MemorySegment val) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.setAddr(ms, offset, val);
+                                       }
+                                   
+                                       public static void setFloat(MemorySegment ms, long offset, float val) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.setFloat(ms, offset, val);
+                                       }
+                                   
+                                       public static void setDouble(MemorySegment ms, long offset, double val) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.setDouble(ms, offset, val);
+                                       }
+                                   
+                                       public static byte getByte(MemorySegment ms, long offset) {
+                                           return MemorySupportHolder.MEMORY_SUPPORT.getByte(ms, offset);
+                                       }
+                                   
+                                       public static short getShort(MemorySegment ms, long offset) {
+                                           return MemorySupportHolder.MEMORY_SUPPORT.getShort(ms, offset);
+                                       }
+                                   
+                                       public static int getInt(MemorySegment ms, long offset) {
+                                           return MemorySupportHolder.MEMORY_SUPPORT.getInt(ms, offset);
+                                       }
+                                   
+                                       public static long getLong(MemorySegment ms, long offset) {
+                                           return MemorySupportHolder.MEMORY_SUPPORT.getLong(ms, offset);
+                                       }
+                                   
+                                       public static MemorySegment getAddr(MemorySegment ms, long offset) {
+                                           return MemorySupportHolder.MEMORY_SUPPORT.getAddr(ms, offset);
+                                       }
+                                   
+                                       public static float getFloat(MemorySegment ms, long offset) {
+                                           return MemorySupportHolder.MEMORY_SUPPORT.getFloat(ms, offset);
+                                       }
+                                   
+                                       public static double getDouble(MemorySegment ms, long offset) {
+                                           return MemorySupportHolder.MEMORY_SUPPORT.getDouble(ms, offset);
+                                       }
+                                   
+                                       public static void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
+                                           MemorySupportHolder.MEMORY_SUPPORT.memcpy(src, srcOffset, dest, destOffset, byteSize);
+                                       }
+                                   
+                                       private static final class OnHeapAllocatorHolder {
+                                           private static final SegmentAllocator ON_HEAP_ALLOCATOR = Objects.requireNonNull(onHeapAllocator);
+                                       }
+                                   
+                                       public static SegmentAllocator onHeapAllocator() {
+                                           return OnHeapAllocatorHolder.ON_HEAP_ALLOCATOR;
+                                       }
+                                   
+                                       public static SegmentAllocator onHeapAllocator = new SegmentAllocator() {
+                                           @Override
+                                           public MemorySegment allocate(long byteSize, long byteAlignment) {
+                                               if (byteAlignment <= 0 || (byteAlignment & (byteAlignment - 1)) != 0) {
+                                                   throw new IllegalArgumentException("Alignment must be a power of two: " + byteAlignment);
+                                               }
+                                               if (byteSize % byteAlignment != 0) {
+                                                   throw new IllegalArgumentException("Size must be multiple of alignment: size=" + byteSize + ", alignment=" + byteAlignment);
+                                               }
+                                               try {
+                                                   return switch ((int) byteAlignment) {
+                                                       case 1 -> MemorySegment.ofArray(new byte[Math.toIntExact(byteSize)]);
+                                                       case 2 -> MemorySegment.ofArray(new short[Math.toIntExact(byteSize / 2)]);
+                                                       case 4 -> MemorySegment.ofArray(new int[Math.toIntExact(byteSize / 4)]);
+                                                       case 8 -> MemorySegment.ofArray(new long[Math.toIntExact(byteSize / 8)]);
+                                                       // fallback to auto arena
+                                                       default -> Arena.ofAuto().allocate(byteSize, byteAlignment);
+                                                   };
+                                               } catch (ArithmeticException e) {
+                                                   throw new OutOfMemoryError("Requested memory size too large: " + byteSize + " bytes");
+                                               } catch (NegativeArraySizeException e) {
+                                                   throw new OutOfMemoryError("Negative array size: " + byteSize);
+                                               }
+                                           }
+                                       };
+                                   }
+                                   """);
     }
 }

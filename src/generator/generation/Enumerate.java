@@ -1,6 +1,7 @@
 package generator.generation;
 
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.generation.generator.EnumGenerator;
 import generator.types.CommonTypes;
@@ -22,7 +23,7 @@ public final class Enumerate extends AbstractGeneration<EnumType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new EnumGenerator(this, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new EnumGenerator(this, dependency, writer).generate();
     }
 }

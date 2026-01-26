@@ -1,17 +1,18 @@
 package generator.generation;
 
 
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-
 import generator.Dependency;
+import generator.Generators;
 import generator.PackagePath;
 import generator.TypePkg;
 import generator.generation.generator.MacroGenerator;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
 import generator.types.TypeImports;
+
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public final class Macros implements Generation<TypeAttr.GenerationType> {
     public sealed interface Macro {
@@ -43,8 +44,8 @@ public final class Macros implements Generation<TypeAttr.GenerationType> {
     }
 
     @Override
-    public void generate(Dependency dependency) {
-        new MacroGenerator(packagePath, macros, dependency).generate();
+    public void generate(Dependency dependency, Generators.Writer writer) {
+        new MacroGenerator(packagePath, macros, dependency, writer).generate();
     }
 
     @Override
