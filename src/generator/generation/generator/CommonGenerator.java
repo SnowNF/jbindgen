@@ -1131,19 +1131,31 @@ public class CommonGenerator implements Generator {
                 %1$s
                 
                 %2$s
-                import java.lang.foreign.MemorySegment;
-                import java.lang.foreign.SegmentAllocator;
-                import java.lang.foreign.ValueLayout;
+                import java.lang.foreign.*;
+                import java.lang.invoke.MethodHandle;
                 import java.nio.charset.StandardCharsets;
                 import java.util.Arrays;
                 import java.util.Collection;
                 import java.util.List;
+                import java.util.Optional;
                 import java.util.stream.Stream;
                 
                 public class %5$s extends %3$s.AbstractRandomAccessList<%11$s> implements %3$s<%5$s, %11$s>, %10$s<%5$s> {
                     public static final %10$s.Operations<%5$s> OPERATIONS = new %10$s.Operations<>(
-                            (param, offset) -> new %5$s(fitByteSize(param.get(ValueLayout.ADDRESS, offset))),
+                            (param, offset) -> new %5$s(param.get(ValueLayout.ADDRESS, offset)),
                             (source, dest, offset) -> dest.set(ValueLayout.ADDRESS, offset, source.ptr), ValueLayout.ADDRESS);
+                    private static final MethodHandle STRLEN;
+                
+                    static {
+                        Optional<MemorySegment> strlen = Linker.nativeLinker().defaultLookup().find("strlen");
+                        if (strlen.isEmpty()) {
+                            STRLEN = null;
+                        } else {
+                            FunctionDescriptor fd = FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.ADDRESS);
+                            STRLEN = Linker.nativeLinker().downcallHandle(strlen.get(), fd, Linker.Option.critical(false));
+                        }
+                    }
+                
                     private final MemorySegment ptr;
                 
                     @Override
@@ -1156,27 +1168,18 @@ public class CommonGenerator implements Generator {
                         return new %12$s<>(allocator, list.getFirst().operator().getOperations(), list);
                     }
                 
-                    private static final long HIMAGIC_FOR_BYTES = 0x8080_8080_8080_8080L;
-                    private static final long LOMAGIC_FOR_BYTES = 0x0101_0101_0101_0101L;
-                
-                    private static boolean containZeroByte(long l) {
-                        return ((l - LOMAGIC_FOR_BYTES) & (~l) & HIMAGIC_FOR_BYTES) != 0;
-                    }
-                
-                    private static int strlen(MemorySegment segment) {
-                        int count = 0;
-                        while (!containZeroByte(segment.get(ValueLayout.JAVA_LONG_UNALIGNED, count))) {
-                            count += 4;
+                    private static long strlen(MemorySegment segment) {
+                        if (STRLEN != null) {
+                            try {
+                                return (long) STRLEN.invokeExact(segment);
+                            } catch (Throwable _) {
+                            }
                         }
+                        long count = 0;
                         while (segment.get(ValueLayout.JAVA_BYTE, count) != 0) {
-                            segment.get(ValueLayout.JAVA_BYTE, count);
                             count++;
                         }
                         return count;
-                    }
-                
-                    private static MemorySegment fitByteSize(MemorySegment segment) {
-                        return !segment.isNative() || segment.address() == 0 ? segment : segment.reinterpret(1 + strlen(segment.reinterpret(Long.MAX_VALUE)));
                     }
                 
                 
@@ -1192,12 +1195,15 @@ public class CommonGenerator implements Generator {
                         return new %13$s<>(allocator, new %5$s(allocator, string));
                     }
                 
-                    protected %5$s(MemorySegment ptr) {
+                    public %5$s(MemorySegment ptr) {
+                        if (ptr.address() != 0 && ptr.isNative()) {
+                            ptr = ptr.reinterpret(Long.MAX_VALUE);
+                        }
                         this.ptr = ptr;
                     }
                 
                     public %5$s(%6$s<? extends %7$s<?>> ptr) {
-                        this(fitByteSize(ptr.operator().value()));
+                        this(ptr.operator().value());
                     }
                 
                     public %5$s(SegmentAllocator allocator, String s) {
@@ -1205,20 +1211,34 @@ public class CommonGenerator implements Generator {
                     }
                 
                     public String get() {
-                        return MemorySegment.NULL.address() == ptr.address() ? null : toString();
+                        return ptr.address() == 0 && ptr.isNative() ? null : ptr.getString(0, StandardCharsets.UTF_8);
+                    }
+                
+                    private String safeToString() {
+                        if (ptr.address() == 0 && ptr.isNative()) {
+                            return null;
+                        }
+                        try {
+                            return ptr.getString(0, StandardCharsets.UTF_8);
+                        } catch (Exception e) {
+                            return null;
+                        }
                     }
                 
                     @Override
                     public int size() {
-                        return (int) ptr.byteSize();
+                        return (int) operator().longSize().value();
                     }
                 
                     @Override
                     public String toString() {
-                        return MemorySegment.NULL.address() == ptr.address()
-                                ? "%5$s{ptr=" + ptr + '}'
-                                : ptr.getString(0, StandardCharsets.UTF_8);
+                        String s = safeToString();
+                        if (s != null)
+                            return s;
+                        return "Str{ptr=" + ptr + '}';
                     }
+                
+                    private long strlen = -1;
                 
                     @Override
                     public ArrayOpI<%5$s, %11$s> operator() {
@@ -1290,6 +1310,10 @@ public class CommonGenerator implements Generator {
                 
                             @Override
                             public %9$s longSize() {
+                                if (strlen == -1 && ptr.isNative() && ptr.address() != 0) {
+                                    strlen = 1 + strlen(ptr);
+                                    return new %9$s(strlen);
+                                }
                                 return new %9$s(ptr.byteSize());
                             }
                         };
