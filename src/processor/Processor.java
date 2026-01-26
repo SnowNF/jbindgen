@@ -114,7 +114,7 @@ public class Processor {
 
         // symbol provider
         SymbolProviderType provider = new SymbolProviderType(dest.symbolProvider().path().getClassName());
-        generations.add(new SymbolProvider(dest.symbolProvider().path().removeEnd(), provider));
+        generations.add(new SymbolProvider(dest.symbolProvider().path().removeClasses(), provider));
 
         // function symbols
         ArrayList<FunctionPtrType> functionPtrTypes = new ArrayList<>();

@@ -270,6 +270,7 @@ public class Utils {
                 case FuncSymbols funcSymbols -> testFuncSymbols(value);
                 case Macros macros -> testMacros(value);
                 case VarSymbols varSymbols -> testVarSymbols(value);
+                case TaggedNames taggedNames -> testTaggedTypes(value);
             };
         }
 
@@ -322,6 +323,9 @@ public class Utils {
         }
 
         default boolean testVarSymbols(Optional<String> value) {
+            return true;
+        }
+        default boolean testTaggedTypes(Optional<String> value) {
             return true;
         }
 
