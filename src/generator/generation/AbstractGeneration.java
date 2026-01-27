@@ -15,7 +15,7 @@ public sealed abstract class AbstractGeneration
     protected final TypePkg<? extends T> typePkg;
 
     public AbstractGeneration(PackagePath packagePath, T type) {
-        typePkg = new TypePkg<>(type, packagePath.end(type.typeName(TypeAttr.NameType.RAW)));
+        typePkg = new TypePkg<>(type, packagePath.close(type.typeName(TypeAttr.NameType.RAW)));
     }
 
 

@@ -227,6 +227,8 @@ public class Utils {
 
         Destination funcSymbols();
 
+        Destination namedTypes();
+
         PathOnly common();
 
         PathOnly enumerate();
@@ -325,6 +327,7 @@ public class Utils {
         default boolean testVarSymbols(Optional<String> value) {
             return true;
         }
+
         default boolean testTaggedTypes(Optional<String> value) {
             return true;
         }
@@ -369,7 +372,7 @@ public class Utils {
 
     public record Destination(PackagePath path) {
         public Destination {
-            path.reqClassName();
+            path.reqClosed();
         }
     }
 
@@ -390,22 +393,27 @@ public class Utils {
 
         @Override
         public Destination symbolProvider() {
-            return new Destination(p.end(libName + "SymbolProvider"));
+            return new Destination(p.close(libName + "SymbolProvider"));
         }
 
         @Override
         public Destination macros() {
-            return new Destination(p.end(libName + "Macros"));
+            return new Destination(p.close(libName + "Macros"));
         }
 
         @Override
         public Destination constants() {
-            return new Destination(p.end(libName + "Constants"));
+            return new Destination(p.close(libName + "Constants"));
         }
 
         @Override
         public Destination funcSymbols() {
-            return new Destination(p.end(libName + "FunctionSymbols"));
+            return new Destination(p.close(libName + "FunctionSymbols"));
+        }
+
+        @Override
+        public Destination namedTypes() {
+            return new Destination(p.close(libName + "NamedTypes"));
         }
 
         @Override

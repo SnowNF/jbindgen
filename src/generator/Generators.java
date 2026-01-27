@@ -68,6 +68,15 @@ public class Generators {
     public static class Writer {
         private final HashSet<PackagePath> WRITING_PATHS = new HashSet<>();
 
+        public void write(PackageManager packages, String content) {
+            String str = packages.getCurrPackage().makePackage();
+            str += "\n";
+            str += packages.makeImports();
+            str += "\n";
+            str += content;
+            write(packages.getCurrPackage(), str);
+        }
+
         public void write(PackagePath path, String content) {
             if (WRITING_PATHS.contains(path)) {
                 throw new RuntimeException("Path " + path.getFilePath() + " already written");

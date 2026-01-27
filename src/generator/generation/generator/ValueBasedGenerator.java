@@ -2,7 +2,7 @@ package generator.generation.generator;
 
 import generator.Dependency;
 import generator.Generators;
-import generator.PackagePath;
+import generator.PackageManager;
 import generator.generation.ValueBased;
 import generator.types.CommonTypes;
 import generator.types.PointerType;
@@ -10,35 +10,36 @@ import generator.types.TypeAttr;
 import generator.types.ValueBasedType;
 
 public class ValueBasedGenerator implements Generator {
-    private final Dependency dependency;
+    private final PackageManager packages;
     private final ValueBased valueBased;
     private final Generators.Writer writer;
 
     public ValueBasedGenerator(ValueBased v, Dependency dependency, Generators.Writer writer) {
-        this.dependency = dependency;
+        packages = new PackageManager(dependency, v.getTypePkg().packagePath());
         this.valueBased = v;
         this.writer = writer;
     }
 
     @Override
     public void generate() {
-        makeValue(valueBased.getTypePkg().packagePath(), valueBased.getTypePkg().type(), Generator.extractImports(valueBased, dependency));
+        makeValue(packages, valueBased.getTypePkg().type());
     }
 
-    private void makeValue(PackagePath path, ValueBasedType type, String imports) {
+    private void makeValue(PackageManager packages, ValueBasedType type) {
         String typeName = Generator.getTypeName(type);
         CommonTypes.BindTypes bindTypes = type.getBindTypes();
         if (bindTypes != CommonTypes.BindTypes.Ptr) {
-            CommonGenerator.genValueBasedTypes(path, type.getBindTypes(), imports, type.typeName(TypeAttr.NameType.RAW), writer);
+            CommonGenerator.genValueBasedTypes(packages, type.getBindTypes(), packages.getCurrentClass(), writer);
             return;
         }
         PointerType pointerType = type.getPointerType().orElseThrow();
         var pointee = ((TypeAttr.OperationType) pointerType.pointee());
         String pointeeName = Generator.getTypeName(pointerType.pointee());
-        writer.write(path, """
-                %1$s
-                
-                %2$s
+
+        packages.addImport(pointee.getOperation().getCommonOperation().makeOperation().imports());
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        writer.write(packages, """
                 import java.util.Objects;
                 
                 public class %3$s implements %5$s<%3$s, %4$s>, %11$s<%3$s> {
@@ -140,17 +141,17 @@ public class ValueBasedGenerator implements Generator {
                         return Objects.hashCode(segment);
                     }
                 }
-                """.formatted(path.makePackage(), imports, typeName, pointeeName,
-                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW), // 5
+                """.formatted(null, null, typeName, pointeeName,
+                packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 5
                 pointee.getOperation().getCommonOperation().makeOperation().str(),
-                CommonTypes.ValueInterface.PtrI.typeName(TypeAttr.NameType.RAW), // 7
+                packages.useClass(CommonTypes.ValueInterface.PtrI), // 7
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(), // 8
-                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW), // 9
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 10
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 11
-                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 12
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW), // 13
-                CommonTypes.BasicOperations.Value.typeName(TypeAttr.NameType.RAW) // 14
+                packages.useClass(CommonTypes.SpecificTypes.ArrayOp), // 9
+                packages.useClass(CommonTypes.ValueInterface.I64I), // 10
+                packages.useClass(CommonTypes.BasicOperations.Info), // 11
+                packages.useClass(CommonTypes.SpecificTypes.Array), // 12
+                packages.useClass(CommonTypes.BindTypes.Ptr), // 13
+                packages.useClass(CommonTypes.BasicOperations.Value) // 14
         ));
     }
 }

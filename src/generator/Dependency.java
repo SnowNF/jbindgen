@@ -22,7 +22,7 @@ public class Dependency {
     public String getTypeImports(Set<TypeAttr.GenerationType> types) {
         Set<String> imports = new HashSet<>();
         for (TypeAttr.GenerationType type : types) {
-            imports.add(getPackagePath(type).makeImport());
+            imports.add(getTypePackagePath(type).makeImport());
         }
         ArrayList<String> sort = new ArrayList<>(imports);
         sort.sort(String::compareTo);
@@ -30,10 +30,6 @@ public class Dependency {
     }
 
     public PackagePath getTypePackagePath(TypeAttr.GenerationType type) {
-        return getPackagePath(type);
-    }
-
-    private PackagePath getPackagePath(TypeAttr.GenerationType type) {
         Assert(allGenerations.containsKey(type), "missing type generation: " + type);
         return allGenerations.get(type);
     }

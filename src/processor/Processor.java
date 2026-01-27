@@ -9,12 +9,11 @@ import generator.generation.*;
 import generator.types.*;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class Processor {
-    record Generations(HashMap<Generation<?>, Optional<String>> genMap) {
-        Generations() {
+    record GenerateUnit(HashMap<Generation<?>, Optional<String>> genMap) {
+        GenerateUnit() {
             this(new HashMap<>());
         }
 
@@ -30,7 +29,7 @@ public class Processor {
             genMap.putAll(generation.stream().collect(Collectors.toMap(k -> k, _ -> Optional.empty())));
         }
 
-        Set<Generation<?>> toGenerations(Predicate<Map.Entry<Generation<?>, Optional<String>>> filter) {
+        Set<Generation<?>> toMustGenerate(Utils.Filter filter) {
             return genMap.entrySet().stream().filter(filter).map(Map.Entry::getKey).collect(Collectors.toSet());
         }
 
@@ -48,19 +47,19 @@ public class Processor {
     private final HashSet<Generation<?>> mustGenerate = new HashSet<>();
 
     public Processor(Utils.DestinationProvider dest, Utils.Filter filter) {
-        Generations generations = new Generations();
+        GenerateUnit generateUnit = new GenerateUnit();
         // common
-        generations.addAll(Common.makeBindTypes(dest.common().path()));
-        generations.addAll(Common.makeValueInterfaces(dest.common().path()));
-        generations.addAll(Common.makeFFMs());
-        generations.addAll(Common.makeBindTypeInterface(dest.common().path()));
-        generations.addAll(Common.makeBasicOperations(dest.common().path()));
-        generations.addAll(Common.makeSpecific(dest.common().path()));
-        allTypes.putAll(generations.getTypeGenerations());
-        mustGenerate.addAll(generations.toGenerations(filter));
+        generateUnit.addAll(Common.makeBindTypes(dest.common().path()));
+        generateUnit.addAll(Common.makeValueInterfaces(dest.common().path()));
+        generateUnit.addAll(Common.makeFFMs());
+        generateUnit.addAll(Common.makeBindTypeInterface(dest.common().path()));
+        generateUnit.addAll(Common.makeBasicOperations(dest.common().path()));
+        generateUnit.addAll(Common.makeSpecific(dest.common().path()));
+        allTypes.putAll(generateUnit.getTypeGenerations());
+        mustGenerate.addAll(generateUnit.toMustGenerate(filter));
     }
 
-    private static void processType(Generations generations, List<Function> functions, HashSet<Macro> macros,
+    private static void processType(GenerateUnit generateUnit, List<Function> functions, HashSet<Macro> macros,
                                     ArrayList<Declare> varDeclares, HashMap<String, Type> types,
                                     Utils.DestinationProvider dest, Map<String, Type> processedTypes,
                                     Set<Function> processedFuncs) {
@@ -74,8 +73,7 @@ public class Processor {
             Type s = t.getValue();
             TypeAttr.TypeRefer conv = Utils.conv(s, null);
             switch (conv) {
-                case ArrayTypeNamed arrayTypeNamed ->
-                        generations.add(new ArrayNamed(dest.arrayNamed().path(), arrayTypeNamed));
+                case ArrayTypeNamed arrayTypeNamed -> generateUnit.add(new ArrayNamed(dest.arrayNamed().path(), arrayTypeNamed), s.getLocation());
                 case EnumType e -> {
                     Type type = Utils.typedefLookUp(s);
                     Enum en = (Enum) type;
@@ -83,23 +81,23 @@ public class Processor {
                         for (Declare declare : en.getDeclares()) {
                             constValues.add(new ConstValues.Value(Utils.conv(declare.type(), null), declare.value(), declare.name()));
                         }
-                    } else
-                        generations.add(new Enumerate(dest.enumerate().path(), e));
+                    } else {
+                        generateUnit.add(new Enumerate(dest.enumerate().path(), e));
+                    }
                 }
                 case FunctionPtrType functionPtrType ->
-                        generations.add(new FuncPointer(dest.funcProtocol().path(), functionPtrType));
-                case ValueBasedType valueBasedType ->
-                        generations.add(new ValueBased(dest.valueBased().path(), valueBasedType));
-                case VoidType voidType -> generations.add(new VoidBased(dest.voidBased().path(), voidType));
-                case RefOnlyType refOnlyType -> generations.add(new RefOnly(dest.refOnly().path(), refOnlyType));
-                case StructType structType -> generations.add(new Structure(dest.struct().path(), structType));
+                        generateUnit.add(new FuncPointer(dest.funcProtocol().path(), functionPtrType));
+                case ValueBasedType valueBasedType -> generateUnit.add(new ValueBased(dest.valueBased().path(), valueBasedType));
+                case VoidType voidType -> generateUnit.add(new VoidBased(dest.voidBased().path(), voidType));
+                case RefOnlyType refOnlyType -> generateUnit.add(new RefOnly(dest.refOnly().path(), refOnlyType));
+                case StructType structType -> generateUnit.add(new Structure(dest.struct().path(), structType));
                 case CommonTypes.BindTypes _, PointerType _, ArrayType _ -> {
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + conv);
             }
         }
         // constants
-        generations.add(new ConstValues(dest.constants().path(), constValues));
+        generateUnit.add(new ConstValues(dest.constants().path(), constValues));
         // macros
         HashSet<Macros.Macro> macro = new HashSet<>();
         macros.forEach(e -> {
@@ -110,11 +108,11 @@ public class Processor {
                         macro.add(new Macros.StrMacro(e.declName(), e.initializer(), e.comment()));
             }
         });
-        generations.add(new Macros(dest.macros().path(), macro));
+        generateUnit.add(new Macros(dest.macros().path(), macro));
 
         // symbol provider
         SymbolProviderType provider = new SymbolProviderType(dest.symbolProvider().path().getClassName());
-        generations.add(new SymbolProvider(dest.symbolProvider().path().removeClasses(), provider));
+        generateUnit.add(new SymbolProvider(dest.symbolProvider().path().removeClasses(), provider));
 
         // function symbols
         ArrayList<FunctionPtrType> functionPtrTypes = new ArrayList<>();
@@ -125,19 +123,18 @@ public class Processor {
                     .map(para -> new FunctionPtrType.Arg(para.paraName(), Utils.conv(para.paraType(), null))).toList();
             functionPtrTypes.add(new FunctionPtrType(function.name(), args, Utils.conv(function.ret(), null)));
         }
-        generations.add(new FuncSymbols(dest.funcSymbols().path(), functionPtrTypes, provider));
+        generateUnit.add(new FuncSymbols(dest.funcSymbols().path(), functionPtrTypes, provider));
     }
-
 
     public Processor withExtra(List<Function> functions, HashSet<Macro> macros, ArrayList<Declare> varDeclares,
                                HashMap<String, Type> types, Utils.DestinationProvider dest, Utils.Filter filter) {
-        Generations generations = new Generations();
-        processType(generations, functions, macros, varDeclares, types, dest,
+        GenerateUnit generateUnit = new GenerateUnit();
+        processType(generateUnit, functions, macros, varDeclares, types, dest,
                 Collections.unmodifiableMap(processedTypes), Collections.unmodifiableSet(processedFuncs));
         processedTypes.putAll(types);
         processedFuncs.addAll(functions);
-        allTypes.putAll(generations.getTypeGenerations());
-        mustGenerate.addAll(generations.toGenerations(filter));
+        allTypes.putAll(generateUnit.getTypeGenerations());
+        mustGenerate.addAll(generateUnit.toMustGenerate(filter));
         return this;
     }
 

@@ -36,12 +36,7 @@ public class PackagePath {
         this.closed = false;
     }
 
-    private void requireNonClose() {
-        if (closed) {
-            throw new IllegalStateException("Package path has been closed, package: " + packages + ", class: " + classNames);
-        }
-    }
-
+    // ----- modify -----//
     public PackagePath add(String packageName) {
         requireNonClose();
         var pkg = new ArrayList<>(packages);
@@ -58,7 +53,7 @@ public class PackagePath {
         return new PackagePath(root, pkg, classNames);
     }
 
-    public PackagePath end(String className) {
+    public PackagePath close(String className) {
         requireNonClose();
         Assert(Utils.isValidClassName(className), "invalid class name: " + className);
         ArrayList<String> strings = new ArrayList<>(packages);
@@ -69,6 +64,12 @@ public class PackagePath {
         classes.add(className);
         return new PackagePath(root, strings, classes, true);
     }
+
+    public PackagePath open() {
+        reqClosed(); // req closed
+        return new PackagePath(root, packages, classNames, false);
+    }
+
 
     public PackagePath className(String className) {
         requireNonClose();
@@ -83,23 +84,55 @@ public class PackagePath {
         return new PackagePath(root, packages, new ArrayList<>());
     }
 
+    // ----- infos -----//
     public String makePackage() {
         return "package " + String.join(".", packages) + ";\n";
     }
 
     public String makeImport() {
-        reqClassName();
+        reqClosed();
         return "import " + String.join(".", packages) + "." + String.join(".", classNames) + ";\n";
     }
 
+    public boolean samePackage(PackagePath that) {
+        return that.packages.equals(packages);
+    }
 
+    // root class and inner class
     public String getClassName() {
-        reqClassName();
+        reqClosed();
         return String.join(".", classNames);
     }
 
+    public String getFullClassName() {
+        reqClosed();
+        return String.join(".", packages) + "." + String.join(".", classNames);
+    }
+
+    public ArrayList<String> getPrefixClassPath() {
+        reqClosed();
+        ArrayList<String> names = new ArrayList<>(classNames);
+        names.removeLast();
+        return names;
+    }
+
+    public ArrayList<String> getPackagePath() {
+        reqClosed();
+        return new ArrayList<>(packages);
+    }
+
+    public String getRootClassName() {
+        reqClosed();
+        return classNames.getFirst();
+    }
+
+    public String getLastClassName() {
+        reqClosed();
+        return classNames.getLast();
+    }
+
     public Path getFilePath() {
-        reqClassName();
+        reqClosed();
         Path path = root;
         for (String p : packages) {
             path = path.resolve(p);
@@ -107,11 +140,18 @@ public class PackagePath {
         return path.resolve(classNames.getFirst() + ".java");
     }
 
-    public PackagePath reqClassName() {
+    // ----- utilities -----//
+    public PackagePath reqClosed() {
         if (!closed) {
             throw new IllegalArgumentException("need class name");
         }
         return this;
+    }
+
+    public void requireNonClose() {
+        if (closed) {
+            throw new IllegalStateException("Package path has been closed, package: " + packages + ", class: " + classNames);
+        }
     }
 
     public PackagePath reqNonClassName() {

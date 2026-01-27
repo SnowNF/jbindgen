@@ -2,33 +2,39 @@ package generator.generation.generator;
 
 import generator.Dependency;
 import generator.Generators;
-import generator.PackagePath;
+import generator.PackageManager;
 import generator.generation.ArrayNamed;
 import generator.types.ArrayTypeNamed;
 import generator.types.CommonTypes;
+import generator.types.CommonTypes.BasicOperations;
+import generator.types.CommonTypes.BindTypes;
+import generator.types.CommonTypes.SpecificTypes;
+import generator.types.CommonTypes.ValueInterface;
 import generator.types.TypeAttr;
 
 public class ArrayNamedGenerator implements Generator {
-    private final Dependency dependency;
+    private final PackageManager packages;
     private final ArrayNamed arrayNamed;
     private final Generators.Writer writer;
 
     public ArrayNamedGenerator(ArrayNamed v, Dependency dependency, Generators.Writer writer) {
-        this.dependency = dependency;
         this.arrayNamed = v;
         this.writer = writer;
+        packages = new PackageManager(dependency, v.getTypePkg().packagePath());
     }
 
     @Override
     public void generate() {
-        PackagePath packagePath = arrayNamed.getTypePkg().packagePath();
-        String out = packagePath.makePackage();
-        out += Generator.extractImports(arrayNamed, dependency);
-        out += makeValue(packagePath, arrayNamed.getTypePkg().type());
-        writer.write(packagePath, out);
+        String content = makeValue(packages, arrayNamed.getTypePkg().type());
+        writer.write(packages, content);
     }
 
-    private String makeValue(PackagePath packagePath, ArrayTypeNamed type) {
+    private static String makeValue(PackageManager packages, ArrayTypeNamed type) {
+        packages.addImport(((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation().imports());
+        packages.addImport(type.getOperation().getCommonOperation().makeDirectMemoryLayout().getTypeImports());
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         return """
                 import java.util.List;
                 import java.util.Objects;
@@ -46,11 +52,11 @@ public class ArrayNamedGenerator implements Generator {
                     public %1$s(MemorySegment ms) {
                         this.ms = ms;
                     }
-
+                
                     public %1$s(SegmentAllocator allocator) {
                         this.ms = allocator.allocate(OPERATIONS.memoryLayout(), LENGTH);
                     }
-
+                
                     @Override
                     public FixedArrayOpI<%1$s, %2$s> operator() {
                         return new FixedArrayOpI<>() {
@@ -114,7 +120,7 @@ public class ArrayNamedGenerator implements Generator {
                             public %1$s self() {
                                 return %1$s.this;
                             }
-
+                
                             @Override
                             public %2$s pointee() {
                                 return get(0);
@@ -149,15 +155,17 @@ public class ArrayNamedGenerator implements Generator {
                     public int size() {
                         return (int) (ms.byteSize() / ELE_OPERATIONS.memoryLayout().byteSize());
                     }
-                }""".formatted(packagePath.getClassName(), ((TypeAttr.NamedType) type.element()).typeName(TypeAttr.NameType.RAW),
+                }""".formatted(packages.getCurrentClass(),
+                packages.useClass((TypeAttr.GenerationType) type.element()),
                 ((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation().str(), // 3
-                type.getOperation().getCommonOperation().makeDirectMemoryLayout(), type.length(), //5
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), //6
-                CommonTypes.BindTypes.I64.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW), // 9
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW), // 10
-                CommonTypes.SpecificTypes.ArrayOp.typeName(TypeAttr.NameType.RAW) // 11
-                );
+                type.getOperation().getCommonOperation().makeDirectMemoryLayout(),
+                type.length(), //5
+                packages.useClass(ValueInterface.I64I), //6
+                packages.useClass(BindTypes.I64), // 7
+                packages.useClass(BasicOperations.Info), // 8
+                packages.useClass(SpecificTypes.MemoryUtils), // 9
+                packages.useClass(BindTypes.Ptr), // 10
+                packages.useClass(SpecificTypes.ArrayOp) // 11
+        );
     }
 }

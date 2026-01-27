@@ -1,9 +1,6 @@
 package generator.generation.generator;
 
-import generator.Dependency;
-import generator.Generators;
-import generator.PackagePath;
-import generator.TypePkg;
+import generator.*;
 import generator.generation.Common;
 import generator.types.CommonTypes;
 import generator.types.CommonTypes.BasicOperations;
@@ -30,45 +27,42 @@ public class CommonGenerator implements Generator {
     public void generate() {
         for (TypePkg<? extends CommonTypes.BaseType> implType : common.getImplTypes()) {
             PackagePath packagePath = dependency.getTypePackagePath(implType.type());
-            String imports = Generator.extractImports(common, dependency);
+            PackageManager packages = new PackageManager(dependency, packagePath);
             switch (implType.type()) {
-                case BindTypes bindTypes -> genBindTypes(packagePath, bindTypes, imports);
-                case CommonTypes.BindTypeOperations btOp -> genBindTypeOp(packagePath, btOp, imports);
-                case ValueInterface v -> genValueInterface(packagePath, v, imports);
+                case BindTypes bindTypes -> genBindTypes(packages, bindTypes);
+                case CommonTypes.BindTypeOperations btOp -> genBindTypeOp(packages, btOp);
+                case ValueInterface v -> genValueInterface(packages, v);
                 case SpecificTypes specificTypes -> {
                     switch (specificTypes) {
-                        case Array -> genArray(packagePath, imports);
-                        case FlatArray -> genFlatArray(packagePath, imports);
-                        case Str -> genStr(packagePath, imports);
-                        case FunctionUtils -> genFunctionUtils(packagePath);
-                        case ArrayOp -> genArrayOp(packagePath, imports);
-                        case FlatArrayOp -> genFlatArrayOp(packagePath, imports);
-                        case StructOp -> genStructOp(packagePath, imports);
-                        case MemoryUtils -> genMemoryUtils(packagePath, imports);
+                        case Array -> genArray(packages);
+                        case FlatArray -> genFlatArray(packages);
+                        case Str -> genStr(packages);
+                        case FunctionUtils -> genFunctionUtils(packages);
+                        case ArrayOp -> genArrayOp(packages);
+                        case FlatArrayOp -> genFlatArrayOp(packages);
+                        case StructOp -> genStructOp(packages);
+                        case MemoryUtils -> genMemoryUtils(packages);
                     }
                 }
                 case CommonTypes.FFMTypes _ -> {
                 }
                 case BasicOperations ext -> {
                     switch (ext) {
-                        case Operation -> genOperation(packagePath);
-                        case Info -> genInfo(packagePath, imports);
-                        case Value -> genValue(packagePath, imports);
-                        case PteI -> genPointee(packagePath, imports);
-                        case ArrayI -> genArrayI(packagePath, imports);
-                        case StructI -> genStructI(packagePath, imports);
+                        case Operation -> genOperation(packages);
+                        case Info -> genInfo(packages);
+                        case Value -> genValue(packages);
+                        case PteI -> genPteI(packages);
+                        case ArrayI -> genArrayI(packages);
+                        case StructI -> genStructI(packages);
                     }
                 }
             }
         }
     }
 
-    private void genStructI(PackagePath path, String imports) {
-        writer.write(path, """
-                %s
-                
-                %s
-                
+    private void genStructI(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        writer.write(packages, """
                 public interface %4$s<E> extends %3$s<MemorySegment> {
                     static <I> %4$s<I> of(MemorySegment value) {
                         return new %4$s<>() {
@@ -88,18 +82,15 @@ public class CommonGenerator implements Generator {
                         return of(value.operator().value());
                     }
                 }
-                """.formatted(path.makePackage(), imports,
-                BasicOperations.Value.typeName(NameType.RAW), // 3
-                BasicOperations.StructI.typeName(NameType.RAW) // 4
+                """.formatted(null, null,
+                packages.useClass(BasicOperations.Value), // 3
+                packages.useClass(BasicOperations.StructI) // 4
         ));
     }
 
-    private void genArrayI(PackagePath path, String imports) {
-        writer.write(path, """
-                %s
-                
-                %s
-                
+    private void genArrayI(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        writer.write(packages, """
                 public interface %4$s<E> extends %3$s<MemorySegment> {
                     static <I> %4$s<I> of(MemorySegment value) {
                         return new %4$s<>() {
@@ -119,18 +110,15 @@ public class CommonGenerator implements Generator {
                         return of(value.operator().value());
                     }
                 }
-                """.formatted(path.makePackage(), imports,
-                BasicOperations.Value.typeName(NameType.RAW), // 3
-                BasicOperations.ArrayI.typeName(NameType.RAW) // 4
+                """.formatted(null, null,
+                packages.useClass(BasicOperations.Value), // 3
+                packages.useClass(BasicOperations.ArrayI) // 4
         ));
     }
 
-    private void genBindTypeOp(PackagePath path, CommonTypes.BindTypeOperations btOp, String imports) {
+    private void genBindTypeOp(PackageManager packages, CommonTypes.BindTypeOperations btOp) {
         if (btOp.getValue().getPrimitive().noJavaPrimitive()) {
             var str = """
-                    %1$s
-                    
-                    %2$s
                     import java.lang.foreign.MemorySegment;
                     
                     public interface %3$s<T> extends %5$s<T>, %4$s<T> {
@@ -141,20 +129,18 @@ public class CommonGenerator implements Generator {
                     
                         }
                     }
-                    """.formatted(path.makePackage(), imports,
-                    btOp.typeName(NameType.RAW), // 3
-                    btOp.getValue().typeName(NameType.RAW),
-                    BasicOperations.Info.typeName(NameType.RAW), // 5
-                    BasicOperations.Value.typeName(NameType.RAW), // 6
+                    """.formatted(null, null,
+                    packages.useClass(btOp), // 3
+                    packages.useClass(btOp.getValue()),
+                    packages.useClass(BasicOperations.Info), // 5
+                    packages.useClass(BasicOperations.Value), // 6
                     btOp.operatorTypeName() // 7
             );
-            writer.write(path, str);
+            writer.write(packages, str);
             return;
         }
+        packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
         String str = """
-                %1$s
-                
-                %2$s
                 import java.util.function.Function;
                 
                 public interface %3$s<T> extends %9$s<T>, %4$s<T> {
@@ -172,22 +158,19 @@ public class CommonGenerator implements Generator {
                                 %7$s);
                     }
                 }
-                """.formatted(path.makePackage(), imports,
-                btOp.typeName(NameType.RAW), // 3
-                btOp.getValue().typeName(NameType.RAW),
+                """.formatted(null, null,
+                packages.useClass(btOp), // 3
+                packages.useClass(btOp.getValue()),
                 btOp.getValue().getPrimitive().getBoxedTypeName(), // 5
                 btOp.operatorTypeName(),
                 btOp.getValue().getPrimitive().getMemoryLayout().getMemoryLayout(), // 7
                 btOp.getValue().getPrimitive().getMemoryUtilName(),
-                BasicOperations.Info.typeName(NameType.RAW), // 9
-                BasicOperations.Value.typeName(NameType.RAW), // 10
-                SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 11
+                packages.useClass(BasicOperations.Info), // 9
+                packages.useClass(BasicOperations.Value), // 10
+                packages.useClass(SpecificTypes.MemoryUtils) // 11
         );
-        if (btOp == CommonTypes.BindTypeOperations.PtrOp)
+        if (btOp == CommonTypes.BindTypeOperations.PtrOp) {
             str = """
-                    %1$s
-                    
-                    %2$s
                     import java.lang.foreign.MemorySegment;
                     import java.util.function.Function;
                     
@@ -208,35 +191,29 @@ public class CommonGenerator implements Generator {
                                         ValueLayout.ADDRESS);
                         }
                     }
-                    """.formatted(path.makePackage(), imports,
-                    btOp.typeName(NameType.RAW),
+                    """.formatted(null, null,
+                    packages.useClass(btOp),
                     btOp.operatorTypeName(),
-                    btOp.getValue().typeName(NameType.RAW),
-                    BasicOperations.PteI.typeName(NameType.RAW),
-                    BasicOperations.Info.typeName(NameType.RAW), // 7
-                    BasicOperations.Value.typeName(NameType.RAW), // 8
-                    SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 9
+                    packages.useClass(btOp.getValue()),
+                    packages.useClass(BasicOperations.PteI),
+                    packages.useClass(BasicOperations.Info), // 7
+                    packages.useClass(BasicOperations.Value), // 8
+                    packages.useClass(SpecificTypes.MemoryUtils) // 9
             );
-        writer.write(path, str);
+        }
+        writer.write(packages, str);
     }
 
-    private void genOperation(PackagePath path) {
-        writer.write(path, """
-                %s
-                
+    private void genOperation(PackageManager packages) {
+        writer.write(packages, """
                 public interface %s {
                     Object operator();
                 }
-                """.formatted(path.makePackage(),
-                BasicOperations.Operation.typeName(NameType.RAW)));
+                """.formatted(packages.useClass(BasicOperations.Operation)));
     }
 
-    private void genValue(PackagePath path, String imports) {
-        writer.write(path, """
-                %s
-                
-                %s
-                
+    private void genValue(PackageManager packages) {
+        writer.write(packages, """
                 public interface %4$s<T> extends %3$s {
                     interface ValueOp<T> {
                         T value();
@@ -245,22 +222,20 @@ public class CommonGenerator implements Generator {
                     @Override
                     ValueOp<T> operator();
                 }
-                """.formatted(path.makePackage(), imports,
-                BasicOperations.Operation.typeName(NameType.RAW), //3
-                BasicOperations.Value.typeName(NameType.RAW) // 4
+                """.formatted(null, null,
+                packages.useClass(BasicOperations.Operation), //3
+                packages.useClass(BasicOperations.Value) // 4
         ));
     }
 
-    private void genArrayOp(PackagePath path, String imports) {
-        writer.write(path, """
-                %s
-                
-                %s
+    private void genArrayOp(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        writer.write(packages, """
                 import java.util.AbstractList;
                 import java.util.List;
                 import java.util.RandomAccess;
                 
-                public interface %s<A, E> extends %11$s<A>, %7$s<E>, %4$s<A, E>, List<E> {
+                public interface %3$s<A, E> extends %11$s<A>, %7$s<E>, %4$s<A, E>, List<E> {
                     interface ArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A>, %5$s<A, E> {
                         A reinterpret(long length);
                 
@@ -295,30 +270,28 @@ public class CommonGenerator implements Generator {
                     }
                 
                     ArrayOpI<A, E> operator();
-                }""".formatted(path.makePackage(), imports,
-                SpecificTypes.ArrayOp.typeName(NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW), // 4
+                }""".formatted(null, null,
+                packages.useClass(SpecificTypes.ArrayOp),
+                packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 4
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(),
-                BindTypes.Ptr.typeName(NameType.RAW),
-                BasicOperations.ArrayI.typeName(NameType.RAW),// 7
-                ValueInterface.I64I.typeName(NameType.RAW),
-                BindTypes.I64.typeName(NameType.RAW), // 9
-                ValueInterface.I32I.typeName(NameType.RAW), // 10
-                BasicOperations.Info.typeName(NameType.RAW), // 11
-                BasicOperations.Value.typeName(NameType.RAW) // 12
+                packages.useClass(BindTypes.Ptr),
+                packages.useClass(BasicOperations.ArrayI),// 7
+                packages.useClass(ValueInterface.I64I),
+                packages.useClass(BindTypes.I64), // 9
+                packages.useClass(ValueInterface.I32I), // 10
+                packages.useClass(BasicOperations.Info), // 11
+                packages.useClass(BasicOperations.Value) // 12
         ));
     }
 
-    private void genFlatArrayOp(PackagePath path, String imports) {
-        writer.write(path, """
-                %s
-                
-                %s
+    private void genFlatArrayOp(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        writer.write(packages, """
                 import java.util.AbstractList;
                 import java.util.List;
                 import java.util.RandomAccess;
                 
-                public interface %s<A, E> extends %11$s<A>, %7$s<E>, List<E> {
+                public interface %3$s<A, E> extends %11$s<A>, %7$s<E>, List<E> {
                     interface FlatArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A> {
                         A reinterpret(long length);
                 
@@ -355,25 +328,25 @@ public class CommonGenerator implements Generator {
                     }
                 
                     FlatArrayOpI<A, E> operator();
-                }""".formatted(path.makePackage(), imports,
-                SpecificTypes.FlatArrayOp.typeName(NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW), // 4
+                }""".formatted(
+                null, null,
+                packages.useClass(SpecificTypes.FlatArrayOp),
+                packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 4
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(),
-                BindTypes.Ptr.typeName(NameType.RAW),
-                BasicOperations.ArrayI.typeName(NameType.RAW), // 7
-                ValueInterface.I64I.typeName(NameType.RAW),
-                BindTypes.I64.typeName(NameType.RAW), // 9
-                ValueInterface.I32I.typeName(NameType.RAW), // 10
-                BasicOperations.Info.typeName(NameType.RAW), // 11
-                BasicOperations.Value.typeName(NameType.RAW) // 12
+                packages.useClass(BindTypes.Ptr),
+                packages.useClass(BasicOperations.ArrayI), // 7
+                packages.useClass(ValueInterface.I64I),
+                packages.useClass(BindTypes.I64), // 9
+                packages.useClass(ValueInterface.I32I), // 10
+                packages.useClass(BasicOperations.Info), // 11
+                packages.useClass(BasicOperations.Value) // 12
         ));
     }
 
-    private void genStructOp(PackagePath path, String imports) {
-        writer.write(path, """
-                %1$s
-                
-                %2$s
+    private void genStructOp(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_LAYOUT);
+        writer.write(packages, """
                 import java.util.function.Function;
                 
                 public interface %6$s<E> extends %4$s<E>, %3$s<E> {
@@ -390,20 +363,17 @@ public class CommonGenerator implements Generator {
                                 (param, offset) -> constructor.apply(param.asSlice(offset, layout)),
                                 (source, dest, offset) -> dest.asSlice(offset).copyFrom(source.operator().value()), layout);
                     }
-                }""".formatted(path.makePackage(), imports,
-                BasicOperations.StructI.typeName(NameType.RAW), // 3
-                BasicOperations.Info.typeName(NameType.RAW), // 4
-                BasicOperations.Value.typeName(NameType.RAW), // 5
-                SpecificTypes.StructOp.typeName(NameType.RAW) // 6
+                }""".formatted(null, null,
+                packages.useClass(BasicOperations.StructI), // 3
+                packages.useClass(BasicOperations.Info), // 4
+                packages.useClass(BasicOperations.Value), // 5
+                packages.useClass(SpecificTypes.StructOp) // 6
         ));
     }
 
-    private void genPointee(PackagePath path, String imports) {
-        writer.write(path, """
-                %s
-                
-                %s
-                
+    private void genPteI(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        writer.write(packages, """
                 public interface %3$s<E> extends %4$s {
                     interface PointeeOp<E> extends %5$s.ValueOp<MemorySegment> {
                         E pointee();
@@ -411,19 +381,17 @@ public class CommonGenerator implements Generator {
                 
                     @Override
                     PointeeOp<E> operator();
-                }""".formatted(path.makePackage(), imports,
-                BasicOperations.PteI.typeName(NameType.RAW), // 3
-                BasicOperations.Operation.typeName(NameType.RAW),
-                BasicOperations.Value.typeName(NameType.RAW) // 5
+                }""".formatted(null, null,
+                packages.useClass(BasicOperations.PteI), // 3
+                packages.useClass(BasicOperations.Operation),
+                packages.useClass(BasicOperations.Value) // 5
         ));
     }
 
-    private void genInfo(PackagePath path, String imports) {
-        writer.write(path, """
-                %1$s
-                
-                %2$s
-                
+    private void genInfo(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_LAYOUT);
+        writer.write(packages, """
                 public interface %3$s<T> extends %4$s {
                     interface InfoOp<S> {
                         Operations<S> getOperations();
@@ -451,243 +419,19 @@ public class CommonGenerator implements Generator {
                         }, MemoryLayout.structLayout());
                     }
                 }
-                """.formatted(path.makePackage(), imports,
-                BasicOperations.Info.typeName(NameType.RAW), // 3
-                BasicOperations.Operation.typeName(NameType.RAW) // 4
+                """.formatted(null, null,
+                packages.useClass(BasicOperations.Info), // 3
+                packages.useClass(BasicOperations.Operation) // 4
         ));
     }
 
     public static final String ARRAY_MAKE_OPERATION_METHOD = "makeOperations";
 
-    private void genSingle(PackagePath path, String imports) {
-        writer.write(path, """
-                %1$s
-                
-                %2$s
-                import java.util.List;
-                import java.util.Objects;
-                import java.util.function.Consumer;
-                
-                public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
-                    public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation) {
-                        return new %10$s.Operations<>((param, offset) -> new %12$s<>(%11$s.getAddr(param, offset),
-                                operation), (source, dest, offset) -> %11$s.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
-                    }
-                
-                    protected final MemorySegment ptr;
-                    protected final %10$s.Operations<E> operations;
-                
-                    public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
-                        this.ptr = ptr.operator().value();
-                        this.operations = operations;
-                    }
-                
-                    public %12$s(%4$s<?, E> ptr) {
-                        this.ptr = ptr.operator().value();
-                        this.operations = ptr.operator().elementOperation();
-                    }
-                
-                    public %12$s(MemorySegment ptr, %10$s.Operations<E> operations) {
-                        this.ptr = ptr;
-                        this.operations = operations;
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, E element) {
-                        this.operations = operations;
-                        this.ptr = allocator.allocate(operations.memoryLayout());
-                        operations.copy().copyTo(element, ptr, 0);
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s<E> info) {
-                        this(allocator, info.operator().getOperations(), info.operator().self());
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations) {
-                        this.operations = operations;
-                        this.ptr = allocator.allocate(operations.memoryLayout());
-                    }
-                
-                    public E get(int index) {
-                        Objects.checkIndex(index, size());
-                        return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
-                    }
-                
-                    private E get(long index) {
-                        Objects.checkIndex(index, sizeLong());
-                        return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
-                    }
-                
-                    public E get(%9$s<?> index) {
-                        return get(index.operator().value());
-                    }
-                
-                    public E get(%8$s<?> index) {
-                        return get(index.operator().value());
-                    }
-                
-                    @Override
-                    public E set(int index, E element) {
-                        Objects.checkIndex(index, size());
-                        operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
-                        return element;
-                    }
-                
-                    public E set(%9$s<?> index, E element) {
-                        return set(index.operator().value(), element);
-                    }
-                
-                    public E set(%8$s<?> index, E element) {
-                        return set(index.operator().value(), element);
-                    }
-                
-                    public E set(long index, E element) {
-                        Objects.checkIndex(index, sizeLong());
-                        operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
-                        return element;
-                    }
-                
-                    @Override
-                    public ArrayOpI<%12$s<E>, E> operator() {
-                        return new ArrayOpI<>() {
-                            @Override
-                            public %10$s.Operations<E> elementOperation() {
-                                return operations;
-                            }
-                
-                            @Override
-                            public void setPointee(E pointee) {
-                                set(0, pointee);
-                            }
-                
-                            @Override
-                            public %12$s<E> reinterpret(long length) {
-                                return new %12$s<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
-                            }
-                
-                            @Override
-                            public %12$s<E> reinterpret(%8$s<?> length) {
-                                return reinterpret(length.operator().value());
-                            }
-                
-                            @Override
-                            public %6$s<E> pointerAt(long index) {
-                                Objects.checkIndex(index, size());
-                                return new %6$s<>(ptr.asSlice(index * operations.memoryLayout().byteSize(), operations.memoryLayout()), operations);
-                            }
-                
-                            @Override
-                            public %6$s<E> pointerAt(%8$s<?> index) {
-                                return pointerAt(index.operator().value());
-                            }
-                
-                            @Override
-                            public List<%6$s<E>> pointerList() {
-                                return new %3$s.AbstractRandomAccessList<>() {
-                                    @Override
-                                    public %6$s<E> get(int index) {
-                                        return pointerAt(index);
-                                    }
-                
-                                    @Override
-                                    public int size() {
-                                        return %12$s.this.size();
-                                    }
-                                };
-                            }
-                
-                            @Override
-                            public %10$s.Operations<%12$s<E>> getOperations() {
-                                return makeOperations(operations);
-                            }
-                
-                            @Override
-                            public %12$s<E> self() {
-                                return %12$s.this;
-                            }
-                
-                            @Override
-                            public E pointee() {
-                                return get(0);
-                            }
-                
-                            @Override
-                            public MemorySegment value() {
-                                return ptr;
-                            }
-                
-                            @Override
-                            public %7$s longSize() {
-                                return new %7$s(ptr.byteSize() / operations.memoryLayout().byteSize());
-                            }
-                        };
-                    }
-                
-                    public %6$s<E> pointerAt(long index) {
-                        return operator().pointerAt(index);
-                    }
-                
-                    public %6$s<E> pointerAt(%8$s<?> index) {
-                        return operator().pointerAt(index.operator().value());
-                    }
-                
-                    public List<%6$s<E>> pointerList() {
-                        return operator().pointerList();
-                    }
-                
-                    @Override
-                    public int size() {
-                        return (int) (ptr.byteSize() / operations.memoryLayout().byteSize());
-                    }
-                
-                    private long sizeLong() {
-                        return longSize().operator().value();
-                    }
-                
-                    public %7$s longSize() {
-                        return operator().longSize();
-                    }
-                
-                    @Override
-                    public %12$s<E> subList(int fromIndex, int toIndex) {
-                        Objects.checkFromToIndex(fromIndex, toIndex, size());
-                        return new %12$s<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
-                                (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
-                    }
-                
-                    public %12$s<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
-                        Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
-                        return new %12$s<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
-                                (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
-                    }
-                
-                    public %12$s<E> apply(Consumer<E> consumer) {
-                        consumer.accept(getFirst());
-                        return this;
-                    }
-                
-                    public E get() {
-                        return getFirst();
-                    }
-                }
-                """.formatted(path.makePackage(), imports,
-                SpecificTypes.ArrayOp.typeName(NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW),
-                ValueInterface.PtrI.typeName(NameType.RAW), // 5
-                BindTypes.Ptr.typeName(NameType.RAW),  // 6
-                BindTypes.I64.typeName(NameType.RAW), // 7
-                ValueInterface.I64I.typeName(NameType.RAW), // 8
-                ValueInterface.I32I.typeName(NameType.RAW), // 9
-                BasicOperations.Info.typeName(NameType.RAW), // 10
-                SpecificTypes.MemoryUtils.typeName(NameType.RAW), // 11
-                CommonTypes.BindTypes.Ptr.typeName(NameType.RAW) // 12
-        ));
-    }
-
-    private void genArray(PackagePath path, String imports) {
-        writer.write(path, """
-                %1$s
-                
-                %2$s
+    private void genArray(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
+        writer.write(packages, """
                 import java.util.*;
                 
                 public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
@@ -899,25 +643,25 @@ public class CommonGenerator implements Generator {
                                 (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
                     }
                 }
-                """.formatted(path.makePackage(), imports,
-                SpecificTypes.ArrayOp.typeName(NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW),
-                ValueInterface.PtrI.typeName(NameType.RAW), // 5
-                BindTypes.Ptr.typeName(NameType.RAW),  // 6
-                BindTypes.I64.typeName(NameType.RAW), // 7
-                ValueInterface.I64I.typeName(NameType.RAW), // 8
-                ValueInterface.I32I.typeName(NameType.RAW), // 9
-                BasicOperations.Info.typeName(NameType.RAW), // 10
-                SpecificTypes.MemoryUtils.typeName(NameType.RAW), // 11
-                SpecificTypes.Array.typeName(NameType.RAW) // 12
+                """.formatted(null, null,
+                packages.useClass(SpecificTypes.ArrayOp),
+                packages.useClass(CommonTypes.BindTypeOperations.PtrOp),
+                packages.useClass(ValueInterface.PtrI), // 5
+                packages.useClass(BindTypes.Ptr),  // 6
+                packages.useClass(BindTypes.I64), // 7
+                packages.useClass(ValueInterface.I64I), // 8
+                packages.useClass(ValueInterface.I32I), // 9
+                packages.useClass(BasicOperations.Info), // 10
+                packages.useClass(SpecificTypes.MemoryUtils), // 11
+                packages.useClass(SpecificTypes.Array) // 12
         ));
     }
 
-    private void genFlatArray(PackagePath path, String imports) {
-        writer.write(path, """
-                %1$s
-                
-                %2$s
+    private void genFlatArray(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_LAYOUT);
+        writer.write(packages, """
                 import java.util.*;
                 
                 public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
@@ -1114,25 +858,22 @@ public class CommonGenerator implements Generator {
                                 (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
                     }
                 }
-                """.formatted(path.makePackage(), imports,
-                SpecificTypes.FlatArrayOp.typeName(NameType.RAW),
-                CommonTypes.BindTypeOperations.PtrOp.typeName(NameType.RAW),
-                ValueInterface.PtrI.typeName(NameType.RAW), // 5
-                BindTypes.Ptr.typeName(NameType.RAW),
-                BindTypes.I64.typeName(NameType.RAW), // 7
-                ValueInterface.I64I.typeName(NameType.RAW), // 8
-                ValueInterface.I32I.typeName(NameType.RAW), // 9
-                BasicOperations.Info.typeName(NameType.RAW), // 10
-                SpecificTypes.MemoryUtils.typeName(NameType.RAW), // 11
-                SpecificTypes.FlatArray.typeName(NameType.RAW) // 12
+                """.formatted(null, null,
+                packages.useClass(SpecificTypes.FlatArrayOp),
+                packages.useClass(CommonTypes.BindTypeOperations.PtrOp),
+                packages.useClass(ValueInterface.PtrI), // 5
+                packages.useClass(BindTypes.Ptr),
+                packages.useClass(BindTypes.I64), // 7
+                packages.useClass(ValueInterface.I64I), // 8
+                packages.useClass(ValueInterface.I32I), // 9
+                packages.useClass(BasicOperations.Info), // 10
+                packages.useClass(SpecificTypes.MemoryUtils), // 11
+                packages.useClass(SpecificTypes.FlatArray) // 12
         ));
     }
 
-    private void genStr(PackagePath packagePath, String imports) {
-        writer.write(packagePath, """
-                %1$s
-                
-                %2$s
+    private void genStr(PackageManager packages) {
+        writer.write(packages, """
                 import java.lang.foreign.*;
                 import java.lang.invoke.MethodHandle;
                 import java.nio.charset.StandardCharsets;
@@ -1321,41 +1062,39 @@ public class CommonGenerator implements Generator {
                         };
                     }
                 }
-                """.formatted(packagePath.makePackage(), imports,
-                SpecificTypes.ArrayOp.typeName(NameType.RAW),// 3
-                BindTypes.Ptr.typeName(NameType.RAW),
-                SpecificTypes.Str.typeName(NameType.RAW),// 5
-                ValueInterface.PtrI.typeName(NameType.RAW),
-                ValueInterface.I8I.typeName(NameType.RAW),
-                ValueInterface.I64I.typeName(NameType.RAW),//8
-                BindTypes.I64.typeName(NameType.RAW),
-                BasicOperations.Info.typeName(NameType.RAW), // 10
-                BindTypes.I8.typeName(NameType.RAW), // 11
-                SpecificTypes.Array.typeName(NameType.RAW), // 12
-                CommonTypes.BindTypes.Ptr.typeName(NameType.RAW) // 13
+                """.formatted(null, null,
+                packages.useClass(SpecificTypes.ArrayOp),// 3
+                packages.useClass(BindTypes.Ptr),
+                packages.useClass(SpecificTypes.Str),// 5
+                packages.useClass(ValueInterface.PtrI),
+                packages.useClass(ValueInterface.I8I),
+                packages.useClass(ValueInterface.I64I),//8
+                packages.useClass(BindTypes.I64),
+                packages.useClass(BasicOperations.Info), // 10
+                packages.useClass(BindTypes.I8), // 11
+                packages.useClass(SpecificTypes.Array), // 12
+                packages.useClass(CommonTypes.BindTypes.Ptr) // 13
         ));
     }
 
-    private void genValueInterface(PackagePath path, ValueInterface type, String imports) {
+    private void genValueInterface(PackageManager packages, ValueInterface type) {
         if (type.getPrimitive().noJavaPrimitive()) {
-            writer.write(path, """
-                    %1$s
-                    %2$s
+            writer.write(packages, """
                     import java.lang.foreign.MemorySegment;
                     
                     public interface %3$s<I> {
                         %4$s.ValueOp<MemorySegment> operator();
                     }
-                    """.formatted(path.makePackage(), imports,
-                    type.typeName(NameType.RAW),
-                    BasicOperations.Value.typeName(NameType.RAW) // 4
+                    """.formatted(null, null,
+                    packages.useClass(type),
+                    packages.useClass(BasicOperations.Value) // 4
             ));
             return;
         }
-        writer.write(path, """
-                %1$s
-                %2$s
-                
+        if (type == ValueInterface.PtrI) {
+            packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        }
+        writer.write(packages, """
                 public interface %3$s<I> extends %6$s<%4$s> {
                     static <I> %3$s<I> of(%5$s value) {
                         return new %3$s<>() {
@@ -1375,23 +1114,25 @@ public class CommonGenerator implements Generator {
                         return of(value.operator().value());
                     }
                 }
-                """.formatted(path.makePackage(), imports, type.typeName(NameType.RAW),
-                type.getPrimitive().getBoxedTypeName(), type.getPrimitive().getPrimitiveTypeName(), // 5
-                BasicOperations.Value.typeName(NameType.RAW)
+                """.formatted(null, null,
+                packages.useClass(type),
+                type.getPrimitive().getBoxedTypeName(),
+                type.getPrimitive().getPrimitiveTypeName(), // 5
+                packages.useClass(BasicOperations.Value)
         ));
     }
 
     public static final String PTR_MAKE_OPERATION_METHOD = "makeOperations";
 
-    private void genBindTypes(PackagePath path, BindTypes bindTypes, String imports) {
+    private void genBindTypes(PackageManager packages, BindTypes bindTypes) {
         if (bindTypes != BindTypes.Ptr) {
-            genValueBasedTypes(path, bindTypes, imports, bindTypes.typeName(NameType.RAW), writer);
+            genValueBasedTypes(packages, bindTypes, bindTypes.typeName(NameType.RAW), writer);
             return;
         }
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
         var str = """
-                %1$s
-                
-                %2$s
                 import java.util.Objects;
                 import java.util.function.Consumer;
                 
@@ -1518,27 +1259,26 @@ public class CommonGenerator implements Generator {
                         return Objects.hashCode(segment);
                     }
                 }
-                """.formatted(path.makePackage(), imports,
-                bindTypes.typeName(NameType.RAW),
-                bindTypes.getOperations().getValue().typeName(NameType.RAW), // 4
-                bindTypes.getOperations().typeName(NameType.RAW),
-                SpecificTypes.ArrayOp.typeName(NameType.RAW), // 6
+                """.formatted(null, null,
+                packages.useClass(bindTypes),
+                packages.useClass(bindTypes.getOperations().getValue()), // 4
+                packages.useClass(bindTypes.getOperations()),
+                packages.useClass(SpecificTypes.ArrayOp), // 6
                 bindTypes.getOperations().operatorTypeName(),
-                BasicOperations.Info.typeName(NameType.RAW), // 8
-                BindTypes.Ptr.typeName(NameType.RAW), // 9
-                SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 10
+                packages.useClass(BasicOperations.Info), // 8
+                packages.useClass(BindTypes.Ptr), // 9
+                packages.useClass(SpecificTypes.MemoryUtils) // 10
         );
-        writer.write(path, str);
+        writer.write(packages, str);
     }
 
-    static void genValueBasedTypes(PackagePath path, BindTypes bindTypes, String imports, String typeName, Generators.Writer writer) {
+    static void genValueBasedTypes(PackageManager packages, BindTypes bindTypes, String typeName, Generators.Writer writer) {
         Assert(bindTypes != BindTypes.Ptr);
         if (bindTypes.getOperations().getValue().getPrimitive().noJavaPrimitive()) {
+            packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+            packages.addImport(bindTypes.getOperation().getCommonOperation().makeDirectMemoryLayout().getTypeImports());
             Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16, " sizeof %s must be 16".formatted(bindTypes));
             var str = """
-                    %1$s
-                    
-                    %2$s
                     import java.lang.foreign.MemorySegment;
                     import java.lang.foreign.ValueLayout;
                     import java.nio.ByteOrder;
@@ -1610,24 +1350,22 @@ public class CommonGenerator implements Generator {
                             return Arrays.hashCode(val.toArray(ValueLayout.JAVA_LONG));
                         }
                     }
-                    """.formatted(path.makePackage(), imports, typeName, // 3
-                    bindTypes.getOperations().typeName(NameType.RAW),
+                    """.formatted(null, null, typeName, // 3
+                    packages.useClass(bindTypes.getOperations()),
                     bindTypes.getOperation().getCommonOperation().makeDirectMemoryLayout().getMemoryLayout(), //5
-                    bindTypes.getOperations().getValue().typeName(NameType.RAW), //6
-                    ValueInterface.I64I.typeName(NameType.RAW), // 7
-                    BasicOperations.Info.typeName(NameType.RAW), // 8
-                    SpecificTypes.Array.typeName(NameType.RAW), // 9
-                    CommonTypes.BindTypes.Ptr.typeName(NameType.RAW), // 10
+                    packages.useClass(bindTypes.getOperations().getValue()), //6
+                    packages.useClass(ValueInterface.I64I), // 7
+                    packages.useClass(BasicOperations.Info), // 8
+                    packages.useClass(SpecificTypes.Array), // 9
+                    packages.useClass(CommonTypes.BindTypes.Ptr), // 10
                     bindTypes.getOperations().operatorTypeName(), // 11
-                    SpecificTypes.MemoryUtils.typeName(NameType.RAW) // 12
+                    packages.useClass(SpecificTypes.MemoryUtils) // 12
             );
-            writer.write(path, str);
+            writer.write(packages, str);
             return;
         }
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         var str = """
-                %1$s
-                
-                %2$s
                 import java.util.Objects;
                 
                 public class %3$s implements %5$s<%3$s>, %10$s<%3$s> {
@@ -1694,25 +1432,23 @@ public class CommonGenerator implements Generator {
                         return Objects.hashCode(val);
                     }
                 }
-                """.formatted(path.makePackage(), imports, typeName,
+                """.formatted(null, null, typeName,
                 bindTypes.getPrimitiveType().getMemoryLayout().getMemoryLayout(), // 4
-                bindTypes.getOperations().typeName(NameType.RAW), // 5
+                packages.useClass(bindTypes.getOperations()), // 5
                 bindTypes.getPrimitiveType().getPrimitiveTypeName(),
                 bindTypes.getPrimitiveType().getBoxedTypeName(),// 7
-                bindTypes.getOperations().getValue().typeName(NameType.RAW), // 8
-                ValueInterface.I64I.typeName(NameType.RAW), // 9
-                BasicOperations.Info.typeName(NameType.RAW), // 10
-                SpecificTypes.Array.typeName(NameType.RAW), // 11
-                CommonTypes.BindTypes.Ptr.typeName(NameType.RAW), // 12
+                packages.useClass(bindTypes.getOperations().getValue()), // 8
+                packages.useClass(ValueInterface.I64I), // 9
+                packages.useClass(BasicOperations.Info), // 10
+                packages.useClass(SpecificTypes.Array), // 11
+                packages.useClass(CommonTypes.BindTypes.Ptr), // 12
                 bindTypes.getOperations().operatorTypeName() // 13
         );
-        writer.write(path, str);
+        writer.write(packages, str);
     }
 
-    private void genFunctionUtils(PackagePath path) {
-        writer.write(path, """
-                %s
-                
+    private void genFunctionUtils(PackageManager packages) {
+        writer.write(packages, """
                 import java.lang.foreign.Arena;
                 import java.lang.foreign.FunctionDescriptor;
                 import java.lang.foreign.Linker;
@@ -1790,225 +1526,226 @@ public class CommonGenerator implements Generator {
                                 : Linker.nativeLinker().downcallHandle(ms, fd);
                     }
                 }
-                """.formatted(path.makePackage(), SpecificTypes.FunctionUtils.typeName(NameType.RAW)));
+                """.formatted(packages.useClass(SpecificTypes.FunctionUtils)));
     }
 
-    private void genMemoryUtils(PackagePath path, String imports) {
-        writer.write(path, """
-                                   %1$s
-                                   
-                                   %3$s
-                                   import java.util.Objects;
-                                   
-                                   public final class %2$s {
-                                   """.formatted(path.makePackage(), path.getClassName(), imports) + """
-                                       public interface MemorySupport {
-                                           void setByte(MemorySegment ms, long offset, byte val);
-                                   
-                                           void setShort(MemorySegment ms, long offset, short val);
-                                   
-                                           void setInt(MemorySegment ms, long offset, int val);
-                                   
-                                           void setLong(MemorySegment ms, long offset, long val);
-                                   
-                                           void setAddr(MemorySegment ms, long offset, MemorySegment val);
-                                   
-                                           void setFloat(MemorySegment ms, long offset, float val);
-                                   
-                                           void setDouble(MemorySegment ms, long offset, double val);
-                                   
-                                           byte getByte(MemorySegment ms, long offset);
-                                   
-                                           short getShort(MemorySegment ms, long offset);
-                                   
-                                           int getInt(MemorySegment ms, long offset);
-                                   
-                                           long getLong(MemorySegment ms, long offset);
-                                   
-                                           MemorySegment getAddr(MemorySegment ms, long offset);
-                                   
-                                           float getFloat(MemorySegment ms, long offset);
-                                   
-                                           double getDouble(MemorySegment ms, long offset);
-                                   
-                                           void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize);
-                                       }
-                                   
-                                       public static MemorySupport memorySupport = new MemorySupport() {
-                                           @Override
-                                           public void setByte(MemorySegment ms, long offset, byte val) {
-                                               ms.set(ValueLayout.JAVA_BYTE, offset, val);
+    private void genMemoryUtils(PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+        packages.useClass(CommonTypes.FFMTypes.ARENA);
+        writer.write(packages, """
+                                       import java.util.Objects;
+                                       
+                                       public final class %1$s {
+                                       """.formatted(packages.getCurrentClass()) + """
+                                           public interface MemorySupport {
+                                               void setByte(MemorySegment ms, long offset, byte val);
+                                       
+                                               void setShort(MemorySegment ms, long offset, short val);
+                                       
+                                               void setInt(MemorySegment ms, long offset, int val);
+                                       
+                                               void setLong(MemorySegment ms, long offset, long val);
+                                       
+                                               void setAddr(MemorySegment ms, long offset, MemorySegment val);
+                                       
+                                               void setFloat(MemorySegment ms, long offset, float val);
+                                       
+                                               void setDouble(MemorySegment ms, long offset, double val);
+                                       
+                                               byte getByte(MemorySegment ms, long offset);
+                                       
+                                               short getShort(MemorySegment ms, long offset);
+                                       
+                                               int getInt(MemorySegment ms, long offset);
+                                       
+                                               long getLong(MemorySegment ms, long offset);
+                                       
+                                               MemorySegment getAddr(MemorySegment ms, long offset);
+                                       
+                                               float getFloat(MemorySegment ms, long offset);
+                                       
+                                               double getDouble(MemorySegment ms, long offset);
+                                       
+                                               void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize);
                                            }
-                                   
-                                           @Override
-                                           public void setShort(MemorySegment ms, long offset, short val) {
-                                               ms.set(ValueLayout.JAVA_SHORT, offset, val);
-                                           }
-                                   
-                                           @Override
-                                           public void setInt(MemorySegment ms, long offset, int val) {
-                                               ms.set(ValueLayout.JAVA_INT, offset, val);
-                                           }
-                                   
-                                           @Override
-                                           public void setLong(MemorySegment ms, long offset, long val) {
-                                               ms.set(ValueLayout.JAVA_LONG, offset, val);
-                                           }
-                                   
-                                           @Override
-                                           public void setAddr(MemorySegment ms, long offset, MemorySegment val) {
-                                               ms.set(ValueLayout.ADDRESS, offset, val);
-                                           }
-                                   
-                                           @Override
-                                           public void setFloat(MemorySegment ms, long offset, float val) {
-                                               ms.set(ValueLayout.JAVA_FLOAT, offset, val);
-                                           }
-                                   
-                                           @Override
-                                           public void setDouble(MemorySegment ms, long offset, double val) {
-                                               ms.set(ValueLayout.JAVA_DOUBLE, offset, val);
-                                           }
-                                   
-                                           @Override
-                                           public byte getByte(MemorySegment ms, long offset) {
-                                               return ms.get(ValueLayout.JAVA_BYTE, offset);
-                                           }
-                                   
-                                           @Override
-                                           public short getShort(MemorySegment ms, long offset) {
-                                               return ms.get(ValueLayout.JAVA_SHORT, offset);
-                                           }
-                                   
-                                           @Override
-                                           public int getInt(MemorySegment ms, long offset) {
-                                               return ms.get(ValueLayout.JAVA_INT, offset);
-                                           }
-                                   
-                                           @Override
-                                           public long getLong(MemorySegment ms, long offset) {
-                                               return ms.get(ValueLayout.JAVA_LONG, offset);
-                                           }
-                                   
-                                           @Override
-                                           public MemorySegment getAddr(MemorySegment ms, long offset) {
-                                               return ms.get(ValueLayout.ADDRESS, offset);
-                                           }
-                                   
-                                           @Override
-                                           public float getFloat(MemorySegment ms, long offset) {
-                                               return ms.get(ValueLayout.JAVA_FLOAT, offset);
-                                           }
-                                   
-                                           @Override
-                                           public double getDouble(MemorySegment ms, long offset) {
-                                               return ms.get(ValueLayout.JAVA_DOUBLE, offset);
-                                           }
-                                   
-                                           @Override
-                                           public void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
-                                               MemorySegment.copy(src, srcOffset, dest, destOffset, byteSize);
-                                           }
-                                       };
-                                   
-                                       private static final class MemorySupportHolder {
-                                           private static final MemorySupport MEMORY_SUPPORT = Objects.requireNonNull(memorySupport);
-                                       }
-                                   
-                                       public static void setByte(MemorySegment ms, long offset, byte val) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.setByte(ms, offset, val);
-                                       }
-                                   
-                                       public static void setShort(MemorySegment ms, long offset, short val) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.setShort(ms, offset, val);
-                                       }
-                                   
-                                       public static void setInt(MemorySegment ms, long offset, int val) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.setInt(ms, offset, val);
-                                       }
-                                   
-                                       public static void setLong(MemorySegment ms, long offset, long val) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.setLong(ms, offset, val);
-                                       }
-                                   
-                                       public static void setAddr(MemorySegment ms, long offset, MemorySegment val) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.setAddr(ms, offset, val);
-                                       }
-                                   
-                                       public static void setFloat(MemorySegment ms, long offset, float val) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.setFloat(ms, offset, val);
-                                       }
-                                   
-                                       public static void setDouble(MemorySegment ms, long offset, double val) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.setDouble(ms, offset, val);
-                                       }
-                                   
-                                       public static byte getByte(MemorySegment ms, long offset) {
-                                           return MemorySupportHolder.MEMORY_SUPPORT.getByte(ms, offset);
-                                       }
-                                   
-                                       public static short getShort(MemorySegment ms, long offset) {
-                                           return MemorySupportHolder.MEMORY_SUPPORT.getShort(ms, offset);
-                                       }
-                                   
-                                       public static int getInt(MemorySegment ms, long offset) {
-                                           return MemorySupportHolder.MEMORY_SUPPORT.getInt(ms, offset);
-                                       }
-                                   
-                                       public static long getLong(MemorySegment ms, long offset) {
-                                           return MemorySupportHolder.MEMORY_SUPPORT.getLong(ms, offset);
-                                       }
-                                   
-                                       public static MemorySegment getAddr(MemorySegment ms, long offset) {
-                                           return MemorySupportHolder.MEMORY_SUPPORT.getAddr(ms, offset);
-                                       }
-                                   
-                                       public static float getFloat(MemorySegment ms, long offset) {
-                                           return MemorySupportHolder.MEMORY_SUPPORT.getFloat(ms, offset);
-                                       }
-                                   
-                                       public static double getDouble(MemorySegment ms, long offset) {
-                                           return MemorySupportHolder.MEMORY_SUPPORT.getDouble(ms, offset);
-                                       }
-                                   
-                                       public static void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
-                                           MemorySupportHolder.MEMORY_SUPPORT.memcpy(src, srcOffset, dest, destOffset, byteSize);
-                                       }
-                                   
-                                       private static final class OnHeapAllocatorHolder {
-                                           private static final SegmentAllocator ON_HEAP_ALLOCATOR = Objects.requireNonNull(onHeapAllocator);
-                                       }
-                                   
-                                       public static SegmentAllocator onHeapAllocator() {
-                                           return OnHeapAllocatorHolder.ON_HEAP_ALLOCATOR;
-                                       }
-                                   
-                                       public static SegmentAllocator onHeapAllocator = new SegmentAllocator() {
-                                           @Override
-                                           public MemorySegment allocate(long byteSize, long byteAlignment) {
-                                               if (byteAlignment <= 0 || (byteAlignment & (byteAlignment - 1)) != 0) {
-                                                   throw new IllegalArgumentException("Alignment must be a power of two: " + byteAlignment);
+                                       
+                                           public static MemorySupport memorySupport = new MemorySupport() {
+                                               @Override
+                                               public void setByte(MemorySegment ms, long offset, byte val) {
+                                                   ms.set(ValueLayout.JAVA_BYTE, offset, val);
                                                }
-                                               if (byteSize % byteAlignment != 0) {
-                                                   throw new IllegalArgumentException("Size must be multiple of alignment: size=" + byteSize + ", alignment=" + byteAlignment);
+                                       
+                                               @Override
+                                               public void setShort(MemorySegment ms, long offset, short val) {
+                                                   ms.set(ValueLayout.JAVA_SHORT, offset, val);
                                                }
-                                               try {
-                                                   return switch ((int) byteAlignment) {
-                                                       case 1 -> MemorySegment.ofArray(new byte[Math.toIntExact(byteSize)]);
-                                                       case 2 -> MemorySegment.ofArray(new short[Math.toIntExact(byteSize / 2)]);
-                                                       case 4 -> MemorySegment.ofArray(new int[Math.toIntExact(byteSize / 4)]);
-                                                       case 8 -> MemorySegment.ofArray(new long[Math.toIntExact(byteSize / 8)]);
-                                                       // fallback to auto arena
-                                                       default -> Arena.ofAuto().allocate(byteSize, byteAlignment);
-                                                   };
-                                               } catch (ArithmeticException e) {
-                                                   throw new OutOfMemoryError("Requested memory size too large: " + byteSize + " bytes");
-                                               } catch (NegativeArraySizeException e) {
-                                                   throw new OutOfMemoryError("Negative array size: " + byteSize);
+                                       
+                                               @Override
+                                               public void setInt(MemorySegment ms, long offset, int val) {
+                                                   ms.set(ValueLayout.JAVA_INT, offset, val);
                                                }
+                                       
+                                               @Override
+                                               public void setLong(MemorySegment ms, long offset, long val) {
+                                                   ms.set(ValueLayout.JAVA_LONG, offset, val);
+                                               }
+                                       
+                                               @Override
+                                               public void setAddr(MemorySegment ms, long offset, MemorySegment val) {
+                                                   ms.set(ValueLayout.ADDRESS, offset, val);
+                                               }
+                                       
+                                               @Override
+                                               public void setFloat(MemorySegment ms, long offset, float val) {
+                                                   ms.set(ValueLayout.JAVA_FLOAT, offset, val);
+                                               }
+                                       
+                                               @Override
+                                               public void setDouble(MemorySegment ms, long offset, double val) {
+                                                   ms.set(ValueLayout.JAVA_DOUBLE, offset, val);
+                                               }
+                                       
+                                               @Override
+                                               public byte getByte(MemorySegment ms, long offset) {
+                                                   return ms.get(ValueLayout.JAVA_BYTE, offset);
+                                               }
+                                       
+                                               @Override
+                                               public short getShort(MemorySegment ms, long offset) {
+                                                   return ms.get(ValueLayout.JAVA_SHORT, offset);
+                                               }
+                                       
+                                               @Override
+                                               public int getInt(MemorySegment ms, long offset) {
+                                                   return ms.get(ValueLayout.JAVA_INT, offset);
+                                               }
+                                       
+                                               @Override
+                                               public long getLong(MemorySegment ms, long offset) {
+                                                   return ms.get(ValueLayout.JAVA_LONG, offset);
+                                               }
+                                       
+                                               @Override
+                                               public MemorySegment getAddr(MemorySegment ms, long offset) {
+                                                   return ms.get(ValueLayout.ADDRESS, offset);
+                                               }
+                                       
+                                               @Override
+                                               public float getFloat(MemorySegment ms, long offset) {
+                                                   return ms.get(ValueLayout.JAVA_FLOAT, offset);
+                                               }
+                                       
+                                               @Override
+                                               public double getDouble(MemorySegment ms, long offset) {
+                                                   return ms.get(ValueLayout.JAVA_DOUBLE, offset);
+                                               }
+                                       
+                                               @Override
+                                               public void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
+                                                   MemorySegment.copy(src, srcOffset, dest, destOffset, byteSize);
+                                               }
+                                           };
+                                       
+                                           private static final class MemorySupportHolder {
+                                               private static final MemorySupport MEMORY_SUPPORT = Objects.requireNonNull(memorySupport);
                                            }
-                                       };
-                                   }
-                                   """);
+                                       
+                                           public static void setByte(MemorySegment ms, long offset, byte val) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.setByte(ms, offset, val);
+                                           }
+                                       
+                                           public static void setShort(MemorySegment ms, long offset, short val) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.setShort(ms, offset, val);
+                                           }
+                                       
+                                           public static void setInt(MemorySegment ms, long offset, int val) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.setInt(ms, offset, val);
+                                           }
+                                       
+                                           public static void setLong(MemorySegment ms, long offset, long val) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.setLong(ms, offset, val);
+                                           }
+                                       
+                                           public static void setAddr(MemorySegment ms, long offset, MemorySegment val) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.setAddr(ms, offset, val);
+                                           }
+                                       
+                                           public static void setFloat(MemorySegment ms, long offset, float val) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.setFloat(ms, offset, val);
+                                           }
+                                       
+                                           public static void setDouble(MemorySegment ms, long offset, double val) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.setDouble(ms, offset, val);
+                                           }
+                                       
+                                           public static byte getByte(MemorySegment ms, long offset) {
+                                               return MemorySupportHolder.MEMORY_SUPPORT.getByte(ms, offset);
+                                           }
+                                       
+                                           public static short getShort(MemorySegment ms, long offset) {
+                                               return MemorySupportHolder.MEMORY_SUPPORT.getShort(ms, offset);
+                                           }
+                                       
+                                           public static int getInt(MemorySegment ms, long offset) {
+                                               return MemorySupportHolder.MEMORY_SUPPORT.getInt(ms, offset);
+                                           }
+                                       
+                                           public static long getLong(MemorySegment ms, long offset) {
+                                               return MemorySupportHolder.MEMORY_SUPPORT.getLong(ms, offset);
+                                           }
+                                       
+                                           public static MemorySegment getAddr(MemorySegment ms, long offset) {
+                                               return MemorySupportHolder.MEMORY_SUPPORT.getAddr(ms, offset);
+                                           }
+                                       
+                                           public static float getFloat(MemorySegment ms, long offset) {
+                                               return MemorySupportHolder.MEMORY_SUPPORT.getFloat(ms, offset);
+                                           }
+                                       
+                                           public static double getDouble(MemorySegment ms, long offset) {
+                                               return MemorySupportHolder.MEMORY_SUPPORT.getDouble(ms, offset);
+                                           }
+                                       
+                                           public static void memcpy(MemorySegment src, long srcOffset, MemorySegment dest, long destOffset, long byteSize) {
+                                               MemorySupportHolder.MEMORY_SUPPORT.memcpy(src, srcOffset, dest, destOffset, byteSize);
+                                           }
+                                       
+                                           private static final class OnHeapAllocatorHolder {
+                                               private static final SegmentAllocator ON_HEAP_ALLOCATOR = Objects.requireNonNull(onHeapAllocator);
+                                           }
+                                       
+                                           public static SegmentAllocator onHeapAllocator() {
+                                               return OnHeapAllocatorHolder.ON_HEAP_ALLOCATOR;
+                                           }
+                                       
+                                           public static SegmentAllocator onHeapAllocator = new SegmentAllocator() {
+                                               @Override
+                                               public MemorySegment allocate(long byteSize, long byteAlignment) {
+                                                   if (byteAlignment <= 0 || (byteAlignment & (byteAlignment - 1)) != 0) {
+                                                       throw new IllegalArgumentException("Alignment must be a power of two: " + byteAlignment);
+                                                   }
+                                                   if (byteSize % byteAlignment != 0) {
+                                                       throw new IllegalArgumentException("Size must be multiple of alignment: size=" + byteSize + ", alignment=" + byteAlignment);
+                                                   }
+                                                   try {
+                                                       return switch ((int) byteAlignment) {
+                                                           case 1 -> MemorySegment.ofArray(new byte[Math.toIntExact(byteSize)]);
+                                                           case 2 -> MemorySegment.ofArray(new short[Math.toIntExact(byteSize / 2)]);
+                                                           case 4 -> MemorySegment.ofArray(new int[Math.toIntExact(byteSize / 4)]);
+                                                           case 8 -> MemorySegment.ofArray(new long[Math.toIntExact(byteSize / 8)]);
+                                                           // fallback to auto arena
+                                                           default -> Arena.ofAuto().allocate(byteSize, byteAlignment);
+                                                       };
+                                                   } catch (ArithmeticException e) {
+                                                       throw new OutOfMemoryError("Requested memory size too large: " + byteSize + " bytes");
+                                                   } catch (NegativeArraySizeException e) {
+                                                       throw new OutOfMemoryError("Negative array size: " + byteSize);
+                                                   }
+                                               }
+                                           };
+                                       }
+                                       """);
     }
 }

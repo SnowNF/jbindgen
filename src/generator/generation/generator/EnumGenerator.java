@@ -2,36 +2,33 @@ package generator.generation.generator;
 
 import generator.Dependency;
 import generator.Generators;
+import generator.PackageManager;
 import generator.generation.Enumerate;
 import generator.types.CommonTypes;
-import generator.types.TypeAttr;
+import generator.types.EnumType;
 
 public class EnumGenerator implements Generator {
-    private final Enumerate enumerate;
-    private final Dependency dependency;
+    private final EnumType enumerate;
+    private final PackageManager packages;
     private final Generators.Writer writer;
 
     public EnumGenerator(Enumerate enumerate, Dependency dependency, Generators.Writer writer) {
-        this.enumerate = enumerate;
-        this.dependency = dependency;
+        this.enumerate = enumerate.getTypePkg().type();
+        this.packages = new PackageManager(dependency, enumerate.getTypePkg().packagePath());
         this.writer = writer;
     }
 
     @Override
     public void generate() {
-        writer.write(enumerate.getTypePkg().packagePath(), makeEnum(enumerate, dependency));
+        writer.write(packages, makeEnum(enumerate, packages));
     }
 
-    private static String makeEnum(Enumerate e, Dependency dependency) {
-        String enumName = Generator.getTypeName(e.getTypePkg().type());
-        var members = e.getTypePkg().type().getMembers().stream()
+    private static String makeEnum(EnumType e, PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
+        String enumName = packages.getCurrentClass();
+        var members = e.getMembers().stream()
                 .map(member -> "public static final %s %s = new %s(%s);".formatted(enumName, member.name(), enumName, member.val())).toList();
         return """
-                %2$s
-                %3$s
-                
-                import java.lang.foreign.SegmentAllocator;
-                
                 public final class %1$s implements %9$s<%1$s>, %8$s<%1$s> {
                     public static final %8$s.Operations<%1$s> OPERATIONS = %9$s.makeOperations(%1$s::new);
                     private final int val;
@@ -101,16 +98,16 @@ public class EnumGenerator implements Generator {
                     }
                 
                     %4$s
-                }""".formatted(enumName, e.getTypePkg().packagePath().makePackage(), // 2
-                Generator.extractImports(e, dependency), String.join("\n    ", members), // 4
-                CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW), // 5
-                e.getTypePkg().type().getType().getOperations().getValue().typeName(TypeAttr.NameType.RAW), // 6
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.BindTypeOperations.I32Op.typeName(TypeAttr.NameType.RAW), // 9
+                }""".formatted(enumName, null, null,
+                String.join("\n    ", members), // 4
+                packages.useClass(CommonTypes.SpecificTypes.FunctionUtils), // 5
+                packages.useClass(e.getType().getOperations().getValue()), // 6
+                packages.useClass(CommonTypes.ValueInterface.I64I), // 7
+                packages.useClass(CommonTypes.BasicOperations.Info), // 8
+                packages.useClass(CommonTypes.BindTypeOperations.I32Op), // 9
                 CommonTypes.BindTypeOperations.I32Op.operatorTypeName(), // 10
-                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 11
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW) // 12
+                packages.useClass(CommonTypes.SpecificTypes.Array), // 11
+                packages.useClass(CommonTypes.BindTypes.Ptr) // 12
         );
     }
 }
