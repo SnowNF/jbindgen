@@ -7,7 +7,6 @@ import analyser.types.*;
 import analyser.types.Enum;
 import analyser.types.Record;
 import generator.PackagePath;
-import generator.generation.*;
 import generator.types.*;
 import utils.ConflictNameUtils;
 
@@ -250,30 +249,13 @@ public class Utils {
         }
     }
 
-    public interface Filter extends Predicate<Map.Entry<Generation<?>, Optional<String>>> {
+    public interface Filter extends Predicate<Map.Entry<TypeAttr.GenerationType, Optional<String>>> {
         @Override
-        default boolean test(Map.Entry<Generation<?>, Optional<String>> entry) {
-            Generation<?> generation = entry.getKey();
+        default boolean test(Map.Entry<TypeAttr.GenerationType, Optional<String>> entry) {
+            var generation = entry.getKey();
             Optional<String> value = entry.getValue();
 
-            return switch (generation) {
-                case AbstractGeneration<?> abstractGeneration -> switch (abstractGeneration) {
-                    case Common common -> testCommon(value);
-                    case ArrayNamed arrayNamed -> testArrayNamed(value);
-                    case Enumerate enumerate -> testEnumerate(value);
-                    case FuncPointer funcPointer -> testFuncPointer(value);
-                    case RefOnly refOnly -> testRefOnly(value);
-                    case Structure structure -> testStructure(value);
-                    case SymbolProvider symbolProvider -> testSymbolProvider(value);
-                    case ValueBased valueBased -> testValueBased(value);
-                    case VoidBased voidBased -> testVoidBased(value);
-                };
-                case ConstValues constValues -> testConstValues(value);
-                case FuncSymbols funcSymbols -> testFuncSymbols(value);
-                case Macros macros -> testMacros(value);
-                case VarSymbols varSymbols -> testVarSymbols(value);
-                case TaggedNames taggedNames -> testTaggedTypes(value);
-            };
+            return false;
         }
 
         default boolean testCommon(Optional<String> value) {

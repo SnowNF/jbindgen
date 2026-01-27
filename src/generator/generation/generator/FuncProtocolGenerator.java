@@ -1,9 +1,7 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.FuncPointer;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
 import generator.types.TypeAttr;
@@ -14,16 +12,10 @@ import static generator.generation.generator.FuncPtrUtils.getNonConflictType;
 
 public class FuncProtocolGenerator implements Generator {
     public static final String FUNCTION_TYPE_NAME = "Function";
-    private final FuncPointer funcPointer;
-    private final PackageManager packages;
-    private final String utilsClassName;
-    private final Generators.Writer writer;
+    private final FunctionPtrType functionPtrType;
 
-    public FuncProtocolGenerator(FuncPointer funcPointer, Dependency dependency, Generators.Writer writer) {
-        this.funcPointer = funcPointer;
-        this.packages = new PackageManager(dependency, funcPointer.getTypePkg().packagePath());
-        utilsClassName = dependency.getTypePackagePath(CommonTypes.SpecificTypes.FunctionUtils).getClassName();
-        this.writer = writer;
+    public FuncProtocolGenerator(FunctionPtrType functionPtrType) {
+        this.functionPtrType = functionPtrType;
     }
 
     private final static List<String> FORBID_LAMBDA_NAMES = List.of("function", "funcLifeTime");
@@ -33,11 +25,12 @@ public class FuncProtocolGenerator implements Generator {
     }
 
     @Override
-    public void generate() {
-        FunctionPtrType type = funcPointer.getTypePkg().type();
-        FunctionRawUtils raw = new FunctionRawUtils(packages, type);
-        FunctionWrapUtils wrap = new FunctionWrapUtils(packages, type);
-        String className = funcPointer.getTypePkg().packagePath().getClassName();
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        var packages = new PackageManager(locations, functionPtrType);
+        var utilsClassName = packages.useClass(CommonTypes.SpecificTypes.FunctionUtils);
+        FunctionRawUtils raw = new FunctionRawUtils(packages, functionPtrType);
+        FunctionWrapUtils wrap = new FunctionWrapUtils(packages, functionPtrType);
+        String className = packages.getClassName();
         String interfaces = """
                     public interface %6$sRaw {
                         %3$s invoke(%2$s);
@@ -54,7 +47,7 @@ public class FuncProtocolGenerator implements Generator {
                 FUNCTION_TYPE_NAME // 6
         );
 
-        FunctionPtrType lambdaType = getNonConflictLambdaType(type);
+        FunctionPtrType lambdaType = getNonConflictLambdaType(functionPtrType);
         FunctionWrapUtils lambda = new FunctionWrapUtils(packages, lambdaType);
         String constructors = """
                     public %1$s(Arena funcLifeTime, %4$sRaw function) {
@@ -116,10 +109,11 @@ public class FuncProtocolGenerator implements Generator {
                                 '}';
                     }
                 """.formatted(className);
-        writer.write(packages, make(className, raw, interfaces, constructors, invokes.toString(), toString));
+        writer.write(packages, make(className, raw, interfaces, constructors, invokes.toString(), toString, utilsClassName));
+        return new GenerateResult(packages, functionPtrType);
     }
 
-    private String make(String className, FunctionRawUtils raw, String interfaces, String constructors, String invokes, String ext) {
+    private String make(String className, FunctionRawUtils raw, String interfaces, String constructors, String invokes, String ext, Object utilsClassName) {
         return """
                 public class %1$s implements %9$s<%1$s, %1$s.Function>, %8$s<%1$s> {
                     public static final %8$s.Operations<%1$s> OPERATIONS = %9$s.makeOperations(%1$s::new);

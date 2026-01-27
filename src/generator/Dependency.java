@@ -12,8 +12,8 @@ public class Dependency {
     public Dependency() {
     }
 
-    public Dependency addType(Collection<? extends TypePkg<?>> typePkgs) {
-        for (TypePkg<?> selfType : typePkgs) {
+    public Dependency addType(Collection<? extends TypePath<?>> typePkgs) {
+        for (TypePath<?> selfType : typePkgs) {
             allGenerations.put(selfType.type(), selfType.packagePath());
         }
         return this;

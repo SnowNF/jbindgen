@@ -4,67 +4,153 @@ import analyser.*;
 import analyser.types.Enum;
 import analyser.types.Type;
 import generator.Generators;
-import generator.TypePkg;
-import generator.generation.*;
+import generator.PackagePath;
+import generator.generation.ConstValue;
+import generator.generation.GenerationMacro;
+import generator.generation.generator.*;
 import generator.types.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
+
+import static generator.types.TypeAttr.NameType.RAW;
 
 public class Processor {
-    record GenerateUnit(HashMap<Generation<?>, Optional<String>> genMap) {
-        GenerateUnit() {
-            this(new HashMap<>());
+    private static class GenerateUnit {
+        private final HashMap<TypeAttr.GenerationType, Optional<PackagePath>> allTypes = new HashMap<>();
+        private final ArrayList<ConstValue> constValues = new ArrayList<>();
+        private final HashSet<GenerationMacro> macros = new HashSet<>();
+        private final ArrayList<FunctionPtrType> funcSymbols = new ArrayList<>();
+        private final SymbolProviderType provider;
+        private final Utils.DestinationProvider dest;
+        private final Utils.Filter filter;
+
+        GenerateUnit(SymbolProviderType provider, Utils.DestinationProvider dest, Utils.Filter filter) {
+            this.filter = filter;
+            this.dest = dest;
+            this.provider = provider;
+            allTypes.put(provider, Optional.of(provider.path()));
         }
 
-        public void add(Generation<?> generation) {
-            genMap.put(generation, Optional.empty());
+        GenerateUnit(Utils.DestinationProvider dest, Utils.Filter filter) {
+            this.filter = filter;
+            this.dest = dest;
+            this.provider = null;
         }
 
-        public void add(Generation<?> generation, String location) {
-            genMap.put(generation, Optional.ofNullable(location));
+        public void addType(TypeAttr.GenerationType generation) {
+            allTypes.put(generation, Optional.empty());
         }
 
-        public void addAll(Collection<? extends Generation<?>> generation) {
-            genMap.putAll(generation.stream().collect(Collectors.toMap(k -> k, _ -> Optional.empty())));
+        public void addType(TypeAttr.GenerationType generation, PackagePath path) {
+            allTypes.put(generation, Optional.of(path));
         }
 
-        Set<Generation<?>> toMustGenerate(Utils.Filter filter) {
-            return genMap.entrySet().stream().filter(filter).map(Map.Entry::getKey).collect(Collectors.toSet());
+        public void addConstValues(ArrayList<ConstValue> generation) {
+            constValues.addAll(generation);
         }
 
-        HashMap<TypeAttr.GenerationType, Generation<?>> getTypeGenerations() {
-            HashMap<TypeAttr.GenerationType, Generation<?>> depGen = new HashMap<>();
-            genMap.forEach((g, _) -> g.getImplTypes().stream()
-                    .map(TypePkg::type).forEach(o -> depGen.put(o, g)));
-            return depGen;
+        public void addMacros(HashSet<GenerationMacro> generation) {
+            macros.addAll(generation);
         }
-    }
 
-    private final HashMap<String, Type> processedTypes = new HashMap<>();
-    private final HashSet<Function> processedFuncs = new HashSet<>();
-    private final HashMap<TypeAttr.GenerationType, Generation<?>> allTypes = new HashMap<>();
-    private final HashSet<Generation<?>> mustGenerate = new HashSet<>();
+        public void addFunctionSymbols(ArrayList<FunctionPtrType> symbols) {
+            funcSymbols.addAll(symbols);
+        }
 
-    public Processor(Utils.DestinationProvider dest, Utils.Filter filter) {
-        GenerateUnit generateUnit = new GenerateUnit();
-        // common
-        generateUnit.addAll(Common.makeBindTypes(dest.common().path()));
-        generateUnit.addAll(Common.makeValueInterfaces(dest.common().path()));
-        generateUnit.addAll(Common.makeFFMs());
-        generateUnit.addAll(Common.makeBindTypeInterface(dest.common().path()));
-        generateUnit.addAll(Common.makeBasicOperations(dest.common().path()));
-        generateUnit.addAll(Common.makeSpecific(dest.common().path()));
-        allTypes.putAll(generateUnit.getTypeGenerations());
-        mustGenerate.addAll(generateUnit.toMustGenerate(filter));
+        List<Generator> makeInitialGenerators() {
+            ArrayList<Generator> generators = new ArrayList<>();
+            if (!funcSymbols.isEmpty()) {
+                generators.add(new FuncSymbolGenerator(funcSymbols, dest.funcSymbols().path(), provider));
+            }
+            if (!macros.isEmpty()) {
+                generators.add(new MacroGenerator(dest.macros().path(), macros));
+            }
+            if (!constValues.isEmpty()) {
+                generators.add(new ConstGenerator(constValues, dest.constants().path()));
+            }
+            if (provider != null) {
+                generators.add(new SymbolProviderGenerator(provider));
+            }
+            return generators;
+        }
+
+        public Optional<PackagePath> queryPath(TypeAttr.GenerationType unlocatedType) {
+            if (unlocatedType instanceof PointerType ptr) {
+                return Optional.ofNullable(dest.common().path().close(ptr.typeName(RAW)));
+            }
+            if (unlocatedType instanceof ArrayType arr) {
+                return Optional.ofNullable(dest.common().path().close(arr.typeName(RAW)));
+            }
+            Optional<PackagePath> packagePath = allTypes.get(unlocatedType);
+            if (packagePath == null)
+                return Optional.empty();
+            if (packagePath.isPresent()) {
+                return packagePath;
+            }
+            var path = switch (unlocatedType) {
+                case CommonTypes.BaseType baseType -> dest.common().path().close(baseType.typeName(RAW));
+                case RefOnlyType refOnlyType -> dest.refOnly().path().close(refOnlyType.typeName(RAW));
+                case SingleGenerationType singleGenerationType -> switch (singleGenerationType) {
+                    case AbstractGenerationType abstractGenerationType -> switch (abstractGenerationType) {
+                        case EnumType enumType -> dest.enumerate().path().close(enumType.typeName(RAW));
+                        case FunctionPtrType functionPtrType ->
+                                dest.funcProtocol().path().close(functionPtrType.typeName(RAW));
+                        case ValueBasedType valueBasedType ->
+                                dest.valueBased().path().close(valueBasedType.typeName(RAW));
+                    };
+                    case ArrayTypeNamed arrayTypeNamed -> dest.arrayNamed().path().close(arrayTypeNamed.typeName(RAW));
+                    case CommonTypes.BindTypes bindTypes ->
+                            throw new UnsupportedOperationException("Not supported yet.");
+                    case StructType structType -> dest.struct().path().close(structType.typeName(RAW));
+                };
+                case SymbolProviderType symbolProviderType -> symbolProviderType.path();
+                case TaggedNamedType _, ArrayType _, PointerType _ -> throw new UnsupportedOperationException();
+                case VoidType voidType -> dest.voidBased().path().close(voidType.typeName(RAW));
+            };
+            allTypes.put(unlocatedType, Optional.of(path));
+            return Optional.of(path);
+        }
+
+        public ArrayList<Generator> queryGenerators(Set<TypeAttr.GenerationType> unhandledTypes) {
+            ArrayList<Generator> generators = new ArrayList<>();
+            for (TypeAttr.GenerationType unhandledType : unhandledTypes) {
+                if (unhandledType instanceof PointerType || unhandledType instanceof ArrayType) {
+                    generators.add(new EmptyGenerator(unhandledType));
+                    continue;
+                }
+                if (!allTypes.containsKey(unhandledType))
+                    continue;
+                var generator = switch (unhandledType) {
+                    case CommonTypes.BaseType baseType -> new CommonGenerator(baseType);
+                    case RefOnlyType refOnlyType -> new RefOnlyGenerator(refOnlyType);
+                    case SingleGenerationType singleGenerationType -> switch (singleGenerationType) {
+                        case AbstractGenerationType abstractGenerationType -> switch (abstractGenerationType) {
+                            case EnumType enumType -> new EnumGenerator(enumType);
+                            case FunctionPtrType functionPtrType -> new FuncProtocolGenerator(functionPtrType);
+                            case ValueBasedType valueBasedType -> new ValueBasedGenerator(valueBasedType);
+                        };
+                        case ArrayTypeNamed arrayTypeNamed -> new ArrayNamedGenerator(arrayTypeNamed);
+                        case CommonTypes.BindTypes bindTypes ->
+                                throw new UnsupportedOperationException("Not supported yet.");
+                        case StructType structType -> new StructGenerator(structType);
+                    };
+                    case SymbolProviderType symbolProviderType -> new SymbolProviderGenerator(symbolProviderType);
+                    case TaggedNamedType _, ArrayType _, PointerType _ ->
+                            throw new UnsupportedOperationException("todo");
+                    case VoidType voidType -> new VoidBasedGenerator(voidType);
+                };
+                generators.add(generator);
+            }
+            return generators;
+        }
     }
 
     private static void processType(GenerateUnit generateUnit, List<Function> functions, HashSet<Macro> macros,
                                     ArrayList<Declare> varDeclares, HashMap<String, Type> types,
-                                    Utils.DestinationProvider dest, Map<String, Type> processedTypes,
-                                    Set<Function> processedFuncs) {
-        ArrayList<ConstValues.Value> constValues = new ArrayList<>(varDeclares.stream()
-                .map(d -> new ConstValues.Value(Utils.conv(d.type(), null), d.value(), d.name())).toList());
+                                    Map<String, Type> processedTypes,
+                                    Set<Function> processedFunSymbols) {
+        ArrayList<ConstValue> constValues = new ArrayList<>(varDeclares.stream()
+                .map(d -> new ConstValue(Utils.conv(d.type(), null), d.value(), d.name())).toList());
         // types
         for (var t : types.entrySet()) {
             if (processedTypes.containsKey(t.getKey())) {
@@ -73,68 +159,101 @@ public class Processor {
             Type s = t.getValue();
             TypeAttr.TypeRefer conv = Utils.conv(s, null);
             switch (conv) {
-                case ArrayTypeNamed arrayTypeNamed -> generateUnit.add(new ArrayNamed(dest.arrayNamed().path(), arrayTypeNamed), s.getLocation());
+                case ArrayTypeNamed arrayTypeNamed -> generateUnit.addType(arrayTypeNamed);
                 case EnumType e -> {
                     Type type = Utils.typedefLookUp(s);
                     Enum en = (Enum) type;
                     if (en.isUnnamed()) {
                         for (Declare declare : en.getDeclares()) {
-                            constValues.add(new ConstValues.Value(Utils.conv(declare.type(), null), declare.value(), declare.name()));
+                            constValues.add(new ConstValue(Utils.conv(declare.type(), null), declare.value(), declare.name()));
                         }
                     } else {
-                        generateUnit.add(new Enumerate(dest.enumerate().path(), e));
+                        generateUnit.addType(e);
                     }
                 }
-                case FunctionPtrType functionPtrType ->
-                        generateUnit.add(new FuncPointer(dest.funcProtocol().path(), functionPtrType));
-                case ValueBasedType valueBasedType -> generateUnit.add(new ValueBased(dest.valueBased().path(), valueBasedType));
-                case VoidType voidType -> generateUnit.add(new VoidBased(dest.voidBased().path(), voidType));
-                case RefOnlyType refOnlyType -> generateUnit.add(new RefOnly(dest.refOnly().path(), refOnlyType));
-                case StructType structType -> generateUnit.add(new Structure(dest.struct().path(), structType));
+                case FunctionPtrType functionPtrType -> generateUnit.addType(functionPtrType);
+                case ValueBasedType valueBasedType -> generateUnit.addType(valueBasedType);
+                case VoidType voidType -> generateUnit.addType(voidType);
+                case RefOnlyType refOnlyType -> generateUnit.addType(refOnlyType);
+                case StructType structType -> generateUnit.addType(structType);
                 case CommonTypes.BindTypes _, PointerType _, ArrayType _ -> {
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + conv);
             }
         }
         // constants
-        generateUnit.add(new ConstValues(dest.constants().path(), constValues));
+        generateUnit.addConstValues(constValues);
         // macros
-        HashSet<Macros.Macro> macro = new HashSet<>();
+        HashSet<GenerationMacro> macro = new HashSet<>();
         macros.forEach(e -> {
             switch (e.type()) {
                 case PrimitiveTypes.CType c ->
-                        macro.add(new Macros.Primitive(Utils.conv2BindTypes(c).getPrimitiveType(), e.declName(), e.initializer(), e.comment()));
+                        macro.add(new GenerationMacro.Primitive(Utils.conv2BindTypes(c).getPrimitiveType(), e.declName(), e.initializer(), e.comment()));
                 case PrimitiveTypes.JType _ ->
-                        macro.add(new Macros.StrMacro(e.declName(), e.initializer(), e.comment()));
+                        macro.add(new GenerationMacro.StrMacro(e.declName(), e.initializer(), e.comment()));
             }
         });
-        generateUnit.add(new Macros(dest.macros().path(), macro));
-
-        // symbol provider
-        SymbolProviderType provider = new SymbolProviderType(dest.symbolProvider().path().getClassName());
-        generateUnit.add(new SymbolProvider(dest.symbolProvider().path().removeClasses(), provider));
-
+        generateUnit.addMacros(macro);
         // function symbols
         ArrayList<FunctionPtrType> functionPtrTypes = new ArrayList<>();
         for (Function function : functions) {
-            if (processedFuncs.contains(function))
+            if (processedFunSymbols.contains(function))
                 continue;
             List<FunctionPtrType.Arg> args = function.paras().stream()
                     .map(para -> new FunctionPtrType.Arg(para.paraName(), Utils.conv(para.paraType(), null))).toList();
             functionPtrTypes.add(new FunctionPtrType(function.name(), args, Utils.conv(function.ret(), null)));
         }
-        generateUnit.add(new FuncSymbols(dest.funcSymbols().path(), functionPtrTypes, provider));
+        generateUnit.addFunctionSymbols(functionPtrTypes);
     }
+
+    private final ArrayList<GenerateUnit> units = new ArrayList<>();
+
+    public Processor(Utils.DestinationProvider dest, Utils.Filter filter) {
+        class BaseUnit extends GenerateUnit {
+            BaseUnit(Utils.DestinationProvider dest, Utils.Filter filter) {
+                super(dest, filter);
+            }
+
+            final ArrayList<Generator> generators = new ArrayList<>();
+
+            public void addAllType(List<? extends CommonTypes.BaseType> generation) {
+                generation.forEach(this::addType);
+                generators.add(new CommonGenerator(generation));
+            }
+
+            public void addAllType(Map<? extends CommonTypes.BaseType, PackagePath> generations) {
+                generations.forEach(this::addType);
+                generators.add(new CommonGenerator(generations.keySet().stream().toList()));
+            }
+
+            @Override
+            List<Generator> makeInitialGenerators() {
+                return generators;
+            }
+        }
+        BaseUnit generateUnit = new BaseUnit(dest, filter);
+        // common
+        generateUnit.addAllType(List.of(CommonTypes.BindTypes.values()));
+        generateUnit.addAllType(List.of(CommonTypes.ValueInterface.values()));
+        generateUnit.addAllType(CommonTypes.FFMTypes.packagePaths());
+        generateUnit.addAllType(List.of(CommonTypes.BindTypeOperations.values()));
+        generateUnit.addAllType(List.of(CommonTypes.BasicOperations.values()));
+        generateUnit.addAllType(List.of(CommonTypes.SpecificTypes.values()));
+        units.add(generateUnit);
+    }
+
+    private final HashMap<String, Type> processedTypes = new HashMap<>();
+    private final HashSet<Function> processedFunSymbols = new HashSet<>();
 
     public Processor withExtra(List<Function> functions, HashSet<Macro> macros, ArrayList<Declare> varDeclares,
                                HashMap<String, Type> types, Utils.DestinationProvider dest, Utils.Filter filter) {
-        GenerateUnit generateUnit = new GenerateUnit();
-        processType(generateUnit, functions, macros, varDeclares, types, dest,
-                Collections.unmodifiableMap(processedTypes), Collections.unmodifiableSet(processedFuncs));
+        // symbol provider
+        SymbolProviderType provider = new SymbolProviderType(dest.symbolProvider().path());
+        GenerateUnit generateUnit = new GenerateUnit(provider, dest, filter);
+        processType(generateUnit, functions, macros, varDeclares, types, processedTypes, processedFunSymbols);
         processedTypes.putAll(types);
-        processedFuncs.addAll(functions);
-        allTypes.putAll(generateUnit.getTypeGenerations());
-        mustGenerate.addAll(generateUnit.toMustGenerate(filter));
+        processedFunSymbols.addAll(functions);
+        units.add(generateUnit);
         return this;
     }
 
@@ -143,7 +262,29 @@ public class Processor {
     }
 
     public void generate() {
-        Generators generators = new Generators(mustGenerate, allTypes::get);
-        generators.generate();
+        ArrayList<Generator> generators = new ArrayList<>();
+        for (GenerateUnit unit : units) {
+            generators.addAll(unit.makeInitialGenerators());
+        }
+        Generators gen = new Generators(generators, unhandledTypes -> {
+            ArrayList<Generator> ret = new ArrayList<>();
+            for (GenerateUnit unit : units) {
+                ret.addAll(unit.queryGenerators(unhandledTypes));
+            }
+            return ret;
+        }, unlocatedType -> {
+            for (GenerateUnit unit : units) {
+                Optional<PackagePath> packagePath = unit.queryPath(unlocatedType);
+                if (packagePath.isPresent()) return packagePath.get();
+            }
+            System.out.println(unlocatedType);
+            for (GenerateUnit unit : units) {
+                Optional<PackagePath> packagePath = unit.queryPath(unlocatedType);
+                if (packagePath.isPresent()) return packagePath.get();
+            }
+
+            throw new IllegalStateException("No package path found for " + unlocatedType);
+        });
+        gen.generate();
     }
 }

@@ -1,24 +1,24 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.VoidBased;
 import generator.types.CommonTypes;
+import generator.types.VoidType;
 
 public class VoidBasedGenerator implements Generator {
-    private final PackageManager packages;
-    private final Generators.Writer writer;
 
+    private final VoidType voidType;
 
-    public VoidBasedGenerator(VoidBased voidType, Dependency dependency, Generators.Writer writer) {
-        packages = new PackageManager(dependency, voidType.getTypePkg().packagePath());
-        this.writer = writer;
+    public VoidBasedGenerator(VoidType voidType) {
+        this.voidType = voidType;
     }
 
     @Override
-    public void generate() {
-        writer.write(packages, makeContent(packages));
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        var packages = new PackageManager(locations, voidType);
+        if (!voidType.realVoid())
+            writer.write(packages, makeContent(packages));
+        return new GenerateResult(packages, voidType);
     }
 
     private static String makeContent(PackageManager packages) {

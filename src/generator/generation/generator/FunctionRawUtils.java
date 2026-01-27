@@ -13,6 +13,7 @@ import java.util.List;
 
 import static generator.generation.generator.FuncPtrUtils.SEGMENT_ALLOCATOR_PARAMETER_NAME;
 import static generator.generation.generator.FuncPtrUtils.arenaAutoAllocator;
+import static generator.types.CommonTypes.FFMTypes.FUNCTION_DESCRIPTOR;
 import static generator.types.CommonTypes.FFMTypes.SEGMENT_ALLOCATOR;
 
 public class FunctionRawUtils {
@@ -25,12 +26,12 @@ public class FunctionRawUtils {
     }
 
     public String getFunctionName() {
-        return Generator.getTypeName(function);
+        return function.typeName(TypeAttr.NameType.RAW);
     }
 
     public String rawRetType() {
         return function.getReturnType().map(operationType ->
-                        operationType.getOperation().getFuncOperation().getPrimitiveType().getPrimitiveTypeName())
+                        operationType.getOperation().getFuncOperation().getPrimitiveType().useType(packages))
                 .orElse("void");
     }
 
@@ -42,9 +43,10 @@ public class FunctionRawUtils {
             memoryLayout.add(l.getMemoryLayout());
         }
         var str = String.join(", ", memoryLayout);
-        return (function.getReturnType().isPresent()
-                ? "FunctionDescriptor.of(%s)"
-                : "FunctionDescriptor.ofVoid(%s)").formatted(str);
+        return packages.useClass(FUNCTION_DESCRIPTOR)
+               + (function.getReturnType().isPresent()
+                ? ".of(%s)"
+                : ".ofVoid(%s)").formatted(str);
     }
 
     public String rawReturnCast() {

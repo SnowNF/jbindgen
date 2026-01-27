@@ -1,9 +1,7 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.ArrayNamed;
 import generator.types.ArrayTypeNamed;
 import generator.types.CommonTypes;
 import generator.types.CommonTypes.BasicOperations;
@@ -13,20 +11,18 @@ import generator.types.CommonTypes.ValueInterface;
 import generator.types.TypeAttr;
 
 public class ArrayNamedGenerator implements Generator {
-    private final PackageManager packages;
-    private final ArrayNamed arrayNamed;
-    private final Generators.Writer writer;
+    private final ArrayTypeNamed arrayNamed;
 
-    public ArrayNamedGenerator(ArrayNamed v, Dependency dependency, Generators.Writer writer) {
-        this.arrayNamed = v;
-        this.writer = writer;
-        packages = new PackageManager(dependency, v.getTypePkg().packagePath());
+    public ArrayNamedGenerator(ArrayTypeNamed arrayNamed) {
+        this.arrayNamed = arrayNamed;
     }
 
     @Override
-    public void generate() {
-        String content = makeValue(packages, arrayNamed.getTypePkg().type());
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        var packages = new PackageManager(locations, arrayNamed);
+        String content = makeValue(packages, arrayNamed);
         writer.write(packages, content);
+        return new GenerateResult(packages, arrayNamed);
     }
 
     private static String makeValue(PackageManager packages, ArrayTypeNamed type) {

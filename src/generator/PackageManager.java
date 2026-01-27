@@ -10,13 +10,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class PackageManager {
-    private final Dependency dependency;
+    private final Generators.GenerationProvider location;
     private final PackagePath currPackage;
     private final HashMap<String, TypeAttr.GenerationType> imports = new HashMap<>();
     private final HashSet<TypeAttr.GenerationType> used = new HashSet<>();
 
-    public PackageManager(Dependency dependency, PackagePath currPackage) {
-        this.dependency = dependency;
+    public PackageManager(Generators.GenerationProvider location, TypeAttr.GenerationType type) {
+        this(location, location.queryPath(type));
+    }
+
+    public PackageManager(Generators.GenerationProvider location, PackagePath currPackage) {
+        this.location = location;
         this.currPackage = currPackage;
         currPackage.reqClosed();
     }
@@ -36,7 +40,7 @@ public class PackageManager {
 
     public String useClass(TypeAttr.GenerationType type) {
         used.add(type);
-        PackagePath packagePath = dependency.getTypePackagePath(type);
+        PackagePath packagePath = location.queryPath(type);
         String rootClassName = packagePath.getRootClassName();
         TypeAttr.GenerationType generationType = imports.get(rootClassName);
         if (generationType != null && !generationType.equals(type)) {
@@ -48,7 +52,7 @@ public class PackageManager {
 
     public String useTypePrefix(TypeAttr.GenerationType type) {
         used.add(type);
-        PackagePath packagePath = dependency.getTypePackagePath(type);
+        PackagePath packagePath = location.queryPath(type);
         String rootClassName = packagePath.getRootClassName();
         String lastClassName = packagePath.getLastClassName();
         String typeName = ((TypeAttr.NamedType) type).typeName(TypeAttr.NameType.RAW);
@@ -76,7 +80,7 @@ public class PackageManager {
     public String makeImports() {
         Set<String> imports = new HashSet<>();
         for (TypeAttr.GenerationType type : this.imports.values()) {
-            PackagePath packagePath = dependency.getTypePackagePath(type);
+            PackagePath packagePath = location.queryPath(type);
             if (packagePath.samePackage(currPackage)) {
                 continue;
             }

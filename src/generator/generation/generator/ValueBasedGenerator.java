@@ -1,31 +1,28 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.ValueBased;
 import generator.types.CommonTypes;
 import generator.types.PointerType;
 import generator.types.TypeAttr;
 import generator.types.ValueBasedType;
 
 public class ValueBasedGenerator implements Generator {
-    private final PackageManager packages;
-    private final ValueBased valueBased;
-    private final Generators.Writer writer;
 
-    public ValueBasedGenerator(ValueBased v, Dependency dependency, Generators.Writer writer) {
-        packages = new PackageManager(dependency, v.getTypePkg().packagePath());
-        this.valueBased = v;
-        this.writer = writer;
+    private final ValueBasedType valueBasedType;
+
+    public ValueBasedGenerator(ValueBasedType valueBasedType) {
+        this.valueBasedType = valueBasedType;
     }
 
     @Override
-    public void generate() {
-        makeValue(packages, valueBased.getTypePkg().type());
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        PackageManager packages = new PackageManager(locations, valueBasedType);
+        makeValue(packages, valueBasedType, writer);
+        return new GenerateResult(packages, valueBasedType);
     }
 
-    private void makeValue(PackageManager packages, ValueBasedType type) {
+    private void makeValue(PackageManager packages, ValueBasedType type, Generators.Writer writer) {
         String typeName = packages.getClassName();
         CommonTypes.BindTypes bindTypes = type.getBindTypes();
         if (bindTypes != CommonTypes.BindTypes.Ptr) {

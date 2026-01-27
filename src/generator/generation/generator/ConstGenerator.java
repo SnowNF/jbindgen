@@ -1,29 +1,26 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
 import generator.PackagePath;
-import generator.generation.ConstValues;
+import generator.generation.ConstValue;
 import generator.types.TypeAttr;
 
 import java.util.List;
 
 public class ConstGenerator implements Generator {
-    private final PackageManager packages;
-    private final List<ConstValues.Value> values;
-    private final Generators.Writer writer;
+    private final List<ConstValue> values;
+    private final PackagePath path;
 
-    public ConstGenerator(ConstValues constValues, PackagePath path,
-                          List<ConstValues.Value> values, Dependency dependency, Generators.Writer writer) {
-        this.packages = new PackageManager(dependency, path);
+    public ConstGenerator(List<ConstValue> values, PackagePath path) {
         this.values = values;
-        this.writer = writer;
+        this.path = path;
     }
 
     @Override
-    public void generate() {
-        if (values.isEmpty()) return;
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        var packages = new PackageManager(locations, path);
+        if (values.isEmpty()) return null;
         StringBuilder core = new StringBuilder();
         for (var val : values) {
             String typeName = packages.useClass((TypeAttr.GenerationType) val.type());
@@ -36,5 +33,6 @@ public class ConstGenerator implements Generator {
                 %s
                 }
                 """.formatted(packages.getClassName(), core.toString()));
+        return new GenerateResult(List.of(packages), List.of());
     }
 }

@@ -1,22 +1,20 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.SymbolProvider;
 import generator.types.CommonTypes;
+import generator.types.SymbolProviderType;
 
 public class SymbolProviderGenerator implements Generator {
-    private final PackageManager packages;
-    private final Generators.Writer writer;
+    private final SymbolProviderType symbolProvider;
 
-    public SymbolProviderGenerator(SymbolProvider symbolProvider, Dependency dependency, Generators.Writer writer) {
-        this.packages = new PackageManager(dependency, symbolProvider.getTypePkg().packagePath());
-        this.writer = writer;
+    public SymbolProviderGenerator(SymbolProviderType symbolProvider) {
+        this.symbolProvider = symbolProvider;
     }
 
     @Override
-    public void generate() {
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        var packages = new PackageManager(locations, symbolProvider);
         writer.write(packages, """
                 import java.lang.foreign.FunctionDescriptor;
                 import java.lang.foreign.MemorySegment;
@@ -47,5 +45,6 @@ public class SymbolProviderGenerator implements Generator {
                 packages.getClassName(),
                 null,
                 packages.useClass(CommonTypes.SpecificTypes.FunctionUtils)));
+        return new GenerateResult(packages, symbolProvider);
     }
 }

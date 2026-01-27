@@ -1,23 +1,22 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.RefOnly;
 import generator.types.CommonTypes;
+import generator.types.RefOnlyType;
 
 public class RefOnlyGenerator implements Generator {
-    private final PackageManager packages;
-    private final Generators.Writer writer;
+    private final RefOnlyType refOnly;
 
-    public RefOnlyGenerator(RefOnly refOnly, Dependency dependency, Generators.Writer writer) {
-        packages = new PackageManager(dependency, refOnly.getTypePkg().packagePath());
-        this.writer = writer;
+    public RefOnlyGenerator(RefOnlyType refOnly) {
+        this.refOnly = refOnly;
     }
 
     @Override
-    public void generate() {
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        PackageManager packages = new PackageManager(locations, refOnly);
         writer.write(packages, makeContent(packages));
+        return new GenerateResult(packages, refOnly);
     }
 
     private static String makeContent(PackageManager packages) {

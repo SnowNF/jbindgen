@@ -1,7 +1,7 @@
 package generator.generation.generator;
 
-import generator.*;
-import generator.generation.Common;
+import generator.Generators;
+import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.CommonTypes.BasicOperations;
 import generator.types.CommonTypes.BindTypes;
@@ -9,26 +9,32 @@ import generator.types.CommonTypes.SpecificTypes;
 import generator.types.CommonTypes.ValueInterface;
 import generator.types.TypeAttr.NameType;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import static utils.CommonUtils.Assert;
 
 
 public class CommonGenerator implements Generator {
-    private final Common common;
-    private final Dependency dependency;
-    private final Generators.Writer writer;
+    private final List<? extends CommonTypes.BaseType> baseTypes;
+    private Generators.Writer writer;
 
-    public CommonGenerator(Common common, Dependency dependency, Generators.Writer writer) {
-        this.common = common;
-        this.dependency = dependency;
-        this.writer = writer;
+    public CommonGenerator(CommonTypes.BaseType type) {
+        this.baseTypes = Collections.singletonList(type);
+    }
+
+    public CommonGenerator(List<? extends CommonTypes.BaseType> type) {
+        this.baseTypes = type;
     }
 
     @Override
-    public void generate() {
-        for (TypePkg<? extends CommonTypes.BaseType> implType : common.getImplTypes()) {
-            PackagePath packagePath = dependency.getTypePackagePath(implType.type());
-            PackageManager packages = new PackageManager(dependency, packagePath);
-            switch (implType.type()) {
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        this.writer = writer;
+        ArrayList<PackageManager> packageManagers = new ArrayList<>();
+        for (CommonTypes.BaseType baseType : baseTypes) {
+            PackageManager packages = new PackageManager(locations, baseType);
+            switch (baseType) {
                 case BindTypes bindTypes -> genBindTypes(packages, bindTypes);
                 case CommonTypes.BindTypeOperations btOp -> genBindTypeOp(packages, btOp);
                 case ValueInterface v -> genValueInterface(packages, v);
@@ -57,7 +63,9 @@ public class CommonGenerator implements Generator {
                     }
                 }
             }
+            packageManagers.add(packages);
         }
+        return new GenerateResult(packageManagers, baseTypes);
     }
 
     private void genStructI(PackageManager packages) {
@@ -1432,7 +1440,7 @@ public class CommonGenerator implements Generator {
                 """.formatted(null, null, typeName,
                 bindTypes.getPrimitiveType().getMemoryLayout().getMemoryLayout(), // 4
                 packages.useClass(bindTypes.getOperations()), // 5
-                bindTypes.getPrimitiveType().getPrimitiveTypeName(),
+                bindTypes.getPrimitiveType().useType(packages),
                 bindTypes.getPrimitiveType().getBoxedTypeName(),// 7
                 packages.useClass(bindTypes.getOperations().getValue()), // 8
                 packages.useClass(ValueInterface.I64I), // 9

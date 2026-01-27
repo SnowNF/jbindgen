@@ -1,68 +1,95 @@
 package generator;
 
-import generator.generation.Generation;
+import generator.generation.generator.Generator;
 import generator.types.TypeAttr;
+import utils.CommonUtils;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static utils.CommonUtils.Assert;
+import java.util.*;
 
 public class Generators {
     public static final boolean DEBUG = false;
     public static final String DEBUG_NAME_APPEND = "Debug";
 
-    public interface GenerationProvider {
-        Generation<? extends TypeAttr.GenerationType> queryGeneration(TypeAttr.GenerationType type);
+    public interface GeneratorProvider {
+        ArrayList<Generator> queryGenerators(Set<TypeAttr.GenerationType> unhandledTypes);
     }
 
-    private final Set<Generation<?>> mustGenerate;
+    public interface GenerationProvider {
+        PackagePath queryPath(TypeAttr.GenerationType unlocatedType);
+    }
 
-    private final Dependency dependency;
-    private final GenerationProvider provider;
+    private final ArrayList<Generator> initialGenerators;
+    private final GeneratorProvider generators;
+    private final GenerationProvider locations;
     private final Writer writer = new Writer();
 
     /**
      * generate java files
      *
-     * @param provider     provide other generations
-     * @param mustGenerate must generate this, when missing symbols, will throw
+     * @param generators        provide other generations
+     * @param initialGenerators initial generators invoke first
      */
-    public Generators(Set<Generation<?>> mustGenerate, GenerationProvider provider) {
-        this.mustGenerate = mustGenerate;
-        dependency = new Dependency()
-                .addType(mustGenerate.stream().map(Generation::getImplTypes).flatMap(Set::stream).toList());
-        this.provider = provider;
+    public Generators(List<Generator> initialGenerators, GeneratorProvider generators, GenerationProvider locations) {
+        this.initialGenerators = new ArrayList<>(initialGenerators);
+        this.generators = generators;
+        this.locations = locations;
     }
 
+    private final HashMap<TypeAttr.GenerationType, PackagePath> located = new HashMap<>();
+
     public void generate() {
-        Set<Generation<?>> generations = new HashSet<>(mustGenerate);
+        ArrayList<Generator> generators = new ArrayList<>(initialGenerators);
         HashSet<TypeAttr.GenerationType> generated = new HashSet<>();
+        HashSet<TypeAttr.GenerationType> ungenerated = new HashSet<>();
         do {
-            HashSet<TypeAttr.GenerationType> reference = new HashSet<>();
-            for (Generation<?> gen : generations) {
-                generated.addAll(gen.getImplTypes().stream().map(TypePkg::type).toList());
-                reference.addAll(gen.getDefineImportTypes().getImports());
+            for (Generator generator : generators) {
+                HashSet<TypeAttr.GenerationType> touched = new HashSet<>();
+                Generator.GenerateResult generateResult = generator.generate(type -> {
+                    touched.add(type);
+                    return located.computeIfAbsent(type, locations::queryPath);
+                }, writer);
+                checkTouched(generator, touched, generateResult);
+                generated.addAll(generateResult.generated());
+                for (PackageManager value : generateResult.packages()) {
+                    Set<TypeAttr.GenerationType> usedTypes = value.usedTypes();
+                    ungenerated.addAll(usedTypes);
+                }
+                ungenerated.removeAll(generated);
             }
-            reference.removeAll(generated);
-            Set<Generation<?>> newGen = new HashSet<>();
-            while (!reference.isEmpty()) {
-                var type = reference.iterator().next();
-                Generation<? extends TypeAttr.GenerationType> generation = provider.queryGeneration(type);
-                Assert(generation != null, "missing generation: hash: " + type.hashCode() + " " + type);
-                List<? extends TypeAttr.GenerationType> impl = generation.getImplTypes().stream().map(TypePkg::type).toList();
-                Assert(impl.contains(type), "missing type generation:" + type);
-                impl.forEach(reference::remove);
-                newGen.add(generation);
-                dependency.addType(generation.getImplTypes());
+            generators.clear();
+            ArrayList<Generator> newGenerators = this.generators.queryGenerators(ungenerated);
+            generators.addAll(newGenerators);
+            if (ungenerated.isEmpty()) break;
+            if (generators.isEmpty()) {
+                CommonUtils.Fail("Has ungenerated: %s, but generators is empty".formatted(ungenerated));
             }
-            for (Generation<?> generation : generations) {
-                generation.generate(dependency, writer);
-            }
-            generations.clear();
-            generations.addAll(newGen);
-        } while (!generations.isEmpty());
+        } while (true);
+    }
+
+    private static void checkTouched(Generator generator,
+                                     HashSet<TypeAttr.GenerationType> touched,
+                                     Generator.GenerateResult result) {
+        // generated
+        Set<TypeAttr.GenerationType> expected = new HashSet<>(result.generated());
+        // used types
+        for (PackageManager p : result.packages()) {
+            expected.addAll(p.usedTypes());
+        }
+        // expected - touched
+        Set<TypeAttr.GenerationType> missingInTouched = new HashSet<>(expected);
+        missingInTouched.removeAll(touched);
+
+        // touched - expected
+        Set<TypeAttr.GenerationType> extraInTouched = new HashSet<>(touched);
+        extraInTouched.removeAll(expected);
+
+        if (!missingInTouched.isEmpty() || !extraInTouched.isEmpty()) {
+            throw new IllegalStateException(
+                    "For generator:" + generator + ", Touched mismatch:\n" +
+                    "missingInTouched = " + missingInTouched + "\n" +
+                    "extraInTouched   = " + extraInTouched
+            );
+        }
     }
 
     public static class Writer {

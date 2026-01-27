@@ -30,7 +30,7 @@ public class FunctionWrapUtils {
     }
 
     public String getFunctionName() {
-        return Generator.getTypeName(function);
+        return function.typeName(TypeAttr.NameType.RAW);
     }
 
     public String downcallRetType() {

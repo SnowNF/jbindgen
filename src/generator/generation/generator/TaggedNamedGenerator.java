@@ -1,18 +1,17 @@
 package generator.generation.generator;
 
 import generator.Dependency;
-import generator.generation.TaggedNames;
+import generator.Generators;
 
 public class TaggedNamedGenerator implements Generator {
-    private final TaggedNames namedType;
     private final Dependency dependency;
 
-    public TaggedNamedGenerator(TaggedNames namedType, Dependency dependency) {
-        this.namedType = namedType;
+    public TaggedNamedGenerator( Dependency dependency) {
         this.dependency = dependency;
     }
 
     @Override
-    public void generate() {
+    public GenerateResult generate(Generators.GenerationProvider generators, Generators.Writer writer) {
+        return null;
     }
 }

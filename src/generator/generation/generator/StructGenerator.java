@@ -1,9 +1,7 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.Structure;
 import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
 import generator.types.StructType;
@@ -15,21 +13,18 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class StructGenerator implements Generator {
-    private final PackageManager packages;
-    private final Generators.Writer writer;
-    private final StructType structType;
+    private final StructType struct;
 
-    public StructGenerator(Structure struct, Dependency dependency, Generators.Writer writer) {
-        this.packages = new PackageManager(dependency, struct.getTypePkg().packagePath());
-        this.structType = struct.getTypePkg().type();
-        this.writer = writer;
+    public StructGenerator(StructType struct) {
+        this.struct = struct;
     }
 
     @Override
-    public void generate() {
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        var packages = new PackageManager(locations, struct);
         StringBuilder stringBuilder = new StringBuilder();
         ArrayList<StructType.Member> availableMembers = new ArrayList<>();
-        for (StructType.Member member : structType.getMembers()) {
+        for (StructType.Member member : struct.getMembers()) {
             makeGetterAndSetter(packages, member)
                     .ifPresent(getterAndSetter -> {
                         availableMembers.add(member);
@@ -40,7 +35,8 @@ public class StructGenerator implements Generator {
             stringBuilder.append("\n");
         }
         stringBuilder.append(toString(packages.getClassName(), availableMembers));
-        writer.write(packages, getMain(packages, structType.getMemoryLayout(), stringBuilder.toString()));
+        writer.write(packages, getMain(packages, struct.getMemoryLayout(), stringBuilder.toString()));
+        return new GenerateResult(packages, struct);
     }
 
     record GetterAndSetter(String getter, String setter) {

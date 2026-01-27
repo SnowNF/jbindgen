@@ -10,6 +10,10 @@ public class CommonUtils {
             throw new AssertionError(msg);
     }
 
+    public static void Fail(String msg) {
+        Assert(false, msg);
+    }
+
     public static void Assert(boolean bool) {
         if (!bool)
             throw new AssertionError();

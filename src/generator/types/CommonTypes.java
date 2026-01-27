@@ -2,6 +2,7 @@ package generator.types;
 
 import generator.Generators;
 import generator.PackageManager;
+import generator.PackagePath;
 import generator.types.operations.DestructOnlyOp;
 import generator.types.operations.NoJavaPrimitiveType;
 import generator.types.operations.OperationAttr;
@@ -11,10 +12,7 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteOrder;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class CommonTypes {
@@ -442,6 +440,23 @@ public class CommonTypes {
         @Override
         public String typeName(TypeAttr.NameType nameType) {
             return type.getSimpleName();
+        }
+
+        public PackagePath packagePath() {
+            String packageName = type.getPackageName();
+            PackagePath packagePath = new PackagePath();
+            for (String s : packageName.split("\\.")) {
+                packagePath = packagePath.add(s);
+            }
+            return packagePath.close(type.getSimpleName());
+        }
+
+        public static HashMap<FFMTypes, PackagePath> packagePaths() {
+            HashMap<FFMTypes, PackagePath> map = new HashMap<>();
+            for (FFMTypes value : FFMTypes.values()) {
+                map.put(value, value.packagePath());
+            }
+            return map;
         }
     }
 

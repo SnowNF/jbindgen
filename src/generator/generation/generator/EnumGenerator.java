@@ -1,26 +1,22 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.generation.Enumerate;
 import generator.types.CommonTypes;
 import generator.types.EnumType;
 
 public class EnumGenerator implements Generator {
     private final EnumType enumerate;
-    private final PackageManager packages;
-    private final Generators.Writer writer;
 
-    public EnumGenerator(Enumerate enumerate, Dependency dependency, Generators.Writer writer) {
-        this.enumerate = enumerate.getTypePkg().type();
-        this.packages = new PackageManager(dependency, enumerate.getTypePkg().packagePath());
-        this.writer = writer;
+    public EnumGenerator(EnumType enumerate) {
+        this.enumerate = enumerate;
     }
 
     @Override
-    public void generate() {
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        var packages = new PackageManager(locations, enumerate);
         writer.write(packages, makeEnum(enumerate, packages));
+        return new GenerateResult(packages, enumerate);
     }
 
     private static String makeEnum(EnumType e, PackageManager packages) {

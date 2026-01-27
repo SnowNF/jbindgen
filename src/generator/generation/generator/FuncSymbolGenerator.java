@@ -1,39 +1,41 @@
 package generator.generation.generator;
 
-import generator.Dependency;
 import generator.Generators;
 import generator.PackageManager;
-import generator.TypePkg;
-import generator.generation.FuncSymbols;
+import generator.PackagePath;
 import generator.types.CommonTypes;
+import generator.types.FunctionPtrType;
 import generator.types.SymbolProviderType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class FuncSymbolGenerator implements Generator {
-    private final FuncSymbols funcSymbols;
-    private final PackageManager packages;
-    private final Generators.Writer writer;
-    private final String symbolClassName;
+    private final List<FunctionPtrType> functions;
+    private final PackagePath dest;
+    private final SymbolProviderType symbolProvider;
 
-    public FuncSymbolGenerator(FuncSymbols funcSymbols, Dependency dependency, SymbolProviderType symbolProvider, Generators.Writer writer) {
-        this.funcSymbols = funcSymbols;
-        this.packages = new PackageManager(dependency, funcSymbols.getPackagePath());
-        this.writer = writer;
-        this.symbolClassName = dependency.getTypePackagePath(symbolProvider).getClassName();
+    public FuncSymbolGenerator(List<FunctionPtrType> functions, PackagePath dest, SymbolProviderType symbolProvider) {
+        this.functions = new ArrayList<>(functions);
+        this.dest = dest;
+        this.symbolProvider = symbolProvider;
     }
 
     @Override
-    public void generate() {
-        String functions = funcSymbols.getFunctions().stream().map(TypePkg::type)
-                .map(type -> makeDirectCall(new FunctionRawUtils(packages, type), symbolClassName, packages)
-                             + "\n" + makeWrappedCall(new FunctionWrapUtils(packages, type)))
+    public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
+        PackageManager packages = new PackageManager(locations, dest);
+        String functions = this.functions.stream().map(type ->
+                        makeDirectCall(new FunctionRawUtils(packages, type), packages.useClass(symbolProvider), packages)
+                        + "\n" + makeWrappedCall(new FunctionWrapUtils(packages, type)))
                 .collect(Collectors.joining(System.lineSeparator()));
         writer.write(packages, "public final class %s {\n%s}".formatted(packages.getClassName(), functions));
+        return new GenerateResult(List.of(packages), List.of());
     }
 
 
     private static String makeDirectCall(FunctionRawUtils raw, String symbolClassName, PackageManager packages) {
+        packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLE);
         return """
                     private static MethodHandle %1$s;
                 
