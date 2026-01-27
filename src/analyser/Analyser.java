@@ -209,9 +209,13 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
             var arg = new ArrayList<>(List.of("-x", "c-header"));
             arg.addAll(args);
             Array<CXTranslationUnit> tu = CXTranslationUnit.list(tempMem, 1);
-            LibclangFunctionSymbols.clang_parseTranslationUnit2(
+            CXErrorCode errorCode = LibclangFunctionSymbols.clang_parseTranslationUnit2(
                     index, new Str(tempMem, header), Str.list(tempMem, arg), new I32(arg.size()), PtrI.of(MemorySegment.NULL), new I32(0),
                     CXTranslationUnit_Flags.CXTranslationUnit_ForSerialization, tu);
+            if (!errorCode.equals(CXErrorCode.CXError_Success)) {
+                System.out.println("Failed to create macro translation unit: " + errorCode);
+                throw new RuntimeException();
+            }
 
             if (tu.getFirst().operator().value().equals(MemorySegment.NULL)) {
                 System.out.println("Failed to parse translation unit.\n");
