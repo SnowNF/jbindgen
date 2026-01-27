@@ -61,7 +61,7 @@ public final class FuncSymbols implements Generation<FunctionPtrType> {
             // imports for raw java signature
             for (TypeAttr.TypeRefer type : function.getFunctionSignatureTypes()) {
                 OperationAttr.Operation operation = ((TypeAttr.OperationType) type).getOperation();
-                operation.getFuncOperation().getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
+                operation.getFuncOperation().getPrimitiveType().importNeedType().ifPresent(imports::addUseImports);
             }
             // imports for construct return type
             function.getReturnType().ifPresent(type -> {

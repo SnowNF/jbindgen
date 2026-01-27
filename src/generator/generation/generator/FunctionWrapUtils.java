@@ -1,10 +1,12 @@
 package generator.generation.generator;
 
+import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
 import generator.types.TypeAttr;
 import generator.types.operations.CommonOperation;
 import generator.types.operations.CommonOperation.AllocatorType;
+import generator.types.operations.FuncOperation;
 import generator.types.operations.OperationAttr;
 import utils.CommonUtils;
 
@@ -17,10 +19,12 @@ import static generator.generation.generator.FuncPtrUtils.arenaAutoAllocator;
 import static generator.types.CommonTypes.FFMTypes.SEGMENT_ALLOCATOR;
 
 public class FunctionWrapUtils {
+    private final PackageManager packages;
     private final FunctionPtrType function;
     private final AllocatorType allocatorType;
 
-    public FunctionWrapUtils(FunctionPtrType function) {
+    public FunctionWrapUtils(PackageManager packages, FunctionPtrType function) {
+        this.packages = packages;
         this.function = function;
         allocatorType = function.allocatorType();
     }
@@ -34,10 +38,10 @@ public class FunctionWrapUtils {
             return "void";
         }
         TypeAttr.OperationType retType = function.getReturnType().get();
-        var r = Generator.getTypeName((TypeAttr.TypeRefer) retType);
+        var r = packages.useType((TypeAttr.GenerationType) retType, TypeAttr.NameType.GENERIC);
         if (allocatorType == AllocatorType.STANDARD) {
             // warp with Ptr<T>
-            return CommonTypes.BindTypes.makePtrGenericName(r);
+            return packages.useTypePrefix(CommonTypes.BindTypes.Ptr) + CommonTypes.BindTypes.makePtrGenericName(r);
         }
         return r;
     }
@@ -49,17 +53,19 @@ public class FunctionWrapUtils {
         TypeAttr.OperationType retType = function.getReturnType().get();
         var operation = retType.getOperation();
         CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType();
+        packages.addImport(upperType.typeImports());
         return upperType.typeName(TypeAttr.NameType.WILDCARD);
     }
 
     public String downcallUpperPara() {
         List<String> out = new ArrayList<>();
         if (allocatorType == AllocatorType.STANDARD) {
-            out.add(SEGMENT_ALLOCATOR.typeName(TypeAttr.NameType.RAW) + " " + SEGMENT_ALLOCATOR_PARAMETER_NAME);
+            out.add(packages.useClass(SEGMENT_ALLOCATOR) + " " + SEGMENT_ALLOCATOR_PARAMETER_NAME);
         }
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             var operation = ((TypeAttr.OperationType) arg.type()).getOperation();
             CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType();
+            packages.addImport(upperType.typeImports());
             String typeName = upperType.typeName(TypeAttr.NameType.WILDCARD);
             out.add(typeName + " " + arg.argName());
         }
@@ -69,7 +75,7 @@ public class FunctionWrapUtils {
     public String upcallPara() {
         List<String> out = new ArrayList<>();
         for (FunctionPtrType.Arg arg : function.getArgs()) {
-            out.add(Generator.getTypeName(arg.type()) + " " + arg.argName());
+            out.add(packages.useClass((TypeAttr.GenerationType) arg.type()) + " " + arg.argName());
         }
         return String.join(", ", out);
     }
@@ -86,7 +92,9 @@ public class FunctionWrapUtils {
         List<String> para = new ArrayList<>();
         for (FunctionPtrType.Arg a : function.getArgs()) {
             TypeAttr.OperationType type = (TypeAttr.OperationType) a.type();
-            String destruct = type.getOperation().getFuncOperation().constructFromRet(a.argName()).codeSegment();
+            FuncOperation.Result construct = type.getOperation().getFuncOperation().constructFromRet(a.argName());
+            String destruct = construct.codeSegment();
+            packages.addImport(construct.imports());
             para.add(destruct);
         }
         return String.join(", ", para);
@@ -100,8 +108,9 @@ public class FunctionWrapUtils {
         for (FunctionPtrType.Arg a : function.getArgs()) {
             TypeAttr.OperationType op = (TypeAttr.OperationType) a.type();
             TypeAttr.OperationType upperType = op.getOperation().getCommonOperation().getUpperType().typeOp();
-            String destruct = upperType.getOperation().getFuncOperation().destructToPara(a.argName()).codeSegment();
-            out.add(destruct);
+            var destruct = upperType.getOperation().getFuncOperation().destructToPara(a.argName());
+            packages.addImport(destruct.imports());
+            out.add(destruct.codeSegment());
         }
         return String.join(", ", out);
     }
@@ -114,10 +123,11 @@ public class FunctionWrapUtils {
         TypeAttr.OperationType retType = function.getReturnType().get();
         OperationAttr.Operation operation = retType.getOperation();
         if (allocatorType == AllocatorType.STANDARD) {
-            var r = Generator.getTypeName((TypeAttr.TypeRefer) retType);
+            packages.addImport(operation.getCommonOperation().makeOperation().imports());
+            String r = packages.useClass((TypeAttr.GenerationType) retType);
             // warp Ptr<T>
-            return "return new " + CommonTypes.BindTypes.makePtrGenericName(r) + "(%s, %s)"
-                    .formatted(value, operation.getCommonOperation().makeOperation().str());
+            return "return new " + packages.useTypePrefix(CommonTypes.BindTypes.Ptr) + CommonTypes.BindTypes.makePtrGenericName(r)
+                   + "(%s, %s)".formatted(value, operation.getCommonOperation().makeOperation().str());
         }
         return "return " + operation.getFuncOperation().constructFromRet(value).codeSegment();
     }
@@ -128,7 +138,9 @@ public class FunctionWrapUtils {
         }
         TypeAttr.OperationType retType = function.getReturnType().get();
         TypeAttr.OperationType upperType = retType.getOperation().getCommonOperation().getUpperType().typeOp();
-        return upperType.getOperation().getFuncOperation().destructToPara(value).codeSegment();
+        FuncOperation.Result destruct = upperType.getOperation().getFuncOperation().destructToPara(value);
+        packages.addImport(destruct.imports());
+        return destruct.codeSegment();
     }
 
     public Optional<OnHeapReturnVariant> hasOnHeapReturnVariant() {
@@ -155,7 +167,7 @@ public class FunctionWrapUtils {
         }
 
         public String downcallRetType() {
-            return Generator.getTypeName((TypeAttr.TypeRefer) retType);
+            return wrap.packages.useClass((TypeAttr.GenerationType) retType);
         }
 
         public String downcallUpperPara() {
@@ -163,6 +175,7 @@ public class FunctionWrapUtils {
             for (FunctionPtrType.Arg arg : function.getArgs()) {
                 var operation = ((TypeAttr.OperationType) arg.type()).getOperation();
                 CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType();
+                wrap.packages.addImport(upperType.typeImports());
                 String typeName = upperType.typeName(TypeAttr.NameType.WILDCARD);
                 out.add(typeName + " " + arg.argName());
             }
@@ -171,19 +184,22 @@ public class FunctionWrapUtils {
 
         public String downcallUpperParaDestruct() {
             List<String> out = new ArrayList<>();
-            out.add(arenaAutoAllocator());
+            out.add(arenaAutoAllocator(wrap.packages));
             for (FunctionPtrType.Arg a : function.getArgs()) {
                 TypeAttr.OperationType upperType = (TypeAttr.OperationType) a.type();
                 TypeAttr.OperationType type = upperType.getOperation().getCommonOperation().getUpperType().typeOp();
-                String destruct = type.getOperation().getFuncOperation().destructToPara(a.argName()).codeSegment();
-                out.add(destruct);
+                FuncOperation.Result destruct = type.getOperation().getFuncOperation().destructToPara(a.argName());
+                wrap.packages.addImport(destruct.imports());
+                out.add(destruct.codeSegment());
             }
             return String.join(", ", out);
         }
 
         public String downcallTypeReturn(String value) {
             OperationAttr.Operation operation = retType.getOperation();
-            return "return " + operation.getFuncOperation().constructFromRet(value).codeSegment();
+            FuncOperation.Result construct = operation.getFuncOperation().constructFromRet(value);
+            wrap.packages.addImport(construct.imports());
+            return "return " + construct.codeSegment();
         }
     }
 }

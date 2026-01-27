@@ -30,7 +30,7 @@ public class VoidBasedGenerator implements Generator {
                 
                     public static final %2$s.Operations<%1$s> OPERATIONS = %2$s.makeOperations();
                 }
-                """.formatted(packages.getCurrentClass(),
+                """.formatted(packages.getClassName(),
                 packages.useClass(CommonTypes.BasicOperations.Info) // 2
         );
     }

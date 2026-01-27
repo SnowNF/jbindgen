@@ -26,15 +26,15 @@ public class ValueBasedGenerator implements Generator {
     }
 
     private void makeValue(PackageManager packages, ValueBasedType type) {
-        String typeName = Generator.getTypeName(type);
+        String typeName = packages.getClassName();
         CommonTypes.BindTypes bindTypes = type.getBindTypes();
         if (bindTypes != CommonTypes.BindTypes.Ptr) {
-            CommonGenerator.genValueBasedTypes(packages, type.getBindTypes(), packages.getCurrentClass(), writer);
+            CommonGenerator.genValueBasedTypes(packages, type.getBindTypes(), packages.getClassName(), writer);
             return;
         }
         PointerType pointerType = type.getPointerType().orElseThrow();
         var pointee = ((TypeAttr.OperationType) pointerType.pointee());
-        String pointeeName = Generator.getTypeName(pointerType.pointee());
+        String pointeeName = packages.useClass((TypeAttr.GenerationType) pointerType.pointee());
 
         packages.addImport(pointee.getOperation().getCommonOperation().makeOperation().imports());
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);

@@ -1,6 +1,7 @@
 package generator.types;
 
 import generator.Generators;
+import generator.PackageManager;
 import generator.types.operations.DestructOnlyOp;
 import generator.types.operations.NoJavaPrimitiveType;
 import generator.types.operations.OperationAttr;
@@ -26,7 +27,7 @@ public class CommonTypes {
         JAVA_LONG(MemoryLayouts.JAVA_LONG, "long", "Long", null, AddressLayout.JAVA_LONG, false, "Long", true),
         JAVA_FLOAT(MemoryLayouts.JAVA_FLOAT, "float", "Float", null, AddressLayout.JAVA_FLOAT, false, "Float", false),
         JAVA_DOUBLE(MemoryLayouts.JAVA_DOUBLE, "double", "Double", null, AddressLayout.JAVA_DOUBLE, false, "Double", false),
-        ADDRESS(MemoryLayouts.ADDRESS, "MemorySegment", "MemorySegment", FFMTypes.MEMORY_SEGMENT, AddressLayout.ADDRESS, false, "Addr", false),
+        ADDRESS(MemoryLayouts.ADDRESS, null, "MemorySegment", FFMTypes.MEMORY_SEGMENT, AddressLayout.ADDRESS, false, "Addr", false),
         FLOAT16(MemoryLayouts.JAVA_SHORT, "short", "Short", null, AddressLayout.JAVA_SHORT, false, "Short", false),
         LONG_DOUBLE(MemoryLayouts.structLayout(List.of(MemoryLayouts.JAVA_LONG, MemoryLayouts.JAVA_LONG)), null, null, null, MemoryLayout.structLayout(AddressLayout.JAVA_LONG, AddressLayout.JAVA_LONG), true, null, false),
         Integer128(MemoryLayouts.structLayout(List.of(MemoryLayouts.JAVA_LONG, MemoryLayouts.JAVA_LONG)), null, null, null, MemoryLayout.structLayout(AddressLayout.JAVA_LONG, AddressLayout.JAVA_LONG), true, null, false);
@@ -65,7 +66,14 @@ public class CommonTypes {
             return Objects.requireNonNull(boxedTypeName);
         }
 
-        public Optional<FFMTypes> getExtraPrimitiveImportType() {
+        public String useType(PackageManager packages) {
+            if (importNeedType().isPresent()) {
+                return packages.useClass(importNeedType().get());
+            }
+            return primitiveTypeName;
+        }
+
+        public Optional<FFMTypes> importNeedType() {
             return Optional.ofNullable(ffmType);
         }
 

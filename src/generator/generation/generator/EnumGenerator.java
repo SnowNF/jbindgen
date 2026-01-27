@@ -25,7 +25,7 @@ public class EnumGenerator implements Generator {
 
     private static String makeEnum(EnumType e, PackageManager packages) {
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-        String enumName = packages.getCurrentClass();
+        String enumName = packages.getClassName();
         var members = e.getMembers().stream()
                 .map(member -> "public static final %s %s = new %s(%s);".formatted(enumName, member.name(), enumName, member.val())).toList();
         return """

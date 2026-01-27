@@ -52,7 +52,7 @@ public final class ValueBasedType extends AbstractGenerationType {
                 .addUseImports(CommonTypes.SpecificTypes.Array)
                 .addUseImports(CommonTypes.BindTypes.Ptr)
                 .addUseImports(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-        bindTypes.getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
+        bindTypes.getPrimitiveType().importNeedType().ifPresent(imports::addUseImports);
         if (pointerType != null) {
             imports.addUseImports(pointerType.pointee())
                     .addUseImports(CommonTypes.BasicOperations.Value)

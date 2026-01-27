@@ -155,7 +155,7 @@ public class ArrayNamedGenerator implements Generator {
                     public int size() {
                         return (int) (ms.byteSize() / ELE_OPERATIONS.memoryLayout().byteSize());
                     }
-                }""".formatted(packages.getCurrentClass(),
+                }""".formatted(packages.getClassName(),
                 packages.useClass((TypeAttr.GenerationType) type.element()),
                 ((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation().str(), // 3
                 type.getOperation().getCommonOperation().makeDirectMemoryLayout(),

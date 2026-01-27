@@ -7,7 +7,8 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
         TypeAttr.SizedType,
         TypeAttr.OperationType,
         TypeAttr.NamedType,
-        TypeAttr.TypeRefer {
+        TypeAttr.TypeRefer,
+        TypeAttr.GenerationType {
 
     @Override
     public OperationAttr.Operation getOperation() {

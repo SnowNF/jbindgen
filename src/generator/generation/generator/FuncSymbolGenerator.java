@@ -2,44 +2,38 @@ package generator.generation.generator;
 
 import generator.Dependency;
 import generator.Generators;
-import generator.PackagePath;
+import generator.PackageManager;
 import generator.TypePkg;
 import generator.generation.FuncSymbols;
 import generator.types.CommonTypes;
 import generator.types.SymbolProviderType;
-import generator.types.TypeAttr;
 
 import java.util.stream.Collectors;
 
 public class FuncSymbolGenerator implements Generator {
     private final FuncSymbols funcSymbols;
-    private final Dependency dependency;
+    private final PackageManager packages;
     private final Generators.Writer writer;
     private final String symbolClassName;
 
     public FuncSymbolGenerator(FuncSymbols funcSymbols, Dependency dependency, SymbolProviderType symbolProvider, Generators.Writer writer) {
         this.funcSymbols = funcSymbols;
-        this.dependency = dependency;
+        this.packages = new PackageManager(dependency, funcSymbols.getPackagePath());
         this.writer = writer;
         this.symbolClassName = dependency.getTypePackagePath(symbolProvider).getClassName();
     }
 
     @Override
     public void generate() {
-        PackagePath pp = funcSymbols.getPackagePath();
-        String out = pp.makePackage();
-        out += Generator.extractImports(funcSymbols, dependency);
         String functions = funcSymbols.getFunctions().stream().map(TypePkg::type)
-                .map(type -> makeDirectCall(new FunctionRawUtils(type), symbolClassName, pp.getClassName())
-                             + "\n" + makeWrappedCall(new FunctionWrapUtils(type)))
+                .map(type -> makeDirectCall(new FunctionRawUtils(packages, type), symbolClassName, packages)
+                             + "\n" + makeWrappedCall(new FunctionWrapUtils(packages, type)))
                 .collect(Collectors.joining(System.lineSeparator()));
-        out += "public final class %s {\n%s}".formatted(pp.getClassName(), functions);
-        writer.write(pp, out);
+        writer.write(packages, "public final class %s {\n%s}".formatted(packages.getClassName(), functions));
     }
 
 
-    private static String makeDirectCall(FunctionRawUtils raw,
-                                         String symbolClassName, String className) {
+    private static String makeDirectCall(FunctionRawUtils raw, String symbolClassName, PackageManager packages) {
         return """
                     private static MethodHandle %1$s;
                 
@@ -61,8 +55,8 @@ public class FuncSymbolGenerator implements Generator {
                 raw.rawReturnCast(),
                 raw.rawDowncallStr(), // 6
                 raw.rawDowncallPara(), // 7
-                CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW),
-                className // 9
+                packages.useClass(CommonTypes.SpecificTypes.FunctionUtils),
+                packages.getClassName() // 9
         );
     }
 
@@ -78,17 +72,16 @@ public class FuncSymbolGenerator implements Generator {
                 wrap.downcallRetType(),
                 wrap.downcallUpperPara(),
                 wrap.downcallTypeReturn("%s$Raw(%s)".formatted(wrap.getFunctionName(), wrap.downcallUpperParaDestruct()))));
-        wrap.hasOnHeapReturnVariant().ifPresent(variant -> {
-            sb.append("""
-                    
-                        public static %2$s %1$s(%3$s) {
-                            %4$s;
-                        }
-                    """.formatted(variant.getFunctionName(),
-                    variant.downcallRetType(),
-                    variant.downcallUpperPara(), // 3
-                    variant.downcallTypeReturn("%s$Raw(%s)".formatted(variant.getFunctionName(), variant.downcallUpperParaDestruct()))));
-        });
+        wrap.hasOnHeapReturnVariant().ifPresent(variant ->
+                sb.append("""
+                        
+                            public static %2$s %1$s(%3$s) {
+                                %4$s;
+                            }
+                        """.formatted(variant.getFunctionName(),
+                        variant.downcallRetType(),
+                        variant.downcallUpperPara(), // 3
+                        variant.downcallTypeReturn("%s$Raw(%s)".formatted(variant.getFunctionName(), variant.downcallUpperParaDestruct())))));
         return sb.toString();
     }
 }

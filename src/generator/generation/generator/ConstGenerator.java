@@ -35,6 +35,6 @@ public class ConstGenerator implements Generator {
                 public class %s {
                 %s
                 }
-                """.formatted(packages.getCurrentClass(), core.toString()));
+                """.formatted(packages.getClassName(), core.toString()));
     }
 }

@@ -1,5 +1,6 @@
 package generator.generation.generator;
 
+import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
 import generator.types.TypeAttr;
@@ -16,8 +17,8 @@ public class FuncPtrUtils {
         throw new IllegalStateException("Utility class");
     }
 
-    public static String arenaAutoAllocator() {
-        return "Arena.ofAuto()";
+    public static String arenaAutoAllocator(PackageManager packages) {
+        return packages.useClass(CommonTypes.FFMTypes.ARENA) + ".ofAuto()";
     }
 
     static FunctionPtrType getNonConflictType(FunctionPtrType function, List<String> forbidNames) {

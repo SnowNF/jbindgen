@@ -40,7 +40,7 @@ public final class FuncPointer extends AbstractGeneration<FunctionPtrType> {
             imports.addImport(operation.getFuncOperation().destructToPara("").imports());
 
             // raw java signature
-            operation.getFuncOperation().getPrimitiveType().getExtraPrimitiveImportType().ifPresent(imports::addUseImports);
+            operation.getFuncOperation().getPrimitiveType().importNeedType().ifPresent(imports::addUseImports);
 
             // destruct upper parameters and upper return type
             CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType();

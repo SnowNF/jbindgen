@@ -2,6 +2,7 @@ package generator.generation.generator;
 
 import generator.Dependency;
 import generator.Generators;
+import generator.PackageManager;
 import generator.generation.Structure;
 import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
@@ -14,23 +15,22 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 public class StructGenerator implements Generator {
-    private final Structure structure;
-    private final Dependency dependency;
+    private final PackageManager packages;
     private final Generators.Writer writer;
+    private final StructType structType;
 
     public StructGenerator(Structure struct, Dependency dependency, Generators.Writer writer) {
-        this.structure = struct;
-        this.dependency = dependency;
+        this.packages = new PackageManager(dependency, struct.getTypePkg().packagePath());
+        this.structType = struct.getTypePkg().type();
         this.writer = writer;
     }
 
     @Override
     public void generate() {
         StringBuilder stringBuilder = new StringBuilder();
-        StructType structType = structure.getTypePkg().type();
         ArrayList<StructType.Member> availableMembers = new ArrayList<>();
         for (StructType.Member member : structType.getMembers()) {
-            makeGetterAndSetter(Generator.getTypeName(structType), member)
+            makeGetterAndSetter(packages, member)
                     .ifPresent(getterAndSetter -> {
                         availableMembers.add(member);
                         stringBuilder.append(getterAndSetter.getter)
@@ -39,12 +39,8 @@ public class StructGenerator implements Generator {
                     });
             stringBuilder.append("\n");
         }
-        stringBuilder.append(toString(Generator.getTypeName(structType), availableMembers));
-        String out = structure.getTypePkg().packagePath().makePackage();
-        out += "\n";
-        out += Generator.extractImports(structure, dependency);
-        out += getMain(Generator.getTypeName(structType), structType.getMemoryLayout(), stringBuilder.toString());
-        writer.write(structure.getTypePkg().packagePath(), out);
+        stringBuilder.append(toString(packages.getClassName(), availableMembers));
+        writer.write(packages, getMain(packages, structType.getMemoryLayout(), stringBuilder.toString()));
     }
 
     record GetterAndSetter(String getter, String setter) {
@@ -64,7 +60,7 @@ public class StructGenerator implements Generator {
                 """.formatted(className, ss.isEmpty() ? "" : "\"" + String.join("                  \", ", ss));
     }
 
-    private static Optional<GetterAndSetter> makeGetterAndSetter(String thisName, StructType.Member member) {
+    private static Optional<GetterAndSetter> makeGetterAndSetter(PackageManager packages, StructType.Member member) {
         OperationAttr.Operation operation = ((TypeAttr.OperationType) member.type()).getOperation();
         String memberName = member.name();
         if (member.bitField()) {
@@ -72,6 +68,8 @@ public class StructGenerator implements Generator {
             var set = operation.getMemoryOperation().setterBitfield("ms", member.offset(), member.bitSize(), memberName);
             if (get.isEmpty() || set.isEmpty())
                 return Optional.empty();
+            packages.addImport(get.get().imports());
+            packages.addImport(set.get().imports());
             return Optional.of(new GetterAndSetter("""
                         public %s %s(%s) {
                     %s
@@ -82,10 +80,12 @@ public class StructGenerator implements Generator {
                             %s
                                     return this;
                                 }
-                            """.formatted(thisName, memberName, set.get().para(), set.get().codeSegment())));
+                            """.formatted(packages.getClassName(), memberName, set.get().para(), set.get().codeSegment())));
         }
         MemoryOperation.Getter getter = operation.getMemoryOperation().getter("ms", member.offset() / 8);
         MemoryOperation.Setter setter = operation.getMemoryOperation().setter("ms", member.offset() / 8, memberName);
+        packages.addImport(getter.imports());
+        packages.addImport(setter.imports());
         return Optional.of(new GetterAndSetter("""
                     public %s %s(%s) {
                         return %s;
@@ -96,10 +96,13 @@ public class StructGenerator implements Generator {
                                 %s;
                                 return this;
                             }
-                        """.formatted(thisName, memberName, setter.para(), setter.codeSegment())));
+                        """.formatted(packages.getClassName(), memberName, setter.para(), setter.codeSegment())));
     }
 
-    private static String getMain(String className, MemoryLayouts layout, String ext) {
+    private static String getMain(PackageManager packages, MemoryLayouts layout, String ext) {
+        packages.addImport(layout.getTypeImports());
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         return """
                 import java.util.Objects;
                 
@@ -164,13 +167,13 @@ public class StructGenerator implements Generator {
                     }
                 
                 %3$s
-                }""".formatted(className, layout.getMemoryLayout(), ext,
-                CommonTypes.SpecificTypes.StructOp.typeName(TypeAttr.NameType.RAW), // 4
-                CommonTypes.ValueInterface.I64I.typeName(TypeAttr.NameType.RAW), // 5
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 6
-                CommonTypes.SpecificTypes.Array.typeName(TypeAttr.NameType.RAW), // 7
-                CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW) // 9
+                }""".formatted(packages.getClassName(), layout.getMemoryLayout(), ext,
+                packages.useClass(CommonTypes.SpecificTypes.StructOp), // 4
+                packages.useClass(CommonTypes.ValueInterface.I64I), // 5
+                packages.useClass(CommonTypes.BasicOperations.Info), // 6
+                packages.useClass(CommonTypes.SpecificTypes.Array), // 7
+                packages.useClass(CommonTypes.BindTypes.Ptr), // 8
+                packages.useClass(CommonTypes.SpecificTypes.MemoryUtils) // 9
         );
     }
 }

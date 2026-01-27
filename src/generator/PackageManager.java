@@ -46,7 +46,7 @@ public class PackageManager {
         return packagePath.getClassName();
     }
 
-    public String useType(TypeAttr.GenerationType type, TypeAttr.NameType name) {
+    public String useTypePrefix(TypeAttr.GenerationType type) {
         used.add(type);
         PackagePath packagePath = dependency.getTypePackagePath(type);
         String rootClassName = packagePath.getRootClassName();
@@ -55,18 +55,22 @@ public class PackageManager {
         if (!lastClassName.equals(typeName)) {
             CommonUtils.shouldNotReachHere();
         }
-        String inputName = ((TypeAttr.NamedType) type).typeName(name);
+        ArrayList<String> path = new ArrayList<>();
         if (imports.containsKey(rootClassName)) {
             // already imports same class name
-            ArrayList<String> path = packagePath.getPackagePath();
-            path.addAll(packagePath.getPrefixClassPath());
-            path.add(inputName);
-            return String.join(".", path);
+            path.addAll(packagePath.getPackagePath());
+        } else {
+            imports.put(rootClassName, type);
         }
-        imports.put(rootClassName, type);
-        ArrayList<String> path = packagePath.getPrefixClassPath();
-        path.add(inputName);
-        return String.join(".", path);
+        path.addAll(packagePath.getPrefixClassPath());
+        if (path.isEmpty()) {
+            return "";
+        }
+        return String.join(".", path) + ".";
+    }
+
+    public String useType(TypeAttr.GenerationType type, TypeAttr.NameType name) {
+        return useTypePrefix(type) + ((TypeAttr.NamedType) type).typeName(name);
     }
 
     public String makeImports() {
@@ -87,7 +91,7 @@ public class PackageManager {
         return currPackage;
     }
 
-    public String getCurrentClass() {
+    public String getClassName() {
         return currPackage.getClassName();
     }
 }

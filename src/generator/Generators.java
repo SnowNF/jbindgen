@@ -77,7 +77,7 @@ public class Generators {
             write(packages.getCurrPackage(), str);
         }
 
-        public void write(PackagePath path, String content) {
+        private void write(PackagePath path, String content) {
             if (WRITING_PATHS.contains(path)) {
                 throw new RuntimeException("Path " + path.getFilePath() + " already written");
             }

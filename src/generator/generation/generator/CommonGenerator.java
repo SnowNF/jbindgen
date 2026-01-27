@@ -331,8 +331,8 @@ public class CommonGenerator implements Generator {
                 }""".formatted(
                 null, null,
                 packages.useClass(SpecificTypes.FlatArrayOp),
-                packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 4
-                CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(),
+                null, // 4
+                null,
                 packages.useClass(BindTypes.Ptr),
                 packages.useClass(BasicOperations.ArrayI), // 7
                 packages.useClass(ValueInterface.I64I),
@@ -1091,9 +1091,6 @@ public class CommonGenerator implements Generator {
             ));
             return;
         }
-        if (type == ValueInterface.PtrI) {
-            packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        }
         writer.write(packages, """
                 public interface %3$s<I> extends %6$s<%4$s> {
                     static <I> %3$s<I> of(%5$s value) {
@@ -1117,7 +1114,7 @@ public class CommonGenerator implements Generator {
                 """.formatted(null, null,
                 packages.useClass(type),
                 type.getPrimitive().getBoxedTypeName(),
-                type.getPrimitive().getPrimitiveTypeName(), // 5
+                type.getPrimitive().useType(packages), // 5
                 packages.useClass(BasicOperations.Value)
         ));
     }
@@ -1538,7 +1535,7 @@ public class CommonGenerator implements Generator {
                                        import java.util.Objects;
                                        
                                        public final class %1$s {
-                                       """.formatted(packages.getCurrentClass()) + """
+                                       """.formatted(packages.getClassName()) + """
                                            public interface MemorySupport {
                                                void setByte(MemorySegment ms, long offset, byte val);
                                        

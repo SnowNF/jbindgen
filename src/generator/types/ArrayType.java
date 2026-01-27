@@ -6,7 +6,7 @@ import generator.types.operations.OperationAttr;
 import static utils.CommonUtils.Assert;
 
 public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) implements
-        TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer {
+        TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
     public static final CommonTypes.SpecificTypes ARRAY_TYPE = CommonTypes.SpecificTypes.Array;
 
     public ArrayType {

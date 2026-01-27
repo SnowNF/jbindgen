@@ -1,5 +1,6 @@
 package generator.generation.generator;
 
+import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
 import generator.types.MemoryLayouts;
@@ -15,9 +16,11 @@ import static generator.generation.generator.FuncPtrUtils.arenaAutoAllocator;
 import static generator.types.CommonTypes.FFMTypes.SEGMENT_ALLOCATOR;
 
 public class FunctionRawUtils {
+    private final PackageManager packages;
     private final FunctionPtrType function;
 
-    public FunctionRawUtils(FunctionPtrType func) {
+    public FunctionRawUtils(PackageManager packages, FunctionPtrType func) {
+        this.packages = packages;
         this.function = func;
     }
 
@@ -33,7 +36,11 @@ public class FunctionRawUtils {
 
 
     public String funcDescriptor() {
-        List<String> memoryLayout = function.getMemoryLayouts().stream().map(MemoryLayouts::getMemoryLayout).toList();
+        List<String> memoryLayout = new ArrayList<>();
+        for (MemoryLayouts l : function.getMemoryLayouts()) {
+            packages.addImport(l.getTypeImports());
+            memoryLayout.add(l.getMemoryLayout());
+        }
         var str = String.join(", ", memoryLayout);
         return (function.getReturnType().isPresent()
                 ? "FunctionDescriptor.of(%s)"
@@ -41,9 +48,11 @@ public class FunctionRawUtils {
     }
 
     public String rawReturnCast() {
-        return function.getReturnType().map(normalType -> "return (%s) ".formatted(normalType
-                        .getOperation().getFuncOperation().getPrimitiveType().getPrimitiveTypeName()))
-                .orElse("");
+        if (function.getReturnType().isEmpty())
+            return "";
+        TypeAttr.OperationType operationType = function.getReturnType().get();
+        CommonTypes.Primitives primitiveType = operationType.getOperation().getFuncOperation().getPrimitiveType();
+        return "return (%s) ".formatted(primitiveType.useType(packages));
     }
 
     public String rawDowncallStr() {
@@ -52,7 +61,7 @@ public class FunctionRawUtils {
             para.add(SEGMENT_ALLOCATOR_PARAMETER_NAME);
         }
         if (function.allocatorType() == CommonOperation.AllocatorType.ON_HEAP) {
-            para.add(arenaAutoAllocator());
+            para.add(arenaAutoAllocator(packages));
         }
         para.addAll(function.getArgs().stream().map(FunctionPtrType.Arg::argName).toList());
         return String.join(", ", para);
@@ -62,7 +71,7 @@ public class FunctionRawUtils {
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             OperationAttr.Operation operation = ((TypeAttr.OperationType) arg.type()).getOperation();
             CommonTypes.Primitives primitiveType = operation.getFuncOperation().getPrimitiveType();
-            String p = primitiveType.getPrimitiveTypeName() + " " + arg.argName();
+            String p = primitiveType.useType(packages) + " " + arg.argName();
             out.add(p);
         }
     }
@@ -70,7 +79,7 @@ public class FunctionRawUtils {
     public String rawDowncallPara() {
         List<String> out = new ArrayList<>();
         if (function.allocatorType() == CommonOperation.AllocatorType.STANDARD) {
-            out.add(SEGMENT_ALLOCATOR.typeName(TypeAttr.NameType.RAW) + " " + SEGMENT_ALLOCATOR_PARAMETER_NAME);
+            out.add(packages.useClass(SEGMENT_ALLOCATOR) + " " + SEGMENT_ALLOCATOR_PARAMETER_NAME);
         }
         commonInvokeParaStr(out);
         return String.join(", ", out);

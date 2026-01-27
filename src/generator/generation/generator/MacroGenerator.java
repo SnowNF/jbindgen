@@ -2,19 +2,19 @@ package generator.generation.generator;
 
 import generator.Dependency;
 import generator.Generators;
+import generator.PackageManager;
 import generator.PackagePath;
 import generator.generation.Macros;
 
 import java.util.Set;
 
 public class MacroGenerator implements Generator {
-    private final PackagePath packagePath;
-
+    private final PackageManager packages;
     private final Set<Macros.Macro> macros;
     private final Generators.Writer writer;
 
     public MacroGenerator(PackagePath packagePath, Set<Macros.Macro> macros, Dependency dependency, Generators.Writer writer) {
-        this.packagePath = packagePath;
+        this.packages = new PackageManager(dependency, packagePath);
         this.macros = macros;
         this.writer = writer;
     }
@@ -33,12 +33,10 @@ public class MacroGenerator implements Generator {
             }
 
         }
-        String out = packagePath.makePackage();
-        out += """
+        writer.write(packages, """
                 public class %s {
                 %s
                 }
-                """.formatted(packagePath.getClassName(), core.toString());
-        writer.write(packagePath, out);
+                """.formatted(packages.getClassName(), core.toString()));
     }
 }

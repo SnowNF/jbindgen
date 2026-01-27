@@ -2,27 +2,22 @@ package generator.generation.generator;
 
 import generator.Dependency;
 import generator.Generators;
+import generator.PackageManager;
 import generator.generation.SymbolProvider;
 import generator.types.CommonTypes;
-import generator.types.TypeAttr;
 
 public class SymbolProviderGenerator implements Generator {
-    private final SymbolProvider symbolProvider;
-    private final Dependency dependency;
+    private final PackageManager packages;
     private final Generators.Writer writer;
 
     public SymbolProviderGenerator(SymbolProvider symbolProvider, Dependency dependency, Generators.Writer writer) {
-        this.symbolProvider = symbolProvider;
-        this.dependency = dependency;
+        this.packages = new PackageManager(dependency, symbolProvider.getTypePkg().packagePath());
         this.writer = writer;
     }
 
     @Override
     public void generate() {
-        writer.write(symbolProvider.getTypePkg().packagePath(), """
-                %1$s
-                
-                %3$s
+        writer.write(packages, """
                 import java.lang.foreign.FunctionDescriptor;
                 import java.lang.foreign.MemorySegment;
                 import java.lang.invoke.MethodHandle;
@@ -48,9 +43,9 @@ public class SymbolProviderGenerator implements Generator {
                         return Optional.empty();
                     }
                 }
-                """.formatted(symbolProvider.getTypePkg().packagePath().makePackage(),
-                symbolProvider.getTypePkg().packagePath().getClassName(),
-                Generator.extractImports(symbolProvider, dependency), // 3
-                CommonTypes.SpecificTypes.FunctionUtils.typeName(TypeAttr.NameType.RAW)));
+                """.formatted(null,
+                packages.getClassName(),
+                null,
+                packages.useClass(CommonTypes.SpecificTypes.FunctionUtils)));
     }
 }
