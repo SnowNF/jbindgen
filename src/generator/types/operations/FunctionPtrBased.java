@@ -43,16 +43,16 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s)".formatted(typeName,
                         "%s.getAddr(%s, %s)".formatted(
-                                MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                MemoryUtils.typeName(),
                                 ms, offset)), new TypeImports().addUseImports(functionPtrType).addUseImports(MemoryUtils));
             }
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
-                                MemoryUtils.typeName(TypeAttr.NameType.RAW), ms, offset, varName),
+                                MemoryUtils.typeName(), ms, offset, varName),
                         upperType.typeImports().addUseImports(MemoryUtils));
             }
         };
@@ -74,7 +74,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                End<?> end = new End<>(functionPtrType, functionPtrType.typeName(TypeAttr.NameType.RAW) + "." + FuncProtocolGenerator.FUNCTION_TYPE_NAME);
+                End<?> end = new End<>(functionPtrType, functionPtrType.typeName() + "." + FuncProtocolGenerator.FUNCTION_TYPE_NAME);
                 return new Warp<>(CommonTypes.ValueInterface.PtrI, end);
             }
         };

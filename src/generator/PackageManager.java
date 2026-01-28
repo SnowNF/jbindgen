@@ -38,7 +38,7 @@ public class PackageManager {
     public void addImport(TypeImports imports) {
         used.addAll(imports.getImports());
         for (TypeAttr.GenerationType anImport : imports.getImports()) {
-            this.imports.put(((TypeAttr.NamedType) anImport).typeName(TypeAttr.NameType.RAW), anImport);
+            this.imports.put(((TypeAttr.NamedType) anImport).typeName(), anImport);
         }
     }
 
@@ -59,7 +59,7 @@ public class PackageManager {
         PackagePath packagePath = location.queryPath(type);
         String rootClassName = packagePath.getRootClassName();
         String lastClassName = packagePath.getLastClassName();
-        String typeName = ((TypeAttr.NamedType) type).typeName(TypeAttr.NameType.RAW);
+        String typeName = ((TypeAttr.NamedType) type).typeName();
         if (!lastClassName.equals(typeName)) {
             CommonUtils.shouldNotReachHere();
         }
@@ -78,7 +78,7 @@ public class PackageManager {
     }
 
     public String useType(TypeAttr.GenerationType type, TypeAttr.NameType name) {
-        return useTypePrefix(type) + ((TypeAttr.NamedType) type).typeName(name);
+        return useTypePrefix(type) + ((TypeAttr.NamedType) type).typeName(this, name);
     }
 
     public String makeImports() {

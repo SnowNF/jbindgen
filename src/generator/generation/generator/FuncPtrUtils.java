@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FuncPtrUtils {
-    public static final String SEGMENT_ALLOCATOR_PARAMETER_NAME = CommonTypes.FFMTypes.SEGMENT_ALLOCATOR.typeName(TypeAttr.NameType.RAW).toLowerCase();
+    public static final String SEGMENT_ALLOCATOR_PARAMETER_NAME = CommonTypes.FFMTypes.SEGMENT_ALLOCATOR.typeName().toLowerCase();
 
     private FuncPtrUtils() {
         throw new IllegalStateException("Utility class");
@@ -27,6 +27,6 @@ public class FuncPtrUtils {
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             args.add(new FunctionPtrType.Arg(ConflictNameUtils.getNonConflictsNameExt(arg.argName(), forbidNames, existingNames), arg.type()));
         }
-        return new FunctionPtrType(function.typeName(null), args, (TypeAttr.TypeRefer) function.getReturnType().orElse(VoidType.VOID));
+        return new FunctionPtrType(function.typeName(), args, (TypeAttr.TypeRefer) function.getReturnType().orElse(VoidType.VOID));
     }
 }

@@ -30,7 +30,7 @@ public class FunctionWrapUtils {
     }
 
     public String getFunctionName() {
-        return function.typeName(TypeAttr.NameType.RAW);
+        return function.typeName();
     }
 
     public String downcallRetType() {
@@ -55,7 +55,7 @@ public class FunctionWrapUtils {
         var operation = retType.getOperation();
         CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType(packages);
         packages.addImport(upperType.typeImports());
-        return upperType.typeName(TypeAttr.NameType.WILDCARD);
+        return upperType.typeName(packages, TypeAttr.NameType.WILDCARD);
     }
 
     public String downcallUpperPara() {
@@ -67,7 +67,7 @@ public class FunctionWrapUtils {
             var operation = ((TypeAttr.OperationType) arg.type()).getOperation();
             CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType(packages);
             packages.addImport(upperType.typeImports());
-            String typeName = upperType.typeName(TypeAttr.NameType.WILDCARD);
+            String typeName = upperType.typeName(packages, TypeAttr.NameType.WILDCARD);
             out.add(typeName + " " + arg.argName());
         }
         return String.join(", ", out);
@@ -179,7 +179,7 @@ public class FunctionWrapUtils {
                 var operation = ((TypeAttr.OperationType) arg.type()).getOperation();
                 CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType(wrap.packages);
                 wrap.packages.addImport(upperType.typeImports());
-                String typeName = upperType.typeName(TypeAttr.NameType.WILDCARD);
+                String typeName = upperType.typeName(wrap.packages, TypeAttr.NameType.WILDCARD);
                 out.add(typeName + " " + arg.argName());
             }
             return String.join(", ", out);

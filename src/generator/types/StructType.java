@@ -22,7 +22,7 @@ public final class StructType implements SingleGenerationType {
      */
     public record Member(TypeAttr.TypeRefer type, String name, long offset, long bitSize) {
         private String typeName() {
-            return ((TypeAttr.NamedType) type).typeName(TypeAttr.NameType.GENERIC);
+            return ((TypeAttr.NamedType) type).typeName();
         }
 
         // note: to avoid member to be a graph, we should compare type name instead of type
@@ -43,7 +43,7 @@ public final class StructType implements SingleGenerationType {
         @Override
         public String toString() {
             return "Member{" +
-                   "type=" + ((TypeAttr.NamedType) type).typeName(TypeAttr.NameType.GENERIC) +
+                   "type=" + ((TypeAttr.NamedType) type).typeName() +
                    ", name='" + name + '\'' +
                    ", offset=" + offset +
                    ", bitSize=" + bitSize +
@@ -157,7 +157,7 @@ public final class StructType implements SingleGenerationType {
     }
 
     @Override
-    public String typeName(TypeAttr.NameType nameType) {
+    public String typeName() {
         return typeName;
     }
 

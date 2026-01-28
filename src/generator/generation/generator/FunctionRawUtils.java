@@ -26,7 +26,7 @@ public class FunctionRawUtils {
     }
 
     public String getFunctionName() {
-        return function.typeName(TypeAttr.NameType.RAW);
+        return function.typeName();
     }
 
     public String rawRetType() {

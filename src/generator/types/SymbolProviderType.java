@@ -22,7 +22,7 @@ public record SymbolProviderType(String className, PackagePath path)
     }
 
     @Override
-    public String typeName(TypeAttr.NameType nameType) {
+    public String typeName() {
         return className;
     }
 }

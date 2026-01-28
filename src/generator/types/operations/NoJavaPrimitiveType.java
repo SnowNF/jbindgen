@@ -14,7 +14,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
 
     public NoJavaPrimitiveType(T type, CommonTypes.BindTypes bindTypes) {
         Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16);
-        this.typeName = type.typeName(TypeAttr.NameType.RAW);
+        this.typeName = type.typeName();
         this.bindTypes = bindTypes;
         this.type = type;
     }
@@ -54,9 +54,9 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
-                                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                CommonTypes.SpecificTypes.MemoryUtils.typeName(),
                                 varName, 0, ms, offset, memoryLayout),
                         upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
             }

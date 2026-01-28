@@ -12,8 +12,6 @@ import generator.types.*;
 
 import java.util.*;
 
-import static generator.types.TypeAttr.NameType.RAW;
-
 public class Processor {
     private static class GenerateUnit {
         private final HashMap<TypeAttr.GenerationType, Optional<PackagePath>> allTypes = new HashMap<>();
@@ -82,24 +80,24 @@ public class Processor {
                 return packagePath;
             }
             var path = switch (unlocatedType) {
-                case CommonTypes.BaseType baseType -> dest.common().path().close(baseType.typeName(RAW));
-                case RefOnlyType refOnlyType -> dest.refOnly().path().close(refOnlyType.typeName(RAW));
+                case CommonTypes.BaseType baseType -> dest.common().path().close(baseType.typeName());
+                case RefOnlyType refOnlyType -> dest.refOnly().path().close(refOnlyType.typeName());
                 case SingleGenerationType singleGenerationType -> switch (singleGenerationType) {
                     case AbstractGenerationType abstractGenerationType -> switch (abstractGenerationType) {
-                        case EnumType enumType -> dest.enumerate().path().close(enumType.typeName(RAW));
+                        case EnumType enumType -> dest.enumerate().path().close(enumType.typeName());
                         case FunctionPtrType functionPtrType ->
-                                dest.funcProtocol().path().close(functionPtrType.typeName(RAW));
+                                dest.funcProtocol().path().close(functionPtrType.typeName());
                         case ValueBasedType valueBasedType ->
-                                dest.valueBased().path().close(valueBasedType.typeName(RAW));
+                                dest.valueBased().path().close(valueBasedType.typeName());
                     };
-                    case ArrayTypeNamed arrayTypeNamed -> dest.arrayNamed().path().close(arrayTypeNamed.typeName(RAW));
+                    case ArrayTypeNamed arrayTypeNamed -> dest.arrayNamed().path().close(arrayTypeNamed.typeName());
                     case CommonTypes.BindTypes bindTypes ->
                             throw new UnsupportedOperationException("Not supported yet.");
-                    case StructType structType -> dest.struct().path().close(structType.typeName(RAW));
+                    case StructType structType -> dest.struct().path().close(structType.typeName());
                 };
                 case SymbolProviderType symbolProviderType -> symbolProviderType.path();
                 case TaggedNamedType _, ArrayType _, PointerType _ -> throw new UnsupportedOperationException();
-                case VoidType voidType -> dest.voidBased().path().close(voidType.typeName(RAW));
+                case VoidType voidType -> dest.voidBased().path().close(voidType.typeName());
             };
             allTypes.put(unlocatedType, Optional.of(path));
             return Optional.of(path);
@@ -231,10 +229,10 @@ public class Processor {
             @Override
             public Optional<PackagePath> queryPath(TypeAttr.GenerationType unlocatedType) {
                 if (unlocatedType instanceof PointerType ptr) {
-                    return Optional.of(dest.common().path().close(ptr.typeName(RAW)));
+                    return Optional.of(dest.common().path().close(ptr.typeName()));
                 }
                 if (unlocatedType instanceof ArrayType arr) {
-                    return Optional.of(dest.common().path().close(arr.typeName(RAW)));
+                    return Optional.of(dest.common().path().close(arr.typeName()));
                 }
                 return super.queryPath(unlocatedType);
             }

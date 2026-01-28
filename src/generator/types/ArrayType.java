@@ -16,7 +16,7 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
 
     @Override
     public OperationAttr.Operation getOperation() {
-        return new ArrayOp(typeName(TypeAttr.NameType.GENERIC), this);
+        return new ArrayOp(typeName(), this);
     }
 
     @Override
@@ -25,13 +25,17 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
     }
 
     @Override
-    public String typeName(TypeAttr.NameType nameType) {
+    public String typeName() {
+        return ARRAY_TYPE.typeName();
+    }
+
+    @Override
+    public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
         return switch (nameType) {
             case WILDCARD ->
-                    ARRAY_TYPE.getWildcardName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.WILDCARD));
+                    ARRAY_TYPE.getWildcardName(((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.WILDCARD));
             case GENERIC ->
-                    ARRAY_TYPE.getGenericName(((TypeAttr.NamedType) element).typeName(TypeAttr.NameType.GENERIC));
-            case RAW -> ARRAY_TYPE.typeName(TypeAttr.NameType.RAW);
+                    ARRAY_TYPE.getGenericName(((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.GENERIC));
         };
     }
 

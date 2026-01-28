@@ -9,7 +9,7 @@ public class CommonOpOnly<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Ty
     private final boolean realVoid;
 
     public CommonOpOnly(T type, boolean realVoid) {
-        this.typeName = type.typeName(TypeAttr.NameType.RAW);
+        this.typeName = type.typeName();
         this.type = type;
         this.realVoid = realVoid;
     }

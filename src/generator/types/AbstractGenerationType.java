@@ -23,7 +23,7 @@ public sealed abstract class AbstractGenerationType
     }
 
     @Override
-    public String typeName(TypeAttr.NameType nameType) {
+    public String typeName() {
         return typeName;
     }
 

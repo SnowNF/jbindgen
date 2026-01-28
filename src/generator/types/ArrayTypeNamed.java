@@ -23,7 +23,7 @@ public record ArrayTypeNamed(String typeName, long length, TypeAttr.TypeRefer el
     }
 
     @Override
-    public String typeName(TypeAttr.NameType nameType) {
+    public String typeName() {
         return typeName;
     }
 

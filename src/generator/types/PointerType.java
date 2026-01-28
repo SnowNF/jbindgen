@@ -13,7 +13,7 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
 
     @Override
     public OperationAttr.Operation getOperation() {
-        return new PointerOp(CommonTypes.BindTypes.makePtrGenericName(((TypeAttr.NamedType) pointee).typeName(TypeAttr.NameType.GENERIC)), this);
+        return new PointerOp( this);
     }
 
     @Override
@@ -24,7 +24,7 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
     @Override
     public String toString() {
         return "PointerType{" +
-               "pointee=" + ((TypeAttr.NamedType) pointee).typeName(TypeAttr.NameType.GENERIC) +
+               "pointee=" + ((TypeAttr.NamedType) pointee).typeName() +
                '}';
     }
 
@@ -39,13 +39,17 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
     }
 
     @Override
-    public String typeName(TypeAttr.NameType nameType) {
+    public String typeName() {
+        return CommonTypes.BindTypes.Ptr.typeName();
+    }
+
+    @Override
+    public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
         return switch (nameType) {
             case WILDCARD ->
-                    CommonTypes.BindTypes.makePtrWildcardName(((TypeAttr.NamedType) pointee).typeName(TypeAttr.NameType.WILDCARD));
+                    CommonTypes.BindTypes.makePtrWildcardName(((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.WILDCARD));
             case GENERIC ->
-                    CommonTypes.BindTypes.makePtrGenericName(((TypeAttr.NamedType) pointee).typeName(TypeAttr.NameType.GENERIC));
-            case RAW -> CommonTypes.BindTypes.Ptr.typeName(TypeAttr.NameType.RAW);
+                    CommonTypes.BindTypes.makePtrGenericName(((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.GENERIC));
         };
     }
 }

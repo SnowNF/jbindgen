@@ -8,7 +8,7 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
     private final StructType structType;
 
     public MemoryBased(StructType structType) {
-        this.typeName = structType.typeName(TypeAttr.NameType.RAW);
+        this.typeName = structType.typeName();
         this.structType = structType;
     }
 
@@ -47,9 +47,9 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
-                                CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                CommonTypes.SpecificTypes.MemoryUtils.typeName(),
                                 varName, 0, ms, offset, memoryLayout),
                         upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
             }

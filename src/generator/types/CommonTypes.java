@@ -124,7 +124,7 @@ public class CommonTypes {
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName() {
             if (Generators.DEBUG)
                 return name() + Generators.DEBUG_NAME_APPEND;
             return name();
@@ -170,7 +170,7 @@ public class CommonTypes {
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName() {
             if (Generators.DEBUG)
                 return name() + Generators.DEBUG_NAME_APPEND;
             return name();
@@ -226,7 +226,7 @@ public class CommonTypes {
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName() {
             if (Generators.DEBUG)
                 return name() + Generators.DEBUG_NAME_APPEND;
             return name();
@@ -272,11 +272,11 @@ public class CommonTypes {
         }
 
         public static String makePtrGenericName(String t) {
-            return Ptr.typeName(TypeAttr.NameType.RAW) + "<%s>".formatted(t);
+            return Ptr.typeName() + "<%s>".formatted(t);
         }
 
         public static String makePtrWildcardName(String t) {
-            return Ptr.typeName(TypeAttr.NameType.RAW) + "<? extends %s>".formatted(t);
+            return Ptr.typeName() + "<? extends %s>".formatted(t);
         }
 
         @Override
@@ -292,7 +292,7 @@ public class CommonTypes {
             if (operations.getValue().primitive.noJavaPrimitive) {
                 return new NoJavaPrimitiveType<>(this, this);
             }
-            return new ValueBased<>(this, typeName(TypeAttr.NameType.RAW), this);
+            return new ValueBased<>(this, typeName(), this);
         }
 
         @Override
@@ -306,7 +306,7 @@ public class CommonTypes {
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName() {
             if (Generators.DEBUG)
                 return name() + Generators.DEBUG_NAME_APPEND;
             return name();
@@ -354,18 +354,18 @@ public class CommonTypes {
             if (!generic) {
                 throw new IllegalStateException("Cannot get generic name for non-generic type");
             }
-            return typeName(TypeAttr.NameType.RAW) + "<%s>".formatted(t);
+            return typeName() + "<%s>".formatted(t);
         }
 
         public String getWildcardName(String t) {
             if (!generic) {
                 throw new IllegalStateException("Cannot get wildcard name for non-generic type");
             }
-            return typeName(TypeAttr.NameType.RAW) + "<? extends %s>".formatted(t);
+            return typeName() + "<? extends %s>".formatted(t);
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName() {
             if (Generators.DEBUG)
                 return name() + Generators.DEBUG_NAME_APPEND;
             return name();
@@ -401,7 +401,7 @@ public class CommonTypes {
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName() {
             return type.getSimpleName();
         }
 

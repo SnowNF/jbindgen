@@ -54,9 +54,9 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
-                                MemoryUtils.typeName(TypeAttr.NameType.RAW),
+                                MemoryUtils.typeName(),
                                 varName, 0, ms, offset, memoryLayout),
                         upperType.typeImports().addUseImports(MemoryUtils));
 
@@ -70,7 +70,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
             @Override
             public Operation makeOperation(PackageManager packages) {
                 Operation eleOp = element.getOperation().getCommonOperation().makeOperation(packages);
-                return new Operation(arrayType.typeName(TypeAttr.NameType.RAW) + "." + ARRAY_MAKE_OPERATION_METHOD + "(%s, %s)"
+                return new Operation(arrayType.typeName() + "." + ARRAY_MAKE_OPERATION_METHOD + "(%s, %s)"
                         .formatted(eleOp.str(), arrayType.length()), eleOp.imports().addUseImports(arrayType));
             }
 

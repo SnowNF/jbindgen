@@ -9,7 +9,7 @@ public record TaggedNamedType(String typeName, TypeAttr.NamedType referType)
     }
 
     @Override
-    public String typeName(TypeAttr.NameType nameType) {
+    public String typeName() {
         return typeName;
     }
 }

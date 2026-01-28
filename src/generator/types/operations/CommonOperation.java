@@ -8,7 +8,7 @@ import generator.types.TypeImports;
 
 public interface CommonOperation {
     interface UpperType {
-        String typeName(TypeAttr.NameType nameType);
+        String typeName(PackageManager packages, TypeAttr.NameType nameType);
 
         TypeImports typeImports();
 
@@ -24,11 +24,11 @@ public interface CommonOperation {
     record End<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType>
             (T type, String typeName) implements UpperType {
         public End(T type) {
-            this(type, type.typeName(TypeAttr.NameType.RAW));
+            this(type, type.typeName());
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
             return typeName;
         }
 
@@ -47,8 +47,8 @@ public interface CommonOperation {
     record Reject<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType>(
             T t) implements UpperType {
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
-            return t.typeName(TypeAttr.NameType.RAW);
+        public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
+            return t.typeName();
         }
 
         @Override
@@ -73,13 +73,12 @@ public interface CommonOperation {
         }
 
         @Override
-        public String typeName(TypeAttr.NameType nameType) {
+        public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
             return switch (nameType) {
                 case WILDCARD -> inner.rejectWildcard()
-                        ? outer.typeName(TypeAttr.NameType.RAW) + "<?>"
-                        : outer.typeName(TypeAttr.NameType.RAW) + "<? extends %s>".formatted(inner.typeName(nameType));
-                case GENERIC -> outer.typeName(TypeAttr.NameType.RAW) + "<%s>".formatted(inner.typeName(nameType));
-                case RAW -> outer.typeName(TypeAttr.NameType.RAW);
+                        ? outer.typeName() + "<?>"
+                        : outer.typeName() + "<? extends %s>".formatted(inner.typeName(packages, nameType));
+                case GENERIC -> outer.typeName() + "<%s>".formatted(inner.typeName(packages, nameType));
             };
         }
 
@@ -104,7 +103,7 @@ public interface CommonOperation {
     }
 
     static Operation makeVoidOperation() {
-        return new Operation(CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW) + ".makeOperations()",
+        return new Operation(CommonTypes.BasicOperations.Info.typeName() + ".makeOperations()",
                 new TypeImports().addUseImports(CommonTypes.BasicOperations.Info));
     }
 

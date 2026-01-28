@@ -7,7 +7,6 @@ import generator.types.CommonTypes.BasicOperations;
 import generator.types.CommonTypes.BindTypes;
 import generator.types.CommonTypes.SpecificTypes;
 import generator.types.CommonTypes.ValueInterface;
-import generator.types.TypeAttr.NameType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1131,7 +1130,7 @@ public class CommonGenerator implements Generator {
 
     private void genBindTypes(PackageManager packages, BindTypes bindTypes) {
         if (bindTypes != BindTypes.Ptr) {
-            genValueBasedTypes(packages, bindTypes, bindTypes.typeName(NameType.RAW), writer);
+            genValueBasedTypes(packages, bindTypes, bindTypes.typeName(), writer);
             return;
         }
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
