@@ -26,7 +26,6 @@ public class ArrayNamedGenerator implements Generator {
     }
 
     private static String makeValue(PackageManager packages, ArrayTypeNamed type) {
-        packages.addImport(type.getOperation().getCommonOperation().makeMemoryLayout(packages).getTypeImports());
         packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
         packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);

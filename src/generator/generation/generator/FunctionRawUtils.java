@@ -39,7 +39,6 @@ public class FunctionRawUtils {
     public String funcDescriptor() {
         List<String> memoryLayout = new ArrayList<>();
         for (MemoryLayouts l : function.getMemoryLayouts(packages)) {
-            packages.addImport(l.getTypeImports());
             memoryLayout.add(l.getMemoryLayout(packages));
         }
         var str = String.join(", ", memoryLayout);

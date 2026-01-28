@@ -19,13 +19,6 @@ public record VoidType(String typeName) implements
     public static final VoidType VOID = new VoidType("Void");
 
     @Override
-    public TypeImports getUseImportTypes() {
-        if (realVoid())
-            return new TypeImports();
-        return new TypeImports(this);
-    }
-
-    @Override
     public String typeName() {
         return typeName;
     }

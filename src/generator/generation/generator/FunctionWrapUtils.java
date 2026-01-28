@@ -38,7 +38,6 @@ public class FunctionWrapUtils {
             return "void";
         }
         TypeAttr.OperationType retType = function.getReturnType().get();
-        packages.addImport(((TypeAttr.TypeRefer) retType).getUseImportTypes());
         var r = packages.useType((TypeAttr.GenerationType) retType, TypeAttr.NameType.GENERIC);
         if (allocatorType == AllocatorType.STANDARD) {
             // warp with Ptr<T>

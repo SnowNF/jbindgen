@@ -83,11 +83,6 @@ public final class FunctionPtrType implements SingleGenerationType {
     }
 
     @Override
-    public TypeImports getUseImportTypes() {
-        return new TypeImports(this);
-    }
-
-    @Override
     public String toString() {
         return "FunctionPtrType{" +
                "typeName='" + typeName + '\'' +

@@ -37,7 +37,7 @@ public class TypeAttr {
          */
         String typeName();
 
-        default String typeName(PackageManager packages, TypeAttr.NameType nameType){
+        default String typeName(PackageManager packages, TypeAttr.NameType nameType) {
             return packages.useClass((GenerationType) this);
         }
     }
@@ -49,9 +49,5 @@ public class TypeAttr {
     }
 
     public sealed interface TypeRefer permits ArrayType, CommonTypes.BaseType, TaggedNamedType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {
-        /**
-         * @return the types when use this type
-         */
-        TypeImports getUseImportTypes();
     }
 }

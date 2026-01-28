@@ -73,8 +73,4 @@ public final class ValueBasedType implements SingleGenerationType {
         return bindTypes.byteSize();
     }
 
-    @Override
-    public TypeImports getUseImportTypes() {
-        return new TypeImports(this);
-    }
 }

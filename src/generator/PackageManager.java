@@ -1,7 +1,6 @@
 package generator;
 
 import generator.types.TypeAttr;
-import generator.types.TypeImports;
 import utils.CommonUtils;
 
 import java.util.ArrayList;
@@ -33,13 +32,6 @@ public class PackageManager {
         HashSet<TypeAttr.GenerationType> ret = new HashSet<>(used);
         ret.addAll(imports.values());
         return ret;
-    }
-
-    public void addImport(TypeImports imports) {
-        used.addAll(imports.getImports());
-        for (TypeAttr.GenerationType anImport : imports.getImports()) {
-            this.imports.put(((TypeAttr.NamedType) anImport).typeName(), anImport);
-        }
     }
 
     public String useClass(TypeAttr.GenerationType type) {
@@ -78,7 +70,7 @@ public class PackageManager {
     }
 
     public String useType(TypeAttr.GenerationType type, TypeAttr.NameType name) {
-        return useTypePrefix(type) + ((TypeAttr.NamedType) type).typeName(this, name);
+        return ((TypeAttr.NamedType) type).typeName(this, name);
     }
 
     public String makeImports() {

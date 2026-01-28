@@ -114,11 +114,6 @@ public class CommonTypes {
         }
 
         @Override
-        public TypeImports getUseImportTypes() {
-            return new TypeImports(this);
-        }
-
-        @Override
         public String typeName() {
             if (Generators.DEBUG)
                 return name() + Generators.DEBUG_NAME_APPEND;
@@ -150,11 +145,6 @@ public class CommonTypes {
 
         ValueInterface(Primitives primitive) {
             this.primitive = primitive;
-        }
-
-        @Override
-        public TypeImports getUseImportTypes() {
-            return new TypeImports(this);
         }
 
         @Override
@@ -197,11 +187,6 @@ public class CommonTypes {
             this.value = elementType;
         }
 
-        @Override
-        public TypeImports getUseImportTypes() {
-            return new TypeImports(this);
-        }
-
         public ValueInterface getValue() {
             return value;
         }
@@ -242,11 +227,6 @@ public class CommonTypes {
 
         public static String makePtrWildcardName(String t) {
             return Ptr.typeName() + "<? extends %s>".formatted(t);
-        }
-
-        @Override
-        public TypeImports getUseImportTypes() {
-            return new TypeImports(this);
         }
 
         public BindTypeOperations getOperations() {
@@ -298,11 +278,6 @@ public class CommonTypes {
             this.generic = generic;
         }
 
-        @Override
-        public TypeImports getUseImportTypes() {
-            return new TypeImports(this);
-        }
-
         public String getGenericName(String t) {
             if (!generic) {
                 throw new IllegalStateException("Cannot get generic name for non-generic type");
@@ -342,11 +317,6 @@ public class CommonTypes {
 
         FFMTypes(Class<?> type) {
             this.type = type;
-        }
-
-        @Override
-        public TypeImports getUseImportTypes() {
-            return new TypeImports(this);
         }
 
         public Class<?> getType() {

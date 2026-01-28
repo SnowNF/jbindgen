@@ -92,7 +92,6 @@ public class StructGenerator implements Generator {
     }
 
     private static String getMain(PackageManager packages, MemoryLayouts layout, String ext) {
-        packages.addImport(layout.getTypeImports());
         packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         return """

@@ -1280,7 +1280,6 @@ public class CommonGenerator implements Generator {
         Assert(bindTypes != BindTypes.Ptr);
         if (bindTypes.getOperations().getValue().getPrimitive().noJavaPrimitive()) {
             packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-            packages.addImport(bindTypes.getOperation().getCommonOperation().makeMemoryLayout(packages).getTypeImports());
             Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16, " sizeof %s must be 16".formatted(bindTypes));
             var str = """
                     import java.lang.foreign.MemorySegment;

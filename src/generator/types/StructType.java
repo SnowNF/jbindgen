@@ -152,11 +152,6 @@ public final class StructType implements SingleGenerationType {
     }
 
     @Override
-    public TypeImports getUseImportTypes() {
-        return new TypeImports(this);
-    }
-
-    @Override
     public String typeName() {
         return typeName;
     }

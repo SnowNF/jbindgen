@@ -7,11 +7,6 @@ public record RefOnlyType(String typeName) implements
         TypeAttr.TypeRefer, TypeAttr.GenerationType, TypeAttr.NamedType, TypeAttr.OperationType {
 
     @Override
-    public TypeImports getUseImportTypes() {
-        return new TypeImports(this);
-    }
-
-    @Override
     public String typeName() {
         return typeName;
     }

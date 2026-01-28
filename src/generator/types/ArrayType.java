@@ -20,11 +20,6 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
     }
 
     @Override
-    public TypeImports getUseImportTypes() {
-        return element.getUseImportTypes().addUseImports(ARRAY_TYPE);
-    }
-
-    @Override
     public String typeName() {
         return ARRAY_TYPE.typeName();
     }

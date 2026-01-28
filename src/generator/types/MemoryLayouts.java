@@ -80,8 +80,4 @@ public class MemoryLayouts {
     public String getMemoryLayout(PackageManager packages) {
         return eval.makeStr(packages);
     }
-
-    public TypeImports getTypeImports() {
-        return new TypeImports();
-    }
 }

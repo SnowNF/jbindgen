@@ -47,11 +47,6 @@ public final class EnumType implements SingleGenerationType {
     }
 
     @Override
-    public TypeImports getUseImportTypes() {
-        return new TypeImports(this);
-    }
-
-    @Override
     public String toString() {
         return "EnumType{" +
                "typeName='" + typeName + '\'' +
