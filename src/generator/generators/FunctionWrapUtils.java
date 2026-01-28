@@ -73,7 +73,7 @@ public class FunctionWrapUtils {
     public String upcallPara() {
         List<String> out = new ArrayList<>();
         for (FunctionPtrType.Arg arg : function.getArgs()) {
-            out.add(packages.useClass((TypeAttr.GenerationType) arg.type()) + " " + arg.argName());
+            out.add(packages.useType((TypeAttr.GenerationType) arg.type(), TypeAttr.NameType.GENERIC) + " " + arg.argName());
         }
         return String.join(", ", out);
     }

@@ -1372,7 +1372,7 @@ public class CommonGenerator implements Generator {
                 import java.util.Objects;
                 
                 public class %3$s implements %5$s<%3$s>, %10$s<%3$s> {
-                    public static final %10$s.Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);;
+                    public static final %10$s.Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);
                     private final %6$s val;
                 
                     public %3$s(%6$s val) {

@@ -125,7 +125,9 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                         p.getMemoryUtilName(),
                         ms,
                         offset / 8);
-                value = "(%s >>> %s) & %s".formatted(value, shift, longToString(mask));
+                value = shift == 0
+                        ? "%s & %s".formatted(value, longToString(mask))
+                        : "(%s >>> %s) & %s".formatted(value, shift, longToString(mask));
                 value = unsignedCast(p, primitives, value);
                 var ret = "        return new %s(%s);".formatted(typeName(packages), value);
                 return Optional.of(new Getter("", typeName(packages), checkByteOrder + ret));
@@ -169,12 +171,9 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                         ms,
                         offset / 8);
                 var userSet = "%s.operator().value()".formatted(varName);
-                var value = "((%s & %s) << %s) | (%s & ~(%s))".formatted(
-                        userSet,
-                        longToString(mask),
-                        shift,
-                        preGet,
-                        longToString(mask << shift));
+                var value = shift == 0
+                        ? "(%s & %s) | (%s & ~(%s))".formatted(userSet, longToString(mask), preGet, longToString(mask << shift))
+                        : "((%s & %s) << %s) | (%s & ~(%s))".formatted(userSet, longToString(mask), shift, preGet, longToString(mask << shift));
                 value = "(%s) (%s)".formatted(
                         p.getPrimitiveTypeName(),
                         value);

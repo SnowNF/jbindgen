@@ -35,7 +35,7 @@ public class ConstGenerator implements Generator {
         return new GenerateResult(List.of(packages), List.of());
     }
 
-    public static record ConstValue(TypeAttr.TypeRefer type, String value, String name) {
+    public record ConstValue(TypeAttr.TypeRefer type, String value, String name) {
 
     }
 }

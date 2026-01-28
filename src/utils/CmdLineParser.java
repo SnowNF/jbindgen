@@ -1,14 +1,14 @@
 package utils;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import analyser.Analyser;
 import generator.PackagePath;
 import processor.Processor;
 import processor.Utils;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class CmdLineParser {
     private static class Component {
@@ -16,30 +16,31 @@ public class CmdLineParser {
         public String filterString;
         public List<String> args;
         public boolean analyseMacro;
+        public boolean greedy = true; // false then track generation by type reference
         public Path outDir;
         public String libPkg;
         public String libName;
 
         public boolean finished() {
             return header != null &&
-                    filterString != null &&
-                    args != null &&
-                    outDir != null &&
-                    libPkg != null &&
-                    libName != null;
+                   filterString != null &&
+                   args != null &&
+                   outDir != null &&
+                   libPkg != null &&
+                   libName != null;
         }
 
         @Override
         public String toString() {
             return "Component{" +
-                    "header='" + header + '\'' +
-                    ", filterString='" + filterString + '\'' +
-                    ", args=" + args +
-                    ", analyseMacro=" + analyseMacro +
-                    ", outDir=" + outDir +
-                    ", libPkg='" + libPkg + '\'' +
-                    ", libName='" + libName + '\'' +
-                    '}';
+                   "header='" + header + '\'' +
+                   ", filterString='" + filterString + '\'' +
+                   ", args=" + args +
+                   ", analyseMacro=" + analyseMacro +
+                   ", outDir=" + outDir +
+                   ", libPkg='" + libPkg + '\'' +
+                   ", libName='" + libName + '\'' +
+                   '}';
         }
     }
 
@@ -100,6 +101,9 @@ public class CmdLineParser {
                 case "--filter-str":
                     current.filterString = value;
                     break;
+                case "--greedy":
+                    current.greedy = Boolean.parseBoolean(value);
+                    break;
                 default:
                     throw new IllegalArgumentException("Invalid argument:" + arg);
             }
@@ -136,14 +140,14 @@ public class CmdLineParser {
 
         var it = components.iterator();
         Component primary = it.next();
-        Processor primaryProc = new Processor(Utils.DestinationProvider.ofDefault(new PackagePath(primary.outDir).add(primary.libPkg), primary.libName),
-                Utils.Filter.ofDefault(s -> s.contains(primary.filterString)));
+        Processor primaryProc = new Processor(Utils.DestinationProvider.ofDefault(new PackagePath(primary.outDir).add(primary.libPkg), primary.libName)
+        );
         if (!primary.header.isEmpty()) {
             Analyser primaryAnalyser = new Analyser(primary.header, primary.args, primary.analyseMacro);
             primaryAnalyser.close();
             primaryProc = primaryProc.withExtra(primaryAnalyser,
                     Utils.DestinationProvider.ofDefault(new PackagePath(primary.outDir).add(primary.libPkg), primary.libName),
-                    Utils.Filter.ofDefault(s -> s.contains(primary.filterString)));
+                    Utils.Filter.ofDefault(s -> s.contains(primary.filterString)), primary.greedy);
         }
 
         while (it.hasNext()) {
@@ -152,7 +156,7 @@ public class CmdLineParser {
             analyser.close();
             primaryProc = primaryProc.withExtra(analyser,
                     Utils.DestinationProvider.ofDefault(new PackagePath(extra.outDir).add(extra.libPkg), extra.libName),
-                    Utils.Filter.ofDefault(s -> s.contains(extra.filterString)));
+                    Utils.Filter.ofDefault(s -> s.contains(extra.filterString)), extra.greedy);
         }
         primaryProc.generate();
     }

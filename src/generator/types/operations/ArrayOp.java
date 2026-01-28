@@ -29,7 +29,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
             @Override
             public Result constructFromRet(String varName) {
                 CommonOperation.Operation operation = element.getOperation().getCommonOperation().makeOperation(packages);
-                return new Result("new %s(%s, %s)".formatted(packages.useClass(arrayType), varName, operation.str()));
+                return new Result("new %s(%s, %s)".formatted(packages.useType(arrayType, TypeAttr.NameType.GENERIC), varName, operation.str()));
             }
 
             @Override
@@ -46,8 +46,8 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public Getter getter(String ms, long offset) {
-                return new Getter("", packages.useClass(arrayType),
-                        "new %s(%s, %s)".formatted(packages.useClass(arrayType),
+                return new Getter("", packages.useType(arrayType, TypeAttr.NameType.GENERIC),
+                        "new %s(%s, %s)".formatted(packages.useType(arrayType, TypeAttr.NameType.GENERIC),
                                 "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout),
                                 element.getOperation().getCommonOperation().makeOperation(packages).str()));
             }
