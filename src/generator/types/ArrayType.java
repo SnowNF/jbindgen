@@ -36,6 +36,7 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
                     ARRAY_TYPE.getWildcardName(((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.WILDCARD));
             case GENERIC ->
                     ARRAY_TYPE.getGenericName(((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.GENERIC));
+            case RAW -> packages.useClass(ARRAY_TYPE);
         };
     }
 

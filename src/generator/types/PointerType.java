@@ -13,7 +13,7 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
 
     @Override
     public OperationAttr.Operation getOperation() {
-        return new PointerOp( this);
+        return new PointerOp(this);
     }
 
     @Override
@@ -50,6 +50,7 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
                     CommonTypes.BindTypes.makePtrWildcardName(((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.WILDCARD));
             case GENERIC ->
                     CommonTypes.BindTypes.makePtrGenericName(((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.GENERIC));
+            case RAW -> packages.useClass(CommonTypes.BindTypes.Ptr);
         };
     }
 }

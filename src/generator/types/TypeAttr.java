@@ -33,6 +33,7 @@ public class TypeAttr {
     public enum NameType {
         WILDCARD,
         GENERIC,
+        RAW,
     }
 
     public sealed interface NamedType permits ArrayType, CommonTypes.BaseType, TaggedNamedType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {
@@ -45,7 +46,7 @@ public class TypeAttr {
         String typeName();
 
         default String typeName(PackageManager packages, TypeAttr.NameType nameType){
-            return typeName();
+            return packages.useClass((GenerationType) this);
         }
     }
 

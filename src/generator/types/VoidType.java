@@ -1,5 +1,6 @@
 package generator.types;
 
+import generator.PackageManager;
 import generator.types.operations.CommonOpOnly;
 import generator.types.operations.OperationAttr;
 
@@ -27,6 +28,14 @@ public record VoidType(String typeName) implements
     @Override
     public String typeName() {
         return typeName;
+    }
+
+    @Override
+    public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
+        if (realVoid()) {
+            return typeName;
+        }
+        return TypeAttr.NamedType.super.typeName(packages, nameType);
     }
 
     @Override

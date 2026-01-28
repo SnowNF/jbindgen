@@ -79,6 +79,7 @@ public interface CommonOperation {
                         ? outer.typeName() + "<?>"
                         : outer.typeName() + "<? extends %s>".formatted(inner.typeName(packages, nameType));
                 case GENERIC -> outer.typeName() + "<%s>".formatted(inner.typeName(packages, nameType));
+                case RAW -> outer.typeName(packages, TypeAttr.NameType.RAW);
             };
         }
 
