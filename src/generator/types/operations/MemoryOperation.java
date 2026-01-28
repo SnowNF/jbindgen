@@ -1,21 +1,13 @@
 package generator.types.operations;
 
-import generator.types.TypeImports;
-
 import java.util.Optional;
 
 public interface MemoryOperation {
 
-    record Setter(String para, String codeSegment, TypeImports imports) {
-        public Setter(String para, String codeSegment) {
-            this(para, codeSegment, new TypeImports());
-        }
+    record Setter(String para, String codeSegment) {
     }
 
-    record Getter(String para, String ret, String codeSegment, TypeImports imports) {
-        public Getter(String para, String ret, String codeSegment) {
-            this(para, ret, codeSegment, new TypeImports());
-        }
+    record Getter(String para, String ret, String codeSegment) {
     }
 
     /**

@@ -29,7 +29,7 @@ public final class EnumType implements SingleGenerationType {
 
     @Override
     public OperationAttr.Operation getOperation() {
-        return new ValueBased<>(this, typeName, type);
+        return new ValueBased<>(this, type);
     }
 
     public CommonTypes.BindTypes getType() {

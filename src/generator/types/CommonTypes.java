@@ -108,6 +108,7 @@ public class CommonTypes {
         StructI(true),
         ;
         private final boolean destruct;
+
         BasicOperations(boolean destruct) {
             this.destruct = destruct;
         }
@@ -146,6 +147,7 @@ public class CommonTypes {
         I128I(Primitives.Integer128);
 
         private final Primitives primitive;
+
         ValueInterface(Primitives primitive) {
             this.primitive = primitive;
         }
@@ -229,6 +231,7 @@ public class CommonTypes {
         FP128(BindTypeOperations.FP128Op),
         I128(BindTypeOperations.I128Op);
         private final BindTypeOperations operations;
+
         BindTypes(BindTypeOperations operations) {
             this.operations = operations;
         }
@@ -254,7 +257,7 @@ public class CommonTypes {
             if (operations.getValue().primitive.noJavaPrimitive) {
                 return new NoJavaPrimitiveType<>(this, this);
             }
-            return new ValueBased<>(this, typeName(), this);
+            return new ValueBased<>(this, this);
         }
 
         public MemoryLayouts getMemoryLayout() {
@@ -290,6 +293,7 @@ public class CommonTypes {
         ;
 
         final boolean generic;
+
         SpecificTypes(boolean generic) {
             this.generic = generic;
         }

@@ -1,7 +1,10 @@
 package generator.types.operations;
 
 import generator.PackageManager;
-import generator.types.*;
+import generator.types.CommonTypes;
+import generator.types.MemoryLayouts;
+import generator.types.StructType;
+import generator.types.TypeAttr;
 
 public class MemoryBased implements OperationAttr.MemoryBasedOperation {
     private final StructType structType;
@@ -48,7 +51,7 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
-                                varName, 0, ms, offset, memoryLayout), new TypeImports());
+                                varName, 0, ms, offset, memoryLayout));
             }
         };
     }

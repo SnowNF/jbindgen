@@ -32,7 +32,7 @@ public final class ValueBasedType implements SingleGenerationType {
         if (bindTypes.getOperations().getValue().getPrimitive().noJavaPrimitive()) {
             return new NoJavaPrimitiveType<>(this, bindTypes);
         }
-        return new ValueBased<>(this, typeName, bindTypes);
+        return new ValueBased<>(this, bindTypes);
     }
 
     public CommonTypes.BindTypes getBindTypes() {

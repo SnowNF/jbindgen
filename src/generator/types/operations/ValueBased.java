@@ -1,21 +1,22 @@
 package generator.types.operations;
 
 import generator.PackageManager;
-import generator.types.*;
+import generator.types.CommonTypes;
 import generator.types.CommonTypes.SpecificTypes;
+import generator.types.TypeAttr;
+import generator.types.ValueBasedType;
+import generator.types.VoidType;
 import utils.CommonUtils;
 
 import java.util.Optional;
 
 public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.ValueBasedOperation {
     private final T type;
-    private final String typeName;
     private final CommonTypes.Primitives primitives;
     private final CommonTypes.BindTypes bindTypes;
 
-    public ValueBased(T type, String typeName, CommonTypes.BindTypes bindTypes) {
+    public ValueBased(T type, CommonTypes.BindTypes bindTypes) {
         this.type = type;
-        this.typeName = typeName;
         this.primitives = bindTypes.getPrimitiveType();
         this.bindTypes = bindTypes;
     }
@@ -30,7 +31,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
 
             @Override
             public Result constructFromRet(String varName) {
-                return new Result("new " + typeName + "(" + varName + ")");
+                return new Result("new " + typeName(packages) + "(" + varName + ")");
             }
 
             @Override
@@ -38,6 +39,10 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                 return primitives;
             }
         };
+    }
+
+    private String typeName(PackageManager packages) {
+        return packages.useClass(type);
     }
 
     private Optional<CommonTypes.Primitives> selectFitBitSize(long bitOffset, long bitSize) {
@@ -82,10 +87,11 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
         return new MemoryOperation() {
             @Override
             public Getter getter(String ms, long offset) {
-                return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.get%s(%s, %s)".formatted(packages.useClass(SpecificTypes.MemoryUtils),
-                                primitives.getMemoryUtilName(), ms, offset)),
-                        new TypeImports().addUseImports(type));
+                return new Getter("", typeName(packages),
+                        "new %s(%s)".formatted(
+                                typeName(packages),
+                                "%s.get%s(%s, %s)".formatted(packages.useClass(SpecificTypes.MemoryUtils),
+                                        primitives.getMemoryUtilName(), ms, offset)));
             }
 
             @Override
@@ -105,9 +111,8 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                             ms,
                             bitOffset / 8);
                     value = unsignedCast(p, primitives, value);
-                    return Optional.of(new Getter("", typeName,
-                            "        return new %s(%s);".formatted(typeName, value),
-                            new TypeImports().addUseImports(type)));
+                    return Optional.of(new Getter("", typeName(packages),
+                            "        return new %s(%s);".formatted(typeName(packages), value)));
                 }
                 long offset = bitOffset - shift;
                 //long get = ms.get(ValueLayout.JAVA_LONG, offset / 8);
@@ -122,10 +127,8 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                         offset / 8);
                 value = "(%s >>> %s) & %s".formatted(value, shift, longToString(mask));
                 value = unsignedCast(p, primitives, value);
-                var ret = "        return new %s(%s);".formatted(typeName, value);
-                return Optional.of(new Getter("", typeName, checkByteOrder + ret,
-                        new TypeImports().addUseImports(type).addUseImports(SpecificTypes.MemoryUtils)
-                                .addUseImports(CommonTypes.FFMTypes.BYTE_ORDER)));
+                var ret = "        return new %s(%s);".formatted(typeName(packages), value);
+                return Optional.of(new Getter("", typeName(packages), checkByteOrder + ret));
             }
 
             @Override
@@ -134,7 +137,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.set%s(%s, %s, %s.operator().value())".formatted(
                                 packages.useClass(SpecificTypes.MemoryUtils),
-                                primitives.getMemoryUtilName(), ms, offset, varName), new TypeImports());
+                                primitives.getMemoryUtilName(), ms, offset, varName));
             }
 
             @Override
@@ -153,7 +156,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                     return Optional.of(new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                             "        %s.set%s(%s, %s, %s.operator().value()%s);".formatted(
                                     packages.useClass(SpecificTypes.MemoryUtils),
-                                    p.getMemoryUtilName(), ms, bitOffset / 8, varName, typeValue), new TypeImports()));
+                                    p.getMemoryUtilName(), ms, bitOffset / 8, varName, typeValue)));
                 }
                 long offset = bitOffset - shift;
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
@@ -180,8 +183,9 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                         p.getMemoryUtilName(),
                         ms,
                         offset / 8, value);
-                return Optional.of(new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
-                        get + set, new TypeImports()));
+                return Optional.of(new Setter(
+                        upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                        get + set));
             }
         };
     }

@@ -1,7 +1,10 @@
 package generator.types.operations;
 
 import generator.PackageManager;
-import generator.types.*;
+import generator.types.CommonTypes;
+import generator.types.MemoryLayouts;
+import generator.types.PointerType;
+import generator.types.TypeAttr;
 
 import static generator.generation.generator.CommonGenerator.PTR_MAKE_OPERATION_METHOD;
 
@@ -43,9 +46,8 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
                 return new Getter("", pointerType.typeName(packages, TypeAttr.NameType.GENERIC),
                         "new %s(%s, %s)".formatted(pointerType.typeName(packages, TypeAttr.NameType.GENERIC),
                                 "%s.getAddr(%s, %s)".formatted(
-                                        CommonTypes.SpecificTypes.MemoryUtils.typeName(), ms, offset),
-                                pointeeType.getOperation().getCommonOperation().makeOperation(packages).str()),
-                        new TypeImports().addUseImports(pointerType).addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
+                                        packages.useClass(CommonTypes.SpecificTypes.MemoryUtils), ms, offset),
+                                pointeeType.getOperation().getCommonOperation().makeOperation(packages).str()));
             }
 
             @Override
@@ -54,7 +56,7 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
                                 packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
-                                ms, offset, varName), new TypeImports());
+                                ms, offset, varName));
             }
         };
     }

@@ -64,8 +64,6 @@ public class StructGenerator implements Generator {
             var set = operation.getMemoryOperation(packages).setterBitfield("ms", member.offset(), member.bitSize(), memberName);
             if (get.isEmpty() || set.isEmpty())
                 return Optional.empty();
-            packages.addImport(get.get().imports());
-            packages.addImport(set.get().imports());
             return Optional.of(new GetterAndSetter("""
                         public %s %s(%s) {
                     %s
@@ -80,8 +78,6 @@ public class StructGenerator implements Generator {
         }
         MemoryOperation.Getter getter = operation.getMemoryOperation(packages).getter("ms", member.offset() / 8);
         MemoryOperation.Setter setter = operation.getMemoryOperation(packages).setter("ms", member.offset() / 8, memberName);
-        packages.addImport(getter.imports());
-        packages.addImport(setter.imports());
         return Optional.of(new GetterAndSetter("""
                     public %s %s(%s) {
                         return %s;

@@ -1,7 +1,10 @@
 package generator.types.operations;
 
 import generator.PackageManager;
-import generator.types.*;
+import generator.types.ArrayType;
+import generator.types.CommonTypes;
+import generator.types.MemoryLayouts;
+import generator.types.TypeAttr;
 
 import static generator.generation.generator.CommonGenerator.ARRAY_MAKE_OPERATION_METHOD;
 import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
@@ -46,8 +49,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
                 return new Getter("", packages.useClass(arrayType),
                         "new %s(%s, %s)".formatted(packages.useClass(arrayType),
                                 "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout),
-                                element.getOperation().getCommonOperation().makeOperation(packages).str()),
-                        new TypeImports().addUseImports(arrayType));
+                                element.getOperation().getCommonOperation().makeOperation(packages).str()));
             }
 
             @Override
@@ -56,7 +58,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 packages.useClass(MemoryUtils),
-                                varName, 0, ms, offset, memoryLayout), new TypeImports());
+                                varName, 0, ms, offset, memoryLayout));
 
             }
         };

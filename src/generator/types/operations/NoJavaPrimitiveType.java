@@ -3,18 +3,15 @@ package generator.types.operations;
 import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
-import generator.types.TypeImports;
 
 import static utils.CommonUtils.Assert;
 
 public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.MemoryBasedOperation {
-    private final String typeName;
     private final CommonTypes.BindTypes bindTypes;
     private final T type;
 
     public NoJavaPrimitiveType(T type, CommonTypes.BindTypes bindTypes) {
         Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16);
-        this.typeName = type.typeName();
         this.bindTypes = bindTypes;
         this.type = type;
     }
@@ -29,7 +26,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.Na
 
             @Override
             public Result constructFromRet(String varName) {
-                return new Result("new " + typeName + "(" + varName + ")");
+                return new Result("new " + packages.useClass(type) + "(" + varName + ")");
             }
 
             @Override
@@ -46,8 +43,9 @@ public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.Na
 
             @Override
             public Getter getter(String ms, long offset) {
-                return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)));
+                return new Getter("", packages.useClass(type),
+                        "new %s(%s)".formatted(packages.useClass(type),
+                                "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)));
             }
 
             @Override
@@ -56,7 +54,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.Na
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
-                                varName, 0, ms, offset, memoryLayout), new TypeImports());
+                                varName, 0, ms, offset, memoryLayout));
             }
         };
     }

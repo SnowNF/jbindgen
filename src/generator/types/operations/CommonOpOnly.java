@@ -4,12 +4,10 @@ import generator.PackageManager;
 import generator.types.TypeAttr;
 
 public class CommonOpOnly<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.CommonOnlyOperation {
-    private final String typeName;
     private final T type;
     private final boolean realVoid;
 
     public CommonOpOnly(T type, boolean realVoid) {
-        this.typeName = type.typeName();
         this.type = type;
         this.realVoid = realVoid;
     }

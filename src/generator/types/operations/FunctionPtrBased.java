@@ -1,7 +1,10 @@
 package generator.types.operations;
 
 import generator.PackageManager;
-import generator.types.*;
+import generator.types.CommonTypes;
+import generator.types.FunctionPtrType;
+import generator.types.MemoryLayouts;
+import generator.types.TypeAttr;
 
 import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
 
@@ -41,8 +44,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
                 return new Getter("", packages.useClass(functionPtrType),
                         "new %s(%s)".formatted(packages.useClass(functionPtrType),
                                 "%s.getAddr(%s, %s)".formatted(
-                                        MemoryUtils.typeName(),
-                                        ms, offset)), new TypeImports().addUseImports(functionPtrType).addUseImports(MemoryUtils));
+                                        packages.useClass(MemoryUtils), ms, offset)));
             }
 
             @Override
@@ -50,7 +52,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
-                                packages.useClass(MemoryUtils), ms, offset, varName), new TypeImports());
+                                packages.useClass(MemoryUtils), ms, offset, varName));
             }
         };
     }
