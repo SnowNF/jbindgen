@@ -170,7 +170,7 @@ public class CommonGenerator implements Generator {
                 packages.useClass(btOp.getValue()),
                 btOp.getValue().getPrimitive().getBoxedTypeName(), // 5
                 btOp.operatorTypeName(),
-                btOp.getValue().getPrimitive().getMemoryLayout(packages).getMemoryLayout(packages), // 7
+                btOp.getValue().getPrimitive().getMemoryLayout().getMemoryLayout(packages), // 7
                 btOp.getValue().getPrimitive().getMemoryUtilName(),
                 packages.useClass(BasicOperations.Info), // 9
                 packages.useClass(BasicOperations.Value), // 10
@@ -1437,7 +1437,7 @@ public class CommonGenerator implements Generator {
                     }
                 }
                 """.formatted(null, null, typeName,
-                bindTypes.getPrimitiveType().getMemoryLayout(packages).getMemoryLayout(packages), // 4
+                bindTypes.getPrimitiveType().getMemoryLayout().getMemoryLayout(packages), // 4
                 packages.useClass(bindTypes.getOperations()), // 5
                 bindTypes.getPrimitiveType().useType(packages),
                 bindTypes.getPrimitiveType().getBoxedTypeName(),// 7

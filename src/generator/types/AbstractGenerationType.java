@@ -1,25 +1,16 @@
 package generator.types;
 
-import generator.PackageManager;
-
 import java.util.Objects;
-import java.util.function.Function;
 
+@Deprecated
 public sealed abstract class AbstractGenerationType
         implements SingleGenerationType permits EnumType, FunctionPtrType, ValueBasedType {
-    protected final Function<PackageManager, MemoryLayouts> memoryLayout;
     protected final String typeName;
     protected final long byteSize;
 
-    public AbstractGenerationType(Function<PackageManager, MemoryLayouts> memoryLayout, String typeName, long byteSize) {
-        this.memoryLayout = memoryLayout;
+    public AbstractGenerationType(String typeName, long byteSize) {
         this.typeName = typeName;
         this.byteSize = byteSize;
-    }
-
-    @Override
-    public MemoryLayouts getMemoryLayout(PackageManager packages) {
-        return memoryLayout.apply(packages);
     }
 
     @Override

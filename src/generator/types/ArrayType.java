@@ -39,9 +39,4 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
             case RAW -> packages.useClass(ARRAY_TYPE);
         };
     }
-
-    @Override
-    public MemoryLayouts getMemoryLayout(PackageManager packages) {
-        return MemoryLayouts.sequenceLayout(((TypeAttr.OperationType) element).getOperation().getCommonOperation().makeDirectMemoryLayout(packages), length);
-    }
 }

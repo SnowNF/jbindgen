@@ -41,10 +41,10 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
     }
 
     private Optional<CommonTypes.Primitives> selectFitBitSize(long bitOffset, long bitSize) {
-        if (!primitives.nativeIntegral())
+        if (primitives.nonNativeIntegral())
             return Optional.empty();
         for (CommonTypes.Primitives primitiveType : CommonTypes.Primitives.values()) {
-            if (!primitiveType.nativeIntegral()) continue;
+            if (primitiveType.nonNativeIntegral()) continue;
             long typeBitSize = primitiveType.byteSize() * 8;
             long typeBitAlign = primitiveType.alignment() * 8;
             long shift = bitOffset % typeBitAlign;

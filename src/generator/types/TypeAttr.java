@@ -12,14 +12,6 @@ public class TypeAttr {
      * types that have size, layout
      */
     public sealed interface SizedType permits SingleGenerationType, ArrayType, CommonTypes.Primitives, PointerType {
-        /**
-         * get the string of {@link java.lang.foreign.MemoryLayout}
-         *
-         * @return the presentation of the MemoryLayout and type used
-         */
-        @Deprecated
-        MemoryLayouts getMemoryLayout(PackageManager packages);
-
         long byteSize();
     }
 

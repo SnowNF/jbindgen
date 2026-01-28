@@ -12,8 +12,10 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteOrder;
-import java.util.*;
-import java.util.function.Supplier;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class CommonTypes {
     public enum Primitives implements TypeAttr.SizedType {
@@ -52,7 +54,7 @@ public class CommonTypes {
             this.nativeIntegral = nativeIntegral;
         }
 
-        public MemoryLayouts getMemoryLayout(PackageManager packages) {
+        public MemoryLayouts getMemoryLayout() {
             return memoryLayout;
         }
 
@@ -87,8 +89,8 @@ public class CommonTypes {
             return alignment;
         }
 
-        public boolean nativeIntegral() {
-            return nativeIntegral;
+        public boolean nonNativeIntegral() {
+            return !nativeIntegral;
         }
 
         @Override
@@ -99,23 +101,15 @@ public class CommonTypes {
 
     public enum BasicOperations implements BaseType, TypeAttr.OperationType {
         Operation(false),
-        Info(Set.of(Operation, FFMTypes.MEMORY_SEGMENT, FFMTypes.MEMORY_LAYOUT), false),
-        Value(Set.of(Operation), false),
-        PteI(Set.of(Value, Operation, FFMTypes.MEMORY_SEGMENT), false),//pointee
-        ArrayI(Set.of(Value, FFMTypes.MEMORY_SEGMENT), true),
-        StructI(Set.of(Value, FFMTypes.MEMORY_SEGMENT), true),
+        Info(false),
+        Value(false),
+        PteI(false),//pointee
+        ArrayI(true),
+        StructI(true),
         ;
-        private final Set<TypeAttr.TypeRefer> imports;
         private final boolean destruct;
-
-        BasicOperations(Set<TypeAttr.TypeRefer> imports, boolean destruct) {
-            this.imports = imports;
-            this.destruct = destruct;
-        }
-
         BasicOperations(boolean destruct) {
             this.destruct = destruct;
-            this.imports = Set.of();
         }
 
         @Override
@@ -146,22 +140,14 @@ public class CommonTypes {
         I64I(Primitives.JAVA_LONG),
         FP32I(Primitives.JAVA_FLOAT),
         FP64I(Primitives.JAVA_DOUBLE),
-        PtrI(Set.of(BasicOperations.Value, FFMTypes.MEMORY_SEGMENT), Primitives.ADDRESS),
+        PtrI(Primitives.ADDRESS),
         FP16I(Primitives.FLOAT16),
         FP128I(Primitives.LONG_DOUBLE),
         I128I(Primitives.Integer128);
 
-        private final Set<TypeAttr.TypeRefer> imports;
         private final Primitives primitive;
-
-        ValueInterface(Set<TypeAttr.TypeRefer> imports, Primitives primitive) {
-            this.imports = imports;
-            this.primitive = primitive;
-        }
-
         ValueInterface(Primitives primitive) {
             this.primitive = primitive;
-            this.imports = Set.of(BasicOperations.Value);
         }
 
         @Override
@@ -199,21 +185,14 @@ public class CommonTypes {
         I64Op(ValueInterface.I64I),
         FP32Op(ValueInterface.FP32I),
         FP64Op(ValueInterface.FP64I),
-        PtrOp(ValueInterface.PtrI, Set.of(BasicOperations.PteI)),
+        PtrOp(ValueInterface.PtrI),
         FP16Op(ValueInterface.FP16I),
         FP128Op(ValueInterface.FP128I),
         I128Op(ValueInterface.I128I);
         private final ValueInterface value;
-        private final Set<TypeAttr.TypeRefer> referenceTypes;
-
-        BindTypeOperations(ValueInterface elementType, Set<TypeAttr.TypeRefer> referenceTypes) {
-            this.value = elementType;
-            this.referenceTypes = referenceTypes;
-        }
 
         BindTypeOperations(ValueInterface elementType) {
             this.value = elementType;
-            this.referenceTypes = Set.of();
         }
 
         @Override
@@ -238,10 +217,6 @@ public class CommonTypes {
     }
 
 
-    private static final Supplier<Set<TypeAttr.TypeRefer>> BIND_TYPE_COMMON_REF = () ->
-            Set.of(ValueInterface.I64I, FFMTypes.SEGMENT_ALLOCATOR,
-                    BasicOperations.Info, SpecificTypes.Array, BindTypes.Ptr);
-
     public enum BindTypes implements BaseType, SingleGenerationType {
         I8(BindTypeOperations.I8Op),
         I16(BindTypeOperations.I16Op),
@@ -249,26 +224,13 @@ public class CommonTypes {
         I64(BindTypeOperations.I64Op),
         FP32(BindTypeOperations.FP32Op),
         FP64(BindTypeOperations.FP64Op),
-        Ptr(BindTypeOperations.PtrOp, () -> Set.of(FFMTypes.MEMORY_SEGMENT, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
-                FFMTypes.VALUE_LAYOUT, BasicOperations.Info, SpecificTypes.ArrayOp, ValueInterface.PtrI)),
+        Ptr(BindTypeOperations.PtrOp),
         FP16(BindTypeOperations.FP16Op),
-        FP128(BindTypeOperations.FP128Op, () -> Set.of(ValueInterface.I64I, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
-                BasicOperations.Info, SpecificTypes.Array, BindTypes.Ptr)),
-        I128(BindTypeOperations.I128Op, () -> Set.of(ValueInterface.I64I, SpecificTypes.MemoryUtils, FFMTypes.SEGMENT_ALLOCATOR,
-                BasicOperations.Info, SpecificTypes.Array, BindTypes.Ptr));
+        FP128(BindTypeOperations.FP128Op),
+        I128(BindTypeOperations.I128Op);
         private final BindTypeOperations operations;
-        // lazy init
-        private final Supplier<Set<TypeAttr.TypeRefer>> referenceTypes;
-
-
-        BindTypes(BindTypeOperations operations, Supplier<Set<TypeAttr.TypeRefer>> referenceTypes) {
-            this.operations = operations;
-            this.referenceTypes = referenceTypes;
-        }
-
         BindTypes(BindTypeOperations operations) {
             this.operations = operations;
-            this.referenceTypes = BIND_TYPE_COMMON_REF;
         }
 
         public static String makePtrGenericName(String t) {
@@ -295,9 +257,8 @@ public class CommonTypes {
             return new ValueBased<>(this, typeName(), this);
         }
 
-        @Override
-        public MemoryLayouts getMemoryLayout(PackageManager packages) {
-            return operations.value.primitive.getMemoryLayout(packages);
+        public MemoryLayouts getMemoryLayout() {
+            return operations.value.primitive.getMemoryLayout();
         }
 
         @Override
@@ -318,31 +279,19 @@ public class CommonTypes {
     }
 
     public enum SpecificTypes implements BaseType {
-        FunctionUtils(false, Set::of),
-        MemoryUtils(false, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.VALUE_LAYOUT, FFMTypes.ARENA, FFMTypes.SEGMENT_ALLOCATOR)),
-        ArrayOp(true, () -> Set.of(BindTypeOperations.PtrOp, BasicOperations.Value, BasicOperations.Info,
-                FFMTypes.MEMORY_SEGMENT, BasicOperations.ArrayI, BindTypes.Ptr, ValueInterface.I64I, ValueInterface.I32I, BindTypes.I64)),
-        Array(true, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.VALUE_LAYOUT, FFMTypes.SEGMENT_ALLOCATOR, ArrayOp,
-                BasicOperations.Info, ValueInterface.PtrI, BindTypes.Ptr, BindTypeOperations.PtrOp,
-                SpecificTypes.MemoryUtils, ValueInterface.I64I, BindTypes.I64, ValueInterface.I32I)),
-        FlatArrayOp(true, () -> Set.of(BasicOperations.Value, BasicOperations.Info,
-                FFMTypes.MEMORY_SEGMENT, BasicOperations.ArrayI, BindTypes.Ptr, ValueInterface.I64I, BindTypes.I64, ValueInterface.I32I)),
-        FlatArray(true, () -> Set.of(FFMTypes.MEMORY_SEGMENT, FFMTypes.MEMORY_LAYOUT, FFMTypes.SEGMENT_ALLOCATOR,
-                FlatArrayOp, BasicOperations.Info, ValueInterface.PtrI, BindTypes.Ptr, BindTypeOperations.PtrOp,
-                SpecificTypes.MemoryUtils, ValueInterface.I64I, ValueInterface.I32I, BindTypes.I64)),
-        StructOp(true, () -> Set.of(BasicOperations.Value, BasicOperations.Info,
-                FFMTypes.MEMORY_SEGMENT, FFMTypes.MEMORY_LAYOUT, BasicOperations.StructI)),
-        Str(false, () -> Set.of(ArrayOp, BasicOperations.Info, Array, BindTypes.I8, BindTypes.Ptr,
-                ValueInterface.PtrI, ValueInterface.I8I, ValueInterface.I64I, BindTypes.I64)),
+        FunctionUtils(false),
+        MemoryUtils(false),
+        ArrayOp(true),
+        Array(true),
+        FlatArrayOp(true),
+        FlatArray(true),
+        StructOp(true),
+        Str(false),
         ;
 
         final boolean generic;
-        // lazy init
-        private final Supplier<Set<TypeAttr.TypeRefer>> referenceTypes;
-
-        SpecificTypes(boolean generic, Supplier<Set<TypeAttr.TypeRefer>> referenceTypes) {
+        SpecificTypes(boolean generic) {
             this.generic = generic;
-            this.referenceTypes = referenceTypes;
         }
 
         @Override

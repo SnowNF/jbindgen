@@ -74,10 +74,10 @@ public final class StructType implements SingleGenerationType {
     private static MemoryLayouts makeMemoryLayouts(CommonTypes.Primitives primitives, long len, long bytePadding, PackageManager packages) {
         if (bytePadding != 0) {
             return MemoryLayouts.structLayout(List.of(
-                    MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(packages), len),
+                    MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(), len),
                     MemoryLayouts.paddingLayout(bytePadding)));
         }
-        return MemoryLayouts.structLayout(List.of(MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(packages), len)));
+        return MemoryLayouts.structLayout(List.of(MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(), len)));
     }
 
     private static MemoryLayouts makeMemoryLayout(List<Member> members, long byteSize, long byteAlign, PackageManager packages) {
@@ -161,7 +161,6 @@ public final class StructType implements SingleGenerationType {
         return typeName;
     }
 
-    @Override
     public MemoryLayouts getMemoryLayout(PackageManager packages) {
         return makeMemoryLayout(members, byteSize, byteAlign, packages);
     }

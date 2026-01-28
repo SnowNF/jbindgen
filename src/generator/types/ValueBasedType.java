@@ -14,14 +14,14 @@ public final class ValueBasedType extends AbstractGenerationType {
     private final PointerType pointerType;
 
     public ValueBasedType(String typeName, CommonTypes.BindTypes bindTypes) {
-        super(p -> bindTypes.getPrimitiveType().getMemoryLayout(p), typeName, bindTypes.byteSize());
+        super(typeName, bindTypes.byteSize());
         Assert(bindTypes != CommonTypes.BindTypes.Ptr);
         this.bindTypes = bindTypes;
         this.pointerType = null;
     }
 
     public ValueBasedType(String typeName, PointerType pointerType) {
-        super(pointerType::getMemoryLayout, typeName, pointerType.byteSize());
+        super(typeName, pointerType.byteSize());
         this.bindTypes = CommonTypes.BindTypes.Ptr;
         this.pointerType = pointerType;
     }

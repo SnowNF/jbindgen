@@ -28,7 +28,7 @@ public final class FunctionPtrType extends AbstractGenerationType {
     private final CommonOperation.AllocatorType allocator;
 
     public FunctionPtrType(String typeName, List<Arg> args, TypeAttr.TypeRefer retType) {
-        super(CommonTypes.Primitives.ADDRESS::getMemoryLayout, typeName, CommonTypes.Primitives.ADDRESS.byteSize());
+        super(typeName, CommonTypes.Primitives.ADDRESS.byteSize());
         this.args = List.copyOf(args);
         returnType = switch (retType) {
             case TypeAttr.SizedType normalType -> ((TypeAttr.TypeRefer) normalType);
@@ -61,15 +61,6 @@ public final class FunctionPtrType extends AbstractGenerationType {
             memoryLayout.add(((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().makeDirectMemoryLayout(packages));
         }
         return memoryLayout;
-    }
-
-    public List<TypeAttr.TypeRefer> getFunctionSignatureTypes() {
-        ArrayList<TypeAttr.TypeRefer> types = new ArrayList<>();
-        args.forEach(arg -> types.add(arg.type));
-        if (returnType != null) {
-            types.add(returnType);
-        }
-        return types;
     }
 
     @Override

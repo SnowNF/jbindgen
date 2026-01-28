@@ -81,7 +81,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
-                return arrayType.getMemoryLayout(packages);
+                return MemoryLayouts.sequenceLayout(element.getOperation().getCommonOperation().makeDirectMemoryLayout(packages), arrayType.length());
             }
 
             @Override

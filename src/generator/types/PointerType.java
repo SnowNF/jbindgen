@@ -28,9 +28,8 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
                '}';
     }
 
-    @Override
     public MemoryLayouts getMemoryLayout(PackageManager packages) {
-        return CommonTypes.Primitives.ADDRESS.getMemoryLayout(packages);
+        return CommonTypes.Primitives.ADDRESS.getMemoryLayout();
     }
 
     @Override
