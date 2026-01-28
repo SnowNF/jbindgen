@@ -7,14 +7,12 @@ import static generator.generation.generator.CommonGenerator.ARRAY_MAKE_OPERATIO
 import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
 
 public class ArrayOp implements OperationAttr.MemoryBasedOperation {
-    private final String typeName;
     private final ArrayType arrayType;
     private final TypeAttr.OperationType element;
 
-    public ArrayOp(String typeName, ArrayType arrayType) {
+    public ArrayOp(ArrayType arrayType) {
         this.arrayType = arrayType;
         this.element = (TypeAttr.OperationType) arrayType.element();
-        this.typeName = typeName;
     }
 
     @Override
@@ -22,13 +20,13 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(arrayType));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override
             public Result constructFromRet(String varName) {
                 CommonOperation.Operation operation = element.getOperation().getCommonOperation().makeOperation(packages);
-                return new Result("new %s(%s, %s)".formatted(typeName, varName, operation.str()), new TypeImports());
+                return new Result("new %s(%s, %s)".formatted(packages.useClass(arrayType), varName, operation.str()));
             }
 
             @Override
@@ -45,9 +43,10 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public Getter getter(String ms, long offset) {
-                return new Getter("", typeName, "new %s(%s, %s)".formatted(typeName,
-                        "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout),
-                        element.getOperation().getCommonOperation().makeOperation(packages).str()),
+                return new Getter("", packages.useClass(arrayType),
+                        "new %s(%s, %s)".formatted(packages.useClass(arrayType),
+                                "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout),
+                                element.getOperation().getCommonOperation().makeOperation(packages).str()),
                         new TypeImports().addUseImports(arrayType));
             }
 

@@ -3,7 +3,6 @@ package generator.types.operations;
 import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
-import generator.types.TypeImports;
 
 public class DestructOnlyOp<T extends TypeAttr.NamedType & TypeAttr.TypeRefer> implements OperationAttr.DesctructOnlyOperation {
     private final T type;
@@ -19,7 +18,7 @@ public class DestructOnlyOp<T extends TypeAttr.NamedType & TypeAttr.TypeRefer> i
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(type));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override

@@ -16,7 +16,7 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
 
     @Override
     public OperationAttr.Operation getOperation() {
-        return new ArrayOp(typeName(), this);
+        return new ArrayOp(this);
     }
 
     @Override

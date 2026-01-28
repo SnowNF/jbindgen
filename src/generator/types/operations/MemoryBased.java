@@ -4,11 +4,9 @@ import generator.PackageManager;
 import generator.types.*;
 
 public class MemoryBased implements OperationAttr.MemoryBasedOperation {
-    private final String typeName;
     private final StructType structType;
 
     public MemoryBased(StructType structType) {
-        this.typeName = structType.typeName();
         this.structType = structType;
     }
 
@@ -17,12 +15,12 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(structType));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override
             public Result constructFromRet(String varName) {
-                return new Result("new " + typeName + "(" + varName + ")", new TypeImports().addUseImports(structType));
+                return new Result("new " + packages.useClass(structType) + "(" + varName + ")");
             }
 
             @Override
@@ -39,9 +37,9 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public Getter getter(String ms, long offset) {
-                return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)),
-                        new TypeImports().addUseImports(structType));
+                return new Getter("", packages.useClass(structType),
+                        "new %s(%s)".formatted(packages.useClass(structType),
+                                "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)));
             }
 
             @Override

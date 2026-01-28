@@ -25,12 +25,12 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(type));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override
             public Result constructFromRet(String varName) {
-                return new Result("new " + typeName + "(" + varName + ")", new TypeImports().addUseImports(type));
+                return new Result("new " + typeName + "(" + varName + ")");
             }
 
             @Override

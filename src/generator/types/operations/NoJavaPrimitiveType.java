@@ -24,12 +24,12 @@ public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.Na
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(type));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override
             public Result constructFromRet(String varName) {
-                return new Result("new " + typeName + "(" + varName + ")", new TypeImports().addUseImports(type));
+                return new Result("new " + typeName + "(" + varName + ")");
             }
 
             @Override
@@ -47,8 +47,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.Na
             @Override
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)),
-                        new TypeImports().addUseImports(type));
+                        "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)));
             }
 
             @Override

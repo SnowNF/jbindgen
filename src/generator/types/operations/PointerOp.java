@@ -19,14 +19,13 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(pointerType));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override
             public Result constructFromRet(String varName) {
                 CommonOperation.Operation operation = pointeeType.getOperation().getCommonOperation().makeOperation(packages);
-                return new Result("new %s(%s, %s)".formatted(pointerType.typeName(packages, TypeAttr.NameType.GENERIC), varName, operation.str()),
-                        new TypeImports().addUseImports(CommonTypes.BindTypes.Ptr));
+                return new Result("new %s(%s, %s)".formatted(pointerType.typeName(packages, TypeAttr.NameType.GENERIC), varName, operation.str()));
             }
 
             @Override

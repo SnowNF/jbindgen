@@ -65,7 +65,7 @@ public final class FunctionPtrType implements SingleGenerationType {
 
     @Override
     public OperationAttr.Operation getOperation() {
-        return new FunctionPtrBased(this, typeName);
+        return new FunctionPtrBased(this);
     }
 
     @Override

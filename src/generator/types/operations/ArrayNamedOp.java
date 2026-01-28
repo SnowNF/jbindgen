@@ -4,19 +4,16 @@ import generator.PackageManager;
 import generator.types.ArrayTypeNamed;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
-import generator.types.TypeImports;
 
 import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
 
 public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
-    private final String typeName;
     private final ArrayTypeNamed arrayType;
     private final TypeAttr.OperationType element;
 
-    public ArrayNamedOp(String typeName, ArrayTypeNamed arrayType) {
+    public ArrayNamedOp(ArrayTypeNamed arrayType) {
         this.arrayType = arrayType;
         this.element = (TypeAttr.OperationType) arrayType.element();
-        this.typeName = typeName;
     }
 
     @Override
@@ -24,12 +21,12 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(arrayType));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override
             public Result constructFromRet(String varName) {
-                return new Result("new %s(%s)".formatted(typeName, varName), new TypeImports().addUseImports(arrayType));
+                return new Result("new %s(%s)".formatted(typeName(packages), varName));
             }
 
             @Override
@@ -39,6 +36,10 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
         };
     }
 
+    private String typeName(PackageManager packages) {
+        return packages.useClass(arrayType);
+    }
+
     @Override
     public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
@@ -46,9 +47,9 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public Getter getter(String ms, long offset) {
-                return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)),
-                        new TypeImports().addUseImports(arrayType));
+                return new Getter("", typeName(packages),
+                        "new %s(%s)".formatted(typeName(packages),
+                                "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout)));
             }
 
             @Override
@@ -57,7 +58,7 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 packages.useClass(MemoryUtils),
-                                varName, 0, ms, offset, memoryLayout), new TypeImports());
+                                varName, 0, ms, offset, memoryLayout));
             }
         };
     }

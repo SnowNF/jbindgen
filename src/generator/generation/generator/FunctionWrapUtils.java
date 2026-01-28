@@ -93,7 +93,6 @@ public class FunctionWrapUtils {
             TypeAttr.OperationType type = (TypeAttr.OperationType) a.type();
             FuncOperation.Result construct = type.getOperation().getFuncOperation(packages).constructFromRet(a.argName());
             String destruct = construct.codeSegment();
-            packages.addImport(construct.imports());
             para.add(destruct);
         }
         return String.join(", ", para);
@@ -108,7 +107,6 @@ public class FunctionWrapUtils {
             TypeAttr.OperationType op = (TypeAttr.OperationType) a.type();
             TypeAttr.OperationType upperType = op.getOperation().getCommonOperation().getUpperType(packages).type();
             var destruct = upperType.getOperation().getFuncOperation(packages).destructToPara(a.argName());
-            packages.addImport(destruct.imports());
             out.add(destruct.codeSegment());
         }
         return String.join(", ", out);
@@ -128,7 +126,6 @@ public class FunctionWrapUtils {
                    + "(%s, %s)".formatted(value, operation.getCommonOperation().makeOperation(packages).str());
         }
         FuncOperation.Result construct = operation.getFuncOperation(packages).constructFromRet(value);
-        packages.addImport(construct.imports());
         return "return " + construct.codeSegment();
     }
 
@@ -139,7 +136,6 @@ public class FunctionWrapUtils {
         TypeAttr.OperationType retType = function.getReturnType().get();
         TypeAttr.OperationType upperType = retType.getOperation().getCommonOperation().getUpperType(packages).type();
         FuncOperation.Result destruct = upperType.getOperation().getFuncOperation(packages).destructToPara(value);
-        packages.addImport(destruct.imports());
         return destruct.codeSegment();
     }
 
@@ -188,7 +184,6 @@ public class FunctionWrapUtils {
                 TypeAttr.OperationType upperType = (TypeAttr.OperationType) a.type();
                 TypeAttr.OperationType type = upperType.getOperation().getCommonOperation().getUpperType(wrap.packages).type();
                 FuncOperation.Result destruct = type.getOperation().getFuncOperation(wrap.packages).destructToPara(a.argName());
-                wrap.packages.addImport(destruct.imports());
                 out.add(destruct.codeSegment());
             }
             return String.join(", ", out);
@@ -197,7 +192,6 @@ public class FunctionWrapUtils {
         public String downcallTypeReturn(String value) {
             OperationAttr.Operation operation = retType.getOperation();
             FuncOperation.Result construct = operation.getFuncOperation(wrap.packages).constructFromRet(value);
-            wrap.packages.addImport(construct.imports());
             return "return " + construct.codeSegment();
         }
     }

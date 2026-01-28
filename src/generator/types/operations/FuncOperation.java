@@ -1,11 +1,9 @@
 package generator.types.operations;
 
 import generator.types.CommonTypes;
-import generator.types.TypeImports;
 
 public interface FuncOperation {
-    record Result(String codeSegment, TypeImports imports) {
-
+    record Result(String codeSegment) {
     }
 
     /**

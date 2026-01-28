@@ -8,11 +8,9 @@ import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
 public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
 
     private final FunctionPtrType functionPtrType;
-    private final String typeName;
 
-    public FunctionPtrBased(FunctionPtrType functionPtrType, String typeName) {
+    public FunctionPtrBased(FunctionPtrType functionPtrType) {
         this.functionPtrType = functionPtrType;
-        this.typeName = typeName;
     }
 
     @Override
@@ -20,12 +18,12 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
-                return new Result(varName + ".operator().value()", new TypeImports().addUseImports(functionPtrType));
+                return new Result(varName + ".operator().value()");
             }
 
             @Override
             public Result constructFromRet(String varName) {
-                return new Result("new " + typeName + "(" + varName + ")", new TypeImports().addUseImports(functionPtrType));
+                return new Result("new " + packages.useClass(functionPtrType) + "(" + varName + ")");
             }
 
             @Override
@@ -40,10 +38,11 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
         return new MemoryOperation() {
             @Override
             public Getter getter(String ms, long offset) {
-                return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.getAddr(%s, %s)".formatted(
-                                MemoryUtils.typeName(),
-                                ms, offset)), new TypeImports().addUseImports(functionPtrType).addUseImports(MemoryUtils));
+                return new Getter("", packages.useClass(functionPtrType),
+                        "new %s(%s)".formatted(packages.useClass(functionPtrType),
+                                "%s.getAddr(%s, %s)".formatted(
+                                        MemoryUtils.typeName(),
+                                        ms, offset)), new TypeImports().addUseImports(functionPtrType).addUseImports(MemoryUtils));
             }
 
             @Override

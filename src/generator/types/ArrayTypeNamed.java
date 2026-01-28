@@ -13,7 +13,7 @@ public record ArrayTypeNamed(String typeName, long length, TypeAttr.TypeRefer el
 
     @Override
     public OperationAttr.Operation getOperation() {
-        return new ArrayNamedOp(typeName, this);
+        return new ArrayNamedOp(this);
     }
 
     @Override
