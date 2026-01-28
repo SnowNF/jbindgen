@@ -81,8 +81,9 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
                         System.out.println("ignore var declaration type " + evalResultKind);
                     }
                     LibclangFunctionSymbols.clang_EvalResult_dispose(evalResult);
+                    String location = Utils.getCursorLocation(cursor);
                     if (value != null)
-                        varDeclares.add(new Declare(type, varName, value));
+                        varDeclares.add(new Declare(type, varName, value, location));
                 }
                 return CXChildVisitResult.CXChildVisit_Continue;
             }
@@ -95,8 +96,7 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         }));
         if (!analyseMacro)
             return;
-
-        HashMap<String, String> macroDefinitions = new HashMap<>();
+        HashMap<String, MacroInfo> macroDefinitions = new HashMap<>();
         analyse(header, args, CXTranslationUnit_Flags.CXTranslationUnit_DetailedPreprocessingRecord.operator().value(), new CXCursorVisitor(mem, (CXCursorVisitor.Function) (CXCursor cursor, CXCursor parent, CXClientData client_data) -> {
             if (CXCursorKind.CXCursor_MacroDefinition.equals(cursor.kind())) {
                 CXTranslationUnit tu = LibclangFunctionSymbols.clang_Cursor_getTranslationUnit(cursor);
@@ -121,16 +121,18 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
                     }
                 }
                 LibclangFunctionSymbols.clang_disposeTokens(tu, tokenList, I32I.of(num));
-                String s = macroDefinitions.get(left);
+                MacroInfo s = macroDefinitions.get(left);
                 if (s != null) {
-                    if (!right.equals(s)) {
-                        System.out.println("Overwrite redefined macro: " + left + " new: " + right + " old: " + s);
+                    if (!right.equals(s.value)) {
+                        System.out.println("Overwrite redefined macro: " + left + " new: " + right + " old: " + s.value);
                     }
                 }
                 if (left.equals("_")) {
                     System.out.println("Ignore unsupported macro name: _");
-                } else
-                    macroDefinitions.put(left, right);
+                } else {
+                    String location = Utils.getCursorLocation(cursor);
+                    macroDefinitions.put(left, new MacroInfo(right, location));
+                }
             }
             return CXChildVisitResult.CXChildVisit_Continue;
         }));
@@ -138,8 +140,8 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         processMacroDefinitions(macroDefinitions, header, args);
     }
 
-    private Macro mkMacroString(Map.Entry<String, String> kv) {
-        String v = kv.getValue().trim();
+    private Macro mkMacroString(Map.Entry<String, MacroInfo> kv) {
+        String v = kv.getValue().value.trim();
         java.util.function.Function<String, String> processStr = input -> {
             input = input.replace("\\\n", " ");
             if (input.startsWith("\"") && input.endsWith("\"")) {
@@ -153,28 +155,28 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         v = processStr.apply(v);
         if (v.isEmpty())
             v = "\"\"";
-        return new Macro(PrimitiveTypes.JType.J_String, kv.getKey(), v, kv.getValue().replace("\\\n", " "));
+        return new Macro(PrimitiveTypes.JType.J_String, kv.getKey(), v, kv.getValue().value.replace("\\\n", " "), kv.getValue().location);
     }
 
-    private Macro mkMacroLong(Map.Entry<String, String> kv, long v) {
-        return new Macro(PrimitiveTypes.CType.C_I64, kv.getKey(), v + "L", kv.getValue());
+    private Macro mkMacroLong(Map.Entry<String, MacroInfo> kv, long v) {
+        return new Macro(PrimitiveTypes.CType.C_I64, kv.getKey(), v + "L", kv.getValue().value, kv.getValue().location);
     }
 
-    private Macro mkMacroInt(Map.Entry<String, String> kv, int v) {
-        return new Macro(PrimitiveTypes.CType.C_I32, kv.getKey(), v + "", kv.getValue());
+    private Macro mkMacroInt(Map.Entry<String, MacroInfo> kv, int v) {
+        return new Macro(PrimitiveTypes.CType.C_I32, kv.getKey(), v + "", kv.getValue().value, kv.getValue().location);
     }
 
-    private Macro mkMacroByte(Map.Entry<String, String> kv, int v) {
+    private Macro mkMacroByte(Map.Entry<String, MacroInfo> kv, int v) {
         String value = v + "";
         if (v > 127)
             value = "(byte)" + v;
         if (v > 255) {
             throw new RuntimeException();
         }
-        return new Macro(PrimitiveTypes.CType.C_I8, kv.getKey(), value, kv.getValue());
+        return new Macro(PrimitiveTypes.CType.C_I8, kv.getKey(), value, kv.getValue().value, kv.getValue().location);
     }
 
-    private Macro mkMacroFloat(Map.Entry<String, String> kv, float v) {
+    private Macro mkMacroFloat(Map.Entry<String, MacroInfo> kv, float v) {
         String initializer = v + "F";
         if (Float.isNaN(v)) {
             initializer = "Float.NaN";
@@ -183,10 +185,10 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         } else if (v == Float.POSITIVE_INFINITY) {
             initializer = "Float.POSITIVE_INFINITY";
         }
-        return new Macro(PrimitiveTypes.CType.C_FP32, kv.getKey(), initializer, kv.getValue());
+        return new Macro(PrimitiveTypes.CType.C_FP32, kv.getKey(), initializer, kv.getValue().value, kv.getValue().location);
     }
 
-    private Macro mkMacroDouble(Map.Entry<String, String> kv, double v) {
+    private Macro mkMacroDouble(Map.Entry<String, MacroInfo> kv, double v) {
         String initializer = v + "";
         if (Double.isNaN(v)) {
             initializer = "Double.NaN";
@@ -195,10 +197,13 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         } else if (v == Double.POSITIVE_INFINITY) {
             initializer = "Double.POSITIVE_INFINITY";
         }
-        return new Macro(PrimitiveTypes.CType.C_FP64, kv.getKey(), initializer, kv.getValue());
+        return new Macro(PrimitiveTypes.CType.C_FP64, kv.getKey(), initializer, kv.getValue().value, kv.getValue().location);
     }
 
-    private void processMacroDefinitions(HashMap<String, String> macroDefinitions, String header, List<String> args) {
+    record MacroInfo(String value, String location) {
+    }
+
+    private void processMacroDefinitions(HashMap<String, MacroInfo> macroDefinitions, String header, List<String> args) {
         header = new File(header).getAbsolutePath();
         Path tempPch;
         // write pch file
@@ -233,16 +238,22 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
             throw new RuntimeException(e);
         }
         try {
-            // first analyse, analyse without explicit include header
-            System.out.println("Macro: first analyse");
+            // First, try to resolve the macro value directly.
+            // Example:
+            //   #define PI 3.14
+            //
+            // In this case, we can infer that the macro `PI` is a constant float with value 3.14,
+            // so we can skip parsing the entire header to speed up the analysis.
+            System.out.println("Macro: resolving literal macro value");
+
             var temp = Files.createTempFile("macro-", ".c");
-            List<Map.Entry<String, String>> failedMacro = new ArrayList<>();
-            for (Map.Entry<String, String> kv : macroDefinitions.entrySet()) {
-                if (kv.getValue().isEmpty())
+            List<Map.Entry<String, MacroInfo>> failedMacro = new ArrayList<>();
+            for (Map.Entry<String, MacroInfo> kv : macroDefinitions.entrySet()) {
+                if (kv.getValue().value.isEmpty())
                     continue;
                 String content = """
                         typeof(%s) x=%s;
-                        """.formatted(kv.getValue(), kv.getValue());
+                        """.formatted(kv.getValue().value, kv.getValue().value);
                 generator.Utils.write(temp, content);
                 Macro r = doMacroAnalyse(temp, args, kv);
                 if (r == null)
@@ -251,9 +262,18 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
                     macros.add(r);
             }
             Files.delete(temp);
-            // second analyse
-            System.out.println("Macro: second analyse");
-            for (Map.Entry<String, String> kv : failedMacro) {
+
+            // If the macro value is not a literal, try to resolve it by following macro references.
+            // Example:
+            //   #define PI 3.14
+            //   #define THE_PI PI
+            //   #define THE_THE_PI THE_PI
+            //
+            // In this case, we can infer that `THE_THE_PI` ultimately resolves to
+            // the constant float value 3.14.
+            System.out.println("Macro: resolving nested macro references");
+
+            for (Map.Entry<String, MacroInfo> kv : failedMacro) {
                 Path file = Files.createTempFile("macro-" + Thread.currentThread().getName() + "-", ".cpp");
                 String content = """
                         typeof(%s) x=%s;
@@ -277,7 +297,7 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         }
     }
 
-    private Macro doMacroAnalyse(Path temp, List<String> args, Map.Entry<String, String> kv) {
+    private Macro doMacroAnalyse(Path temp, List<String> args, Map.Entry<String, MacroInfo> kv) {
         var result = new Object() {
             Macro macro = null;
         };
@@ -401,7 +421,9 @@ public class Analyser implements AutoCloseableChecker.NonThrowAutoCloseable {
         }
         CXType returnType = LibclangFunctionSymbols.clang_getCursorResultType(mem, cur);
         Type funcRet = typePool.addOrCreateType(returnType, cur, null);
-        Function func = new Function(funcName, funcRet, typeName);
+
+        String location = Utils.getCursorLocation(cur);
+        Function func = new Function(funcName, funcRet, typeName, location);
 
         int numArgs = LibclangFunctionSymbols.clang_Cursor_getNumArguments(cur).operator().value();
         for (int i = 0; i < numArgs; i++) {

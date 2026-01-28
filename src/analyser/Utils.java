@@ -21,7 +21,7 @@ public class Utils {
     }
 
     public static void printLocation(CXCursor cursor) {
-        LoggerUtils.debug("Processing path " + getLocation(cursor));
+        LoggerUtils.debug("Processing path " + getLocationForDebug(cursor));
     }
 
     public static String getLocation(CXType type, CXCursor fallback) {
@@ -56,7 +56,7 @@ public class Utils {
         }
     }
 
-    public static String getLocation(CXCursor cursor) {
+    public static String getLocationForDebug(CXCursor cursor) {
         try (Arena mem = Arena.ofConfined()) {
             CXSourceLocation location = LibclangFunctionSymbols.clang_getCursorLocation(mem, cursor);
             Array<CXFile> file = CXFile.list(mem, 1);

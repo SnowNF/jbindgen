@@ -5,9 +5,9 @@ import analyser.types.Type;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public record Function(String name, Type ret, ArrayList<Para> paras, String signature) {
-    public Function(String name, Type ret, String signature) {
-        this(name, ret, new ArrayList<>(), signature);
+public record Function(String name, Type ret, ArrayList<Para> paras, String signature, String location) {
+    public Function(String name, Type ret, String signature, String location) {
+        this(name, ret, new ArrayList<>(), signature, location);
     }
 
     public void addPara(Para para) {

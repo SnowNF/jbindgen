@@ -311,7 +311,7 @@ public class TypePool implements AutoCloseableChecker.NonThrowAutoCloseable {
                             paras.add(new Para(memberType, cursorName, OptionalLong.of(offset),
                                     OptionalLong.of(field), OptionalLong.of(getAlign(cxType))));
                         else
-                            System.out.println("Ignore unnamed field declare in [" + ret.getTypeName() + "] (" + Utils.getLocation(cursor) + ")");
+                            System.out.println("Ignore unnamed field declare in [" + ret.getTypeName() + "] (" + Utils.getLocationForDebug(cursor) + ")");
                     } else if (CXCursorKind.CXCursor_EnumDecl.equals(kind)) {
                         LoggerUtils.debug("Field Declared " + cursorName + " in " + ret);
                         var memberType = addOrCreateType(cursor, null);
@@ -366,7 +366,8 @@ public class TypePool implements AutoCloseableChecker.NonThrowAutoCloseable {
                     if (CXCursorKind.CXCursor_EnumConstantDecl.equals(LibclangFunctionSymbols.clang_getCursorKind(cur))) {
                         CXString declName = LibclangFunctionSymbols.clang_getCursorSpelling(mem, cur);
                         long constant_value = LibclangFunctionSymbols.clang_getEnumConstantDeclValue(cur).operator().value();
-                        e.addDeclare(new Declare(type, Utils.cXString2String(declName), constant_value + ""));
+                        String location = Utils.getCursorLocation(cur);
+                        e.addDeclare(new Declare(type, Utils.cXString2String(declName), constant_value + "", location));
                     }
                     return CXChildVisitResult.CXChildVisit_Continue;
                 }), new CXClientData(MemorySegment.NULL));
