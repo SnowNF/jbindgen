@@ -83,13 +83,10 @@ public class Processor {
                 case CommonTypes.BaseType baseType -> dest.common().path().close(baseType.typeName());
                 case RefOnlyType refOnlyType -> dest.refOnly().path().close(refOnlyType.typeName());
                 case SingleGenerationType singleGenerationType -> switch (singleGenerationType) {
-                    case AbstractGenerationType abstractGenerationType -> switch (abstractGenerationType) {
-                        case EnumType enumType -> dest.enumerate().path().close(enumType.typeName());
-                        case FunctionPtrType functionPtrType ->
-                                dest.funcProtocol().path().close(functionPtrType.typeName());
-                        case ValueBasedType valueBasedType ->
-                                dest.valueBased().path().close(valueBasedType.typeName());
-                    };
+                    case EnumType enumType -> dest.enumerate().path().close(enumType.typeName());
+                    case FunctionPtrType functionPtrType ->
+                            dest.funcProtocol().path().close(functionPtrType.typeName());
+                    case ValueBasedType valueBasedType -> dest.valueBased().path().close(valueBasedType.typeName());
                     case ArrayTypeNamed arrayTypeNamed -> dest.arrayNamed().path().close(arrayTypeNamed.typeName());
                     case CommonTypes.BindTypes bindTypes ->
                             throw new UnsupportedOperationException("Not supported yet.");
@@ -112,11 +109,9 @@ public class Processor {
                     case CommonTypes.BaseType baseType -> new CommonGenerator(baseType);
                     case RefOnlyType refOnlyType -> new RefOnlyGenerator(refOnlyType);
                     case SingleGenerationType singleGenerationType -> switch (singleGenerationType) {
-                        case AbstractGenerationType abstractGenerationType -> switch (abstractGenerationType) {
-                            case EnumType enumType -> new EnumGenerator(enumType);
-                            case FunctionPtrType functionPtrType -> new FuncProtocolGenerator(functionPtrType);
-                            case ValueBasedType valueBasedType -> new ValueBasedGenerator(valueBasedType);
-                        };
+                        case EnumType enumType -> new EnumGenerator(enumType);
+                        case FunctionPtrType functionPtrType -> new FuncProtocolGenerator(functionPtrType);
+                        case ValueBasedType valueBasedType -> new ValueBasedGenerator(valueBasedType);
                         case ArrayTypeNamed arrayTypeNamed -> new ArrayNamedGenerator(arrayTypeNamed);
                         case CommonTypes.BindTypes bindTypes ->
                                 throw new UnsupportedOperationException("Not supported yet.");

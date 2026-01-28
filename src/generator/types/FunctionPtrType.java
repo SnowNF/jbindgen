@@ -14,21 +14,20 @@ import java.util.Optional;
 import static utils.CommonUtils.Assert;
 
 // function ptr type, not function protocol type
-public final class FunctionPtrType extends AbstractGenerationType {
+public final class FunctionPtrType implements SingleGenerationType {
     public record Arg(String argName, TypeAttr.TypeRefer type) {
         public Arg {
             Assert(Utils.isValidVarName(argName), "Arg name must be a valid variable name: " + argName);
         }
     }
 
+    private final String typeName;
     private final List<Arg> args;
-
     private final TypeAttr.TypeRefer returnType;
-
     private final CommonOperation.AllocatorType allocator;
 
     public FunctionPtrType(String typeName, List<Arg> args, TypeAttr.TypeRefer retType) {
-        super(typeName, CommonTypes.Primitives.ADDRESS.byteSize());
+        this.typeName = typeName;
         this.args = List.copyOf(args);
         returnType = switch (retType) {
             case TypeAttr.SizedType normalType -> ((TypeAttr.TypeRefer) normalType);
@@ -69,9 +68,25 @@ public final class FunctionPtrType extends AbstractGenerationType {
     }
 
     @Override
+    public String typeName() {
+        return typeName;
+    }
+
+    @Override
+    public long byteSize() {
+        return CommonTypes.Primitives.ADDRESS.byteSize();
+    }
+
+    @Override
+    public TypeImports getUseImportTypes() {
+        return new TypeImports(this);
+    }
+
+    @Override
     public String toString() {
         return "FunctionPtrType{" +
-               "args=" + args +
+               "typeName='" + typeName + '\'' +
+               ", args=" + args +
                ", returnType=" + returnType +
                ", allocator=" + allocator +
                '}';
@@ -80,12 +95,11 @@ public final class FunctionPtrType extends AbstractGenerationType {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof FunctionPtrType that)) return false;
-        if (!super.equals(o)) return false;
-        return allocator == that.allocator && Objects.equals(args, that.args) && Objects.equals(returnType, that.returnType);
+        return Objects.equals(typeName, that.typeName) && Objects.equals(args, that.args) && Objects.equals(returnType, that.returnType) && allocator == that.allocator;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), args, returnType, allocator);
+        return Objects.hash(typeName, args, returnType, allocator);
     }
 }

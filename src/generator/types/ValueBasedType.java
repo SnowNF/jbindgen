@@ -9,19 +9,20 @@ import java.util.Optional;
 
 import static utils.CommonUtils.Assert;
 
-public final class ValueBasedType extends AbstractGenerationType {
+public final class ValueBasedType implements SingleGenerationType {
     private final CommonTypes.BindTypes bindTypes;
     private final PointerType pointerType;
+    private final String typeName;
 
     public ValueBasedType(String typeName, CommonTypes.BindTypes bindTypes) {
-        super(typeName, bindTypes.byteSize());
+        this.typeName = typeName;
         Assert(bindTypes != CommonTypes.BindTypes.Ptr);
         this.bindTypes = bindTypes;
         this.pointerType = null;
     }
 
     public ValueBasedType(String typeName, PointerType pointerType) {
-        super(typeName, pointerType.byteSize());
+        this.typeName = typeName;
         this.bindTypes = CommonTypes.BindTypes.Ptr;
         this.pointerType = pointerType;
     }
@@ -46,6 +47,7 @@ public final class ValueBasedType extends AbstractGenerationType {
     public String toString() {
         return "ValueBasedType{" +
                "bindTypes=" + bindTypes +
+               ", pointerType=" + pointerType +
                ", typeName='" + typeName + '\'' +
                '}';
     }
@@ -53,12 +55,26 @@ public final class ValueBasedType extends AbstractGenerationType {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof ValueBasedType that)) return false;
-        if (!super.equals(o)) return false;
-        return bindTypes == that.bindTypes;
+        return bindTypes == that.bindTypes && Objects.equals(pointerType, that.pointerType) && Objects.equals(typeName, that.typeName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), bindTypes);
+        return Objects.hash(bindTypes, pointerType, typeName);
+    }
+
+    @Override
+    public String typeName() {
+        return typeName;
+    }
+
+    @Override
+    public long byteSize() {
+        return bindTypes.byteSize();
+    }
+
+    @Override
+    public TypeImports getUseImportTypes() {
+        return new TypeImports(this);
     }
 }
