@@ -1,6 +1,6 @@
 package generator;
 
-import generator.generation.generator.Generator;
+import generator.generators.Generator;
 import generator.types.TypeAttr;
 import utils.CommonUtils;
 

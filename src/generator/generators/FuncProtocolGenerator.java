@@ -1,4 +1,4 @@
-package generator.generation.generator;
+package generator.generators;
 
 import generator.Generators;
 import generator.PackageManager;
@@ -7,7 +7,7 @@ import generator.types.FunctionPtrType;
 
 import java.util.List;
 
-import static generator.generation.generator.FuncPtrUtils.getNonConflictType;
+import static generator.generators.FuncPtrUtils.getNonConflictType;
 
 public class FuncProtocolGenerator implements Generator {
     private final FunctionPtrType functionPtrType;

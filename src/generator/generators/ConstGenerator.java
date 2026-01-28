@@ -1,9 +1,8 @@
-package generator.generation.generator;
+package generator.generators;
 
 import generator.Generators;
 import generator.PackageManager;
 import generator.PackagePath;
-import generator.generation.ConstValue;
 import generator.types.TypeAttr;
 
 import java.util.List;
@@ -34,5 +33,9 @@ public class ConstGenerator implements Generator {
                 }
                 """.formatted(packages.getClassName(), core.toString()));
         return new GenerateResult(List.of(packages), List.of());
+    }
+
+    public static record ConstValue(TypeAttr.TypeRefer type, String value, String name) {
+
     }
 }

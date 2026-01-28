@@ -5,9 +5,7 @@ import analyser.types.Enum;
 import analyser.types.Type;
 import generator.Generators;
 import generator.PackagePath;
-import generator.generation.ConstValue;
-import generator.generation.GenerationMacro;
-import generator.generation.generator.*;
+import generator.generators.*;
 import generator.types.*;
 
 import java.util.*;
@@ -15,8 +13,8 @@ import java.util.*;
 public class Processor {
     private static class GenerateUnit {
         private final HashMap<TypeAttr.GenerationType, Optional<PackagePath>> allTypes = new HashMap<>();
-        private final ArrayList<ConstValue> constValues = new ArrayList<>();
-        private final HashSet<GenerationMacro> macros = new HashSet<>();
+        private final ArrayList<ConstGenerator.ConstValue> constValues = new ArrayList<>();
+        private final HashSet<MacroGenerator.Macro> macros = new HashSet<>();
         private final ArrayList<FunctionPtrType> funcSymbols = new ArrayList<>();
         private final SymbolProviderType provider;
         private final Utils.DestinationProvider dest;
@@ -43,11 +41,11 @@ public class Processor {
             allTypes.put(generation, Optional.of(path));
         }
 
-        public void addConstValues(ArrayList<ConstValue> generation) {
+        public void addConstValues(ArrayList<ConstGenerator.ConstValue> generation) {
             constValues.addAll(generation);
         }
 
-        public void addMacros(HashSet<GenerationMacro> generation) {
+        public void addMacros(HashSet<MacroGenerator.Macro> generation) {
             macros.addAll(generation);
         }
 
@@ -132,8 +130,8 @@ public class Processor {
                                     ArrayList<Declare> varDeclares, HashMap<String, Type> types,
                                     Map<String, Type> processedTypes,
                                     Set<Function> processedFunSymbols) {
-        ArrayList<ConstValue> constValues = new ArrayList<>(varDeclares.stream()
-                .map(d -> new ConstValue(Utils.conv(d.type(), null), d.value(), d.name())).toList());
+        ArrayList<ConstGenerator.ConstValue> constValues = new ArrayList<>(varDeclares.stream()
+                .map(d -> new ConstGenerator.ConstValue(Utils.conv(d.type(), null), d.value(), d.name())).toList());
         // types
         for (var t : types.entrySet()) {
             if (processedTypes.containsKey(t.getKey())) {
@@ -148,7 +146,7 @@ public class Processor {
                     Enum en = (Enum) type;
                     if (en.isUnnamed()) {
                         for (Declare declare : en.getDeclares()) {
-                            constValues.add(new ConstValue(Utils.conv(declare.type(), null), declare.value(), declare.name()));
+                            constValues.add(new ConstGenerator.ConstValue(Utils.conv(declare.type(), null), declare.value(), declare.name()));
                         }
                     } else {
                         generateUnit.addType(e);
@@ -167,13 +165,13 @@ public class Processor {
         // constants
         generateUnit.addConstValues(constValues);
         // macros
-        HashSet<GenerationMacro> macro = new HashSet<>();
+        HashSet<MacroGenerator.Macro> macro = new HashSet<>();
         macros.forEach(e -> {
             switch (e.type()) {
                 case PrimitiveTypes.CType c ->
-                        macro.add(new GenerationMacro.Primitive(Utils.conv2BindTypes(c).getPrimitiveType(), e.declName(), e.initializer(), e.comment()));
+                        macro.add(new MacroGenerator.Macro.Primitive(Utils.conv2BindTypes(c).getPrimitiveType(), e.declName(), e.initializer(), e.comment()));
                 case PrimitiveTypes.JType _ ->
-                        macro.add(new GenerationMacro.StrMacro(e.declName(), e.initializer(), e.comment()));
+                        macro.add(new MacroGenerator.Macro.String(e.declName(), e.initializer(), e.comment()));
             }
         });
         generateUnit.addMacros(macro);

@@ -1,22 +1,24 @@
-package generator.generation.generator;
+package generator.generators;
 
 import generator.Generators;
 import generator.PackageManager;
 import generator.types.CommonTypes;
-import generator.types.RefOnlyType;
+import generator.types.VoidType;
 
-public class RefOnlyGenerator implements Generator {
-    private final RefOnlyType refOnly;
+public class VoidBasedGenerator implements Generator {
 
-    public RefOnlyGenerator(RefOnlyType refOnly) {
-        this.refOnly = refOnly;
+    private final VoidType voidType;
+
+    public VoidBasedGenerator(VoidType voidType) {
+        this.voidType = voidType;
     }
 
     @Override
     public GenerateResult generate(Generators.GenerationProvider locations, Generators.Writer writer) {
-        PackageManager packages = new PackageManager(locations, refOnly);
-        writer.write(packages, makeContent(packages));
-        return new GenerateResult(packages, refOnly);
+        var packages = new PackageManager(locations, voidType);
+        if (!voidType.realVoid())
+            writer.write(packages, makeContent(packages));
+        return new GenerateResult(packages, voidType);
     }
 
     private static String makeContent(PackageManager packages) {

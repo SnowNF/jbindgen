@@ -1,4 +1,4 @@
-package generator.generation.generator;
+package generator.generators;
 
 import generator.PackageManager;
 import generator.types.CommonTypes;
@@ -11,8 +11,8 @@ import generator.types.operations.OperationAttr;
 import java.util.ArrayList;
 import java.util.List;
 
-import static generator.generation.generator.FuncPtrUtils.SEGMENT_ALLOCATOR_PARAMETER_NAME;
-import static generator.generation.generator.FuncPtrUtils.arenaAutoAllocator;
+import static generator.generators.FuncPtrUtils.SEGMENT_ALLOCATOR_PARAMETER_NAME;
+import static generator.generators.FuncPtrUtils.arenaAutoAllocator;
 import static generator.types.CommonTypes.FFMTypes.FUNCTION_DESCRIPTOR;
 import static generator.types.CommonTypes.FFMTypes.SEGMENT_ALLOCATOR;
 

@@ -6,7 +6,7 @@ import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
 import generator.types.TypeAttr;
 
-import static generator.generation.generator.CommonGenerator.ARRAY_MAKE_OPERATION_METHOD;
+import static generator.generators.CommonGenerator.ARRAY_MAKE_OPERATION_METHOD;
 import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
 
 public class ArrayOp implements OperationAttr.MemoryBasedOperation {

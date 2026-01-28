@@ -6,7 +6,7 @@ import generator.types.MemoryLayouts;
 import generator.types.PointerType;
 import generator.types.TypeAttr;
 
-import static generator.generation.generator.CommonGenerator.PTR_MAKE_OPERATION_METHOD;
+import static generator.generators.CommonGenerator.PTR_MAKE_OPERATION_METHOD;
 
 public class PointerOp implements OperationAttr.ValueBasedOperation {
     private final PointerType pointerType;

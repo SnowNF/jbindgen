@@ -1,4 +1,4 @@
-package generator.generation.generator;
+package generator.generators;
 
 import generator.Generators;
 
