@@ -1,7 +1,6 @@
 package generator;
 
 import generator.types.TypeAttr;
-import utils.CommonUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,29 +46,6 @@ public class PackageManager {
         }
         imports.put(rootClassName, type);
         return packagePath.getClassName();
-    }
-
-    public String useTypePrefix(TypeAttr.GenerationType type) {
-        used.add(type);
-        PackagePath packagePath = location.queryPath(type);
-        String rootClassName = packagePath.getRootClassName();
-        String lastClassName = packagePath.getLastClassName();
-        String typeName = ((TypeAttr.NamedType) type).typeName();
-        if (!lastClassName.equals(typeName)) {
-            CommonUtils.shouldNotReachHere();
-        }
-        ArrayList<String> path = new ArrayList<>();
-        if (imports.containsKey(rootClassName)) {
-            // already imports same class name
-            path.addAll(packagePath.getPackagePath());
-        } else {
-            imports.put(rootClassName, type);
-        }
-        path.addAll(packagePath.getPrefixClassPath());
-        if (path.isEmpty()) {
-            return "";
-        }
-        return String.join(".", path) + ".";
     }
 
     public String useType(TypeAttr.GenerationType type, TypeAttr.NameType name) {

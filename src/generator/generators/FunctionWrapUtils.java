@@ -41,7 +41,7 @@ public class FunctionWrapUtils {
         var r = packages.useType((TypeAttr.GenerationType) retType, TypeAttr.NameType.GENERIC);
         if (allocatorType == AllocatorType.STANDARD) {
             // warp with Ptr<T>
-            return packages.useTypePrefix(CommonTypes.BindTypes.Ptr) + CommonTypes.BindTypes.makePtrGenericName(r);
+            return CommonTypes.BindTypes.makePtrGenericName(packages, r);
         }
         return r;
     }
@@ -121,7 +121,7 @@ public class FunctionWrapUtils {
         if (allocatorType == AllocatorType.STANDARD) {
             String r = packages.useClass((TypeAttr.GenerationType) retType);
             // warp Ptr<T>
-            return "return new " + packages.useTypePrefix(CommonTypes.BindTypes.Ptr) + CommonTypes.BindTypes.makePtrGenericName(r)
+            return "return new " + CommonTypes.BindTypes.makePtrGenericName(packages, r)
                    + "(%s, %s)".formatted(value, operation.getCommonOperation().makeOperation(packages).str());
         }
         FuncOperation.Result construct = operation.getFuncOperation(packages).constructFromRet(value);

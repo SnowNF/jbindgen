@@ -28,9 +28,9 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
     public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
         return switch (nameType) {
             case WILDCARD ->
-                    ARRAY_TYPE.getWildcardName(((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.WILDCARD));
+                    ARRAY_TYPE.getWildcardName(packages, ((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.WILDCARD));
             case GENERIC ->
-                    ARRAY_TYPE.getGenericName(((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.GENERIC));
+                    ARRAY_TYPE.getGenericName(packages, ((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.GENERIC));
             case RAW -> packages.useClass(ARRAY_TYPE);
         };
     }

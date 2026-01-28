@@ -41,9 +41,9 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
     public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
         return switch (nameType) {
             case WILDCARD ->
-                    CommonTypes.BindTypes.makePtrWildcardName(((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.WILDCARD));
+                    CommonTypes.BindTypes.makePtrWildcardName(packages, ((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.WILDCARD));
             case GENERIC ->
-                    CommonTypes.BindTypes.makePtrGenericName(((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.GENERIC));
+                    CommonTypes.BindTypes.makePtrGenericName(packages, ((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.GENERIC));
             case RAW -> packages.useClass(CommonTypes.BindTypes.Ptr);
         };
     }

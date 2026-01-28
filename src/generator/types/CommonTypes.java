@@ -221,12 +221,12 @@ public class CommonTypes {
             this.operations = operations;
         }
 
-        public static String makePtrGenericName(String t) {
-            return Ptr.typeName() + "<%s>".formatted(t);
+        public static String makePtrGenericName(PackageManager packages, String t) {
+            return packages.useClass(Ptr) + "<%s>".formatted(t);
         }
 
-        public static String makePtrWildcardName(String t) {
-            return Ptr.typeName() + "<? extends %s>".formatted(t);
+        public static String makePtrWildcardName(PackageManager packages, String t) {
+            return packages.useClass(Ptr) + "<? extends %s>".formatted(t);
         }
 
         public BindTypeOperations getOperations() {
@@ -278,18 +278,18 @@ public class CommonTypes {
             this.generic = generic;
         }
 
-        public String getGenericName(String t) {
+        public String getGenericName(PackageManager packages, String t) {
             if (!generic) {
                 throw new IllegalStateException("Cannot get generic name for non-generic type");
             }
-            return typeName() + "<%s>".formatted(t);
+            return packages.useClass(this) + "<%s>".formatted(t);
         }
 
-        public String getWildcardName(String t) {
+        public String getWildcardName(PackageManager packages, String t) {
             if (!generic) {
                 throw new IllegalStateException("Cannot get wildcard name for non-generic type");
             }
-            return typeName() + "<? extends %s>".formatted(t);
+            return packages.useClass(this) + "<? extends %s>".formatted(t);
         }
 
         @Override
