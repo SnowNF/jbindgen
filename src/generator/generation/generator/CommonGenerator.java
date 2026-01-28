@@ -1280,7 +1280,7 @@ public class CommonGenerator implements Generator {
         Assert(bindTypes != BindTypes.Ptr);
         if (bindTypes.getOperations().getValue().getPrimitive().noJavaPrimitive()) {
             packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-            packages.addImport(bindTypes.getOperation().getCommonOperation().makeDirectMemoryLayout(packages).getTypeImports());
+            packages.addImport(bindTypes.getOperation().getCommonOperation().makeMemoryLayout(packages).getTypeImports());
             Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16, " sizeof %s must be 16".formatted(bindTypes));
             var str = """
                     import java.lang.foreign.MemorySegment;
@@ -1356,7 +1356,7 @@ public class CommonGenerator implements Generator {
                     }
                     """.formatted(null, null, typeName, // 3
                     packages.useClass(bindTypes.getOperations()),
-                    bindTypes.getOperation().getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages), //5
+                    bindTypes.getOperation().getCommonOperation().makeMemoryLayout(packages).getMemoryLayout(packages), //5
                     packages.useClass(bindTypes.getOperations().getValue()), //6
                     packages.useClass(ValueInterface.I64I), // 7
                     packages.useClass(BasicOperations.Info), // 8

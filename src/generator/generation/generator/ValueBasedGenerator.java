@@ -35,7 +35,6 @@ public class ValueBasedGenerator implements Generator {
             pointeeName = packages.useClass((TypeAttr.GenerationType) pointerType.pointee());
         }
 
-        packages.addImport(pointee.getOperation().getCommonOperation().makeOperation(packages).imports());
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
         writer.write(packages, """

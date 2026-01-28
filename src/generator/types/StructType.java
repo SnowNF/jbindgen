@@ -122,7 +122,7 @@ public final class StructType implements SingleGenerationType {
             ArrayList<MemoryLayouts> unionLayouts = new ArrayList<>();
             for (Member u : union) {
                 unionBits = Math.max(unionBits, u.bitSize);
-                MemoryLayouts ml = ((TypeAttr.OperationType) u.type).getOperation().getCommonOperation().makeDirectMemoryLayout(packages);
+                MemoryLayouts ml = ((TypeAttr.OperationType) u.type).getOperation().getCommonOperation().makeMemoryLayout(packages);
                 unionLayouts.add(MemoryLayouts.withName(ml, u.name));
             }
             layouts.add(unionLayoutMaybe(unionLayouts));

@@ -28,7 +28,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
             @Override
             public Result constructFromRet(String varName) {
                 CommonOperation.Operation operation = element.getOperation().getCommonOperation().makeOperation(packages);
-                return new Result("new %s(%s, %s)".formatted(typeName, varName, operation.str()), operation.imports());
+                return new Result("new %s(%s, %s)".formatted(typeName, varName, operation.str()), new TypeImports());
             }
 
             @Override
@@ -41,7 +41,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
     @Override
     public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
+            private final String memoryLayout = getCommonOperation().makeMemoryLayout(packages).getMemoryLayout(packages);
 
             @Override
             public Getter getter(String ms, long offset) {
@@ -56,9 +56,8 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
-                                MemoryUtils.typeName(),
-                                varName, 0, ms, offset, memoryLayout),
-                        upperType.typeImports().addUseImports(MemoryUtils));
+                                packages.useClass(MemoryUtils),
+                                varName, 0, ms, offset, memoryLayout), new TypeImports());
 
             }
         };
@@ -70,8 +69,8 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
             @Override
             public Operation makeOperation(PackageManager packages) {
                 Operation eleOp = element.getOperation().getCommonOperation().makeOperation(packages);
-                return new Operation(arrayType.typeName() + "." + ARRAY_MAKE_OPERATION_METHOD + "(%s, %s)"
-                        .formatted(eleOp.str(), arrayType.length()), eleOp.imports().addUseImports(arrayType));
+                return new Operation(packages.useClass(arrayType) + "." + ARRAY_MAKE_OPERATION_METHOD + "(%s, %s)"
+                        .formatted(eleOp.str(), arrayType.length()));
             }
 
             @Override
@@ -80,8 +79,8 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
             }
 
             @Override
-            public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
-                return MemoryLayouts.sequenceLayout(element.getOperation().getCommonOperation().makeDirectMemoryLayout(packages), arrayType.length());
+            public MemoryLayouts makeMemoryLayout(PackageManager packages) {
+                return MemoryLayouts.sequenceLayout(element.getOperation().getCommonOperation().makeMemoryLayout(packages), arrayType.length());
             }
 
             @Override

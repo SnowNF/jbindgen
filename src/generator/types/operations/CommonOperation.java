@@ -4,15 +4,12 @@ import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
 import generator.types.TypeAttr;
-import generator.types.TypeImports;
 
 public interface CommonOperation {
     interface UpperType {
         String typeName(PackageManager packages, TypeAttr.NameType nameType);
 
-        TypeImports typeImports();
-
-        TypeAttr.OperationType typeOp();
+        TypeAttr.OperationType type();
 
         default boolean rejectWildcard() {
             return false;
@@ -23,41 +20,25 @@ public interface CommonOperation {
 
     record End<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType>
             (T type, String typeName) implements UpperType {
-        public End(T type) {
-            this(type, type.typeName());
+        public End(T type, PackageManager packages) {
+            this(type, type.typeName(packages, TypeAttr.NameType.RAW));
         }
 
         @Override
         public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
             return typeName;
         }
-
-        @Override
-        public TypeImports typeImports() {
-            return new TypeImports().addUseImports(type);
-        }
-
-        @Override
-        public TypeAttr.OperationType typeOp() {
-            return type;
-        }
-
     }
 
     record Reject<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType>(
             T t) implements UpperType {
         @Override
         public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
-            return t.typeName();
+            return t.typeName(packages, nameType);
         }
 
         @Override
-        public TypeImports typeImports() {
-            return new TypeImports();
-        }
-
-        @Override
-        public TypeAttr.OperationType typeOp() {
+        public TypeAttr.OperationType type() {
             return t;
         }
 
@@ -67,48 +48,48 @@ public interface CommonOperation {
         }
     }
 
-    record Warp<T extends TypeAttr.NamedType & TypeAttr.TypeRefer>(T outer, UpperType inner) implements UpperType {
+    record Warp<T extends TypeAttr.OperationType & TypeAttr.NamedType & TypeAttr.TypeRefer>(T outer,
+                                                                                            UpperType inner) implements UpperType {
         public Warp(T outer, CommonOperation inner, PackageManager packages) {
             this(outer, inner.getUpperType(packages));
         }
 
         @Override
         public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
+            final String outerRaw = outer.typeName(packages, TypeAttr.NameType.RAW);
             return switch (nameType) {
                 case WILDCARD -> inner.rejectWildcard()
-                        ? outer.typeName() + "<?>"
-                        : outer.typeName() + "<? extends %s>".formatted(inner.typeName(packages, nameType));
-                case GENERIC -> outer.typeName() + "<%s>".formatted(inner.typeName(packages, nameType));
-                case RAW -> outer.typeName(packages, TypeAttr.NameType.RAW);
+                        ? outerRaw + "<?>"
+                        : outerRaw + "<? extends %s>".formatted(inner.typeName(packages, nameType));
+                case GENERIC -> outerRaw + "<%s>".formatted(inner.typeName(packages, nameType));
+                case RAW -> outerRaw;
             };
         }
 
         @Override
-        public TypeImports typeImports() {
-            return inner.typeImports().addUseImports(outer);
-        }
-
-        @Override
-        public TypeAttr.OperationType typeOp() {
-            return ((TypeAttr.OperationType) outer);
+        public TypeAttr.OperationType type() {
+            return outer;
         }
     }
 
-    record Operation(String str, TypeImports imports) {
+    record Operation(String str) {
     }
 
     Operation makeOperation(PackageManager packages);
 
-    static Operation makeStaticOperation(TypeAttr.TypeRefer type, String typeName) {
-        return new Operation(typeName + ".OPERATIONS", new TypeImports().addUseImports(type));
+    static Operation makeStaticOperation(PackageManager packages, TypeAttr.GenerationType type) {
+        return makeStaticOperation(packages.useClass(type));
     }
 
-    static Operation makeVoidOperation() {
-        return new Operation(CommonTypes.BasicOperations.Info.typeName() + ".makeOperations()",
-                new TypeImports().addUseImports(CommonTypes.BasicOperations.Info));
+    static Operation makeStaticOperation(String typeName) {
+        return new Operation(typeName + ".OPERATIONS");
     }
 
-    default MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+    static Operation makeVoidOperation(PackageManager packages) {
+        return new Operation(packages.useClass(CommonTypes.BasicOperations.Info) + ".makeOperations()");
+    }
+
+    default MemoryLayouts makeMemoryLayout(PackageManager packages) {
         return makeStaticMemoryLayout(makeOperation(packages));
     }
 

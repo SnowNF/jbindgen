@@ -1,7 +1,6 @@
 package generator.types.operations;
 
 import generator.PackageManager;
-import generator.generation.generator.FuncProtocolGenerator;
 import generator.types.*;
 
 import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
@@ -52,8 +51,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
-                                MemoryUtils.typeName(), ms, offset, varName),
-                        upperType.typeImports().addUseImports(MemoryUtils));
+                                packages.useClass(MemoryUtils), ms, offset, varName), new TypeImports());
             }
         };
     }
@@ -63,18 +61,18 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
         return new CommonOperation() {
             @Override
             public Operation makeOperation(PackageManager packages) {
-                return CommonOperation.makeStaticOperation(functionPtrType, typeName);
+                return CommonOperation.makeStaticOperation(packages, functionPtrType);
             }
 
 
             @Override
-            public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+            public MemoryLayouts makeMemoryLayout(PackageManager packages) {
                 return CommonOperation.makeStaticMemoryLayout(CommonTypes.Primitives.ADDRESS.getMemoryLayout());
             }
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                End<?> end = new End<>(functionPtrType, functionPtrType.typeName() + "." + FuncProtocolGenerator.FUNCTION_TYPE_NAME);
+                End<?> end = new End<>(functionPtrType, functionPtrType.innerFunctionTypeName(packages));
                 return new Warp<>(CommonTypes.ValueInterface.PtrI, end);
             }
         };

@@ -26,7 +26,7 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
             public Result constructFromRet(String varName) {
                 CommonOperation.Operation operation = pointeeType.getOperation().getCommonOperation().makeOperation(packages);
                 return new Result("new %s(%s, %s)".formatted(pointerType.typeName(packages, TypeAttr.NameType.GENERIC), varName, operation.str()),
-                        operation.imports().addUseImports(CommonTypes.BindTypes.Ptr));
+                        new TypeImports().addUseImports(CommonTypes.BindTypes.Ptr));
             }
 
             @Override
@@ -54,8 +54,8 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
-                                CommonTypes.SpecificTypes.MemoryUtils.typeName(),
-                                ms, offset, varName), upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
+                                packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
+                                ms, offset, varName), new TypeImports());
             }
         };
     }
@@ -66,12 +66,11 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
             @Override
             public Operation makeOperation(PackageManager packages) {
                 Operation pointeeOp = pointeeType.getOperation().getCommonOperation().makeOperation(packages);
-                return new Operation(pointerType.typeName() + "." + PTR_MAKE_OPERATION_METHOD + "(%s)"
-                        .formatted(pointeeOp.str()), pointeeOp.imports().addUseImports(pointerType));
+                return new Operation(packages.useClass(pointerType) + "." + PTR_MAKE_OPERATION_METHOD + "(%s)".formatted(pointeeOp.str()));
             }
 
             @Override
-            public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+            public MemoryLayouts makeMemoryLayout(PackageManager packages) {
                 return CommonOperation.makeStaticMemoryLayout(MemoryLayouts.ADDRESS);
             }
 

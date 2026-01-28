@@ -2,6 +2,7 @@ package generator.types;
 
 import generator.PackageManager;
 import generator.Utils;
+import generator.generation.generator.FuncProtocolGenerator;
 import generator.types.operations.CommonOperation;
 import generator.types.operations.FunctionPtrBased;
 import generator.types.operations.OperationAttr;
@@ -55,9 +56,9 @@ public final class FunctionPtrType implements SingleGenerationType {
     public List<MemoryLayouts> getMemoryLayouts(PackageManager packages) {
         ArrayList<MemoryLayouts> memoryLayout = new ArrayList<>();
         if (this.getReturnType().isPresent())
-            memoryLayout.add(this.getReturnType().get().getOperation().getCommonOperation().makeDirectMemoryLayout(packages));
+            memoryLayout.add(this.getReturnType().get().getOperation().getCommonOperation().makeMemoryLayout(packages));
         for (Arg arg : this.getArgs()) {
-            memoryLayout.add(((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().makeDirectMemoryLayout(packages));
+            memoryLayout.add(((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().makeMemoryLayout(packages));
         }
         return memoryLayout;
     }
@@ -70,6 +71,10 @@ public final class FunctionPtrType implements SingleGenerationType {
     @Override
     public String typeName() {
         return typeName;
+    }
+
+    public String innerFunctionTypeName(PackageManager packages) {
+        return packages.useClass(this) + "." + FuncProtocolGenerator.FUNCTION_TYPE_NAME;
     }
 
     @Override

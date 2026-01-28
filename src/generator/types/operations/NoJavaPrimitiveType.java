@@ -7,7 +7,7 @@ import generator.types.TypeImports;
 
 import static utils.CommonUtils.Assert;
 
-public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.MemoryBasedOperation {
+public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.MemoryBasedOperation {
     private final String typeName;
     private final CommonTypes.BindTypes bindTypes;
     private final T type;
@@ -42,7 +42,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
     @Override
     public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
+            private final String memoryLayout = getCommonOperation().makeMemoryLayout(packages).getMemoryLayout(packages);
 
             @Override
             public Getter getter(String ms, long offset) {
@@ -56,9 +56,8 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
-                                CommonTypes.SpecificTypes.MemoryUtils.typeName(),
-                                varName, 0, ms, offset, memoryLayout),
-                        upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
+                                packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
+                                varName, 0, ms, offset, memoryLayout), new TypeImports());
             }
         };
     }
@@ -68,7 +67,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
         return new CommonOperation() {
             @Override
             public Operation makeOperation(PackageManager packages) {
-                return CommonOperation.makeStaticOperation(type, typeName);
+                return CommonOperation.makeStaticOperation(packages, type);
             }
 
             @Override

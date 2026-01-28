@@ -7,7 +7,7 @@ import utils.CommonUtils;
 
 import java.util.Optional;
 
-public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.ValueBasedOperation {
+public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.ValueBasedOperation {
     private final T type;
     private final String typeName;
     private final CommonTypes.Primitives primitives;
@@ -83,9 +83,9 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
             @Override
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s)".formatted(typeName,
-                        "%s.get%s(%s, %s)".formatted(SpecificTypes.MemoryUtils.typeName(),
+                        "%s.get%s(%s, %s)".formatted(packages.useClass(SpecificTypes.MemoryUtils),
                                 primitives.getMemoryUtilName(), ms, offset)),
-                        new TypeImports().addUseImports(type).addUseImports(SpecificTypes.MemoryUtils));
+                        new TypeImports().addUseImports(type));
             }
 
             @Override
@@ -100,21 +100,26 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                 long shift = bitOffset % bitAlign;
                 if (mask == -1 && shift == 0) {
                     String value = "%s.get%s(%s, %s)".formatted(
-                            SpecificTypes.MemoryUtils.typeName(),
-                            p.getMemoryUtilName(), ms, bitOffset / 8);
+                            packages.useClass(SpecificTypes.MemoryUtils),
+                            p.getMemoryUtilName(),
+                            ms,
+                            bitOffset / 8);
                     value = unsignedCast(p, primitives, value);
-                    return Optional.of(new Getter("", typeName, "        return new %s(%s);".formatted(typeName, value),
-                            new TypeImports().addUseImports(type).addUseImports(SpecificTypes.MemoryUtils)));
+                    return Optional.of(new Getter("", typeName,
+                            "        return new %s(%s);".formatted(typeName, value),
+                            new TypeImports().addUseImports(type)));
                 }
                 long offset = bitOffset - shift;
                 //long get = ms.get(ValueLayout.JAVA_LONG, offset / 8);
                 //result = (get >>> shift) & mask;
                 String checkByteOrder = """
-                                if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) throw new UnsupportedOperationException();
-                        """;
+                                if (%1$s.nativeOrder() == %1$s.BIG_ENDIAN) throw new UnsupportedOperationException();
+                        """.formatted(packages.useClass(CommonTypes.FFMTypes.BYTE_ORDER));
                 String value = "%s.get%s(%s, %s)".formatted(
-                        SpecificTypes.MemoryUtils.typeName(),
-                        p.getMemoryUtilName(), ms, offset / 8);
+                        packages.useClass(SpecificTypes.MemoryUtils),
+                        p.getMemoryUtilName(),
+                        ms,
+                        offset / 8);
                 value = "(%s >>> %s) & %s".formatted(value, shift, longToString(mask));
                 value = unsignedCast(p, primitives, value);
                 var ret = "        return new %s(%s);".formatted(typeName, value);
@@ -128,9 +133,8 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.set%s(%s, %s, %s.operator().value())".formatted(
-                                SpecificTypes.MemoryUtils.typeName(),
-                                primitives.getMemoryUtilName(), ms, offset, varName),
-                        upperType.typeImports().addUseImports(SpecificTypes.MemoryUtils));
+                                packages.useClass(SpecificTypes.MemoryUtils),
+                                primitives.getMemoryUtilName(), ms, offset, varName), new TypeImports());
             }
 
             @Override
@@ -148,25 +152,36 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                     CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                     return Optional.of(new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                             "        %s.set%s(%s, %s, %s.operator().value()%s);".formatted(
-                                    SpecificTypes.MemoryUtils.typeName(),
-                                    p.getMemoryUtilName(), ms, bitOffset / 8, varName, typeValue),
-                            upperType.typeImports().addUseImports(SpecificTypes.MemoryUtils)));
+                                    packages.useClass(SpecificTypes.MemoryUtils),
+                                    p.getMemoryUtilName(), ms, bitOffset / 8, varName, typeValue), new TypeImports()));
                 }
                 long offset = bitOffset - shift;
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 var get = """
-                                if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) throw new UnsupportedOperationException();
-                        """;
-                var preGet = "%s.get%s(%s, %s)".formatted(SpecificTypes.MemoryUtils.typeName(), p.getMemoryUtilName(), ms, offset / 8);
+                                if (%1$s.nativeOrder() == %1$s.BIG_ENDIAN) throw new UnsupportedOperationException();
+                        """.formatted(packages.useClass(CommonTypes.FFMTypes.BYTE_ORDER));
+                var preGet = "%s.get%s(%s, %s)".formatted(
+                        packages.useClass(SpecificTypes.MemoryUtils),
+                        p.getMemoryUtilName(),
+                        ms,
+                        offset / 8);
                 var userSet = "%s.operator().value()".formatted(varName);
-                var value = "((%s & %s) << %s) | (%s & ~(%s))".formatted(userSet, longToString(mask), shift, preGet, longToString(mask << shift));
-                value = "(%s) (%s)".formatted(p.getPrimitiveTypeName(), value);
-                TypeImports imports = upperType.typeImports().addUseImports(SpecificTypes.MemoryUtils).addUseImports(CommonTypes.FFMTypes.BYTE_ORDER);
+                var value = "((%s & %s) << %s) | (%s & ~(%s))".formatted(
+                        userSet,
+                        longToString(mask),
+                        shift,
+                        preGet,
+                        longToString(mask << shift));
+                value = "(%s) (%s)".formatted(
+                        p.getPrimitiveTypeName(),
+                        value);
                 String set = "        %s.set%s(%s, %s, %s);".formatted(
-                        SpecificTypes.MemoryUtils.typeName(),
-                        p.getMemoryUtilName(), ms, offset / 8, value);
+                        packages.useClass(SpecificTypes.MemoryUtils),
+                        p.getMemoryUtilName(),
+                        ms,
+                        offset / 8, value);
                 return Optional.of(new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
-                        get + set, imports));
+                        get + set, new TypeImports()));
             }
         };
     }
@@ -176,7 +191,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
         return new CommonOperation() {
             @Override
             public Operation makeOperation(PackageManager packages) {
-                return CommonOperation.makeStaticOperation(type, typeName);
+                return CommonOperation.makeStaticOperation(packages, type);
             }
 
             @Override
@@ -184,14 +199,14 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                 if (type instanceof CommonTypes.BindTypes) {
                     return new Warp<>(bindTypes.getOperations().getValue(), new Reject<>(type));
                 }
-                End<?> end = new End<>(type);
+                End<?> end = new End<>(type, packages);
                 if (type instanceof ValueBasedType v && v.getPointerType().isPresent()) {
                     // make Ptr<Void> -> Type
                     TypeAttr.TypeRefer pointee = v.getPointerType().get().pointee();
                     if (pointee instanceof VoidType) {
                         return end;
                     }
-                    // PtrI<ppintee>, get pointee as inner Wildacrd type
+                    // PtrI<pointee>, get pointee as inner Wildacrd type
                     return new Warp<>(bindTypes.getOperations().getValue(), new UpperType() {
                         @Override
                         public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
@@ -199,12 +214,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                         }
 
                         @Override
-                        public TypeImports typeImports() {
-                            return new TypeImports().addUseImports(pointee);
-                        }
-
-                        @Override
-                        public TypeAttr.OperationType typeOp() {
+                        public TypeAttr.OperationType type() {
                             return ((TypeAttr.OperationType) pointee);
                         }
                     });

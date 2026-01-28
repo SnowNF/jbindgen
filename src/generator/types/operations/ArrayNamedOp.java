@@ -42,7 +42,7 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
     @Override
     public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
+            private final String memoryLayout = getCommonOperation().makeMemoryLayout(packages).getMemoryLayout(packages);
 
             @Override
             public Getter getter(String ms, long offset) {
@@ -56,9 +56,8 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
-                                MemoryUtils.typeName(),
-                                varName, 0, ms, offset, memoryLayout),
-                        upperType.typeImports().addUseImports(MemoryUtils));
+                                packages.useClass(MemoryUtils),
+                                varName, 0, ms, offset, memoryLayout), new TypeImports());
             }
         };
     }
@@ -68,7 +67,7 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
         return new CommonOperation() {
             @Override
             public Operation makeOperation(PackageManager packages) {
-                return CommonOperation.makeStaticOperation(arrayType, typeName);
+                return CommonOperation.makeStaticOperation(packages, arrayType);
             }
 
             @Override

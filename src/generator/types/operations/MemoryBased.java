@@ -35,7 +35,7 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
     @Override
     public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
+            private final String memoryLayout = getCommonOperation().makeMemoryLayout(packages).getMemoryLayout(packages);
 
             @Override
             public Getter getter(String ms, long offset) {
@@ -49,9 +49,8 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
-                                CommonTypes.SpecificTypes.MemoryUtils.typeName(),
-                                varName, 0, ms, offset, memoryLayout),
-                        upperType.typeImports().addUseImports(CommonTypes.SpecificTypes.MemoryUtils));
+                                packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
+                                varName, 0, ms, offset, memoryLayout), new TypeImports());
             }
         };
     }
@@ -61,17 +60,17 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
         return new CommonOperation() {
             @Override
             public Operation makeOperation(PackageManager packages) {
-                return CommonOperation.makeStaticOperation(structType, typeName);
+                return CommonOperation.makeStaticOperation(packages, structType);
             }
 
             @Override
-            public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+            public MemoryLayouts makeMemoryLayout(PackageManager packages) {
                 return CommonOperation.makeStaticMemoryLayout(makeOperation(packages));
             }
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                End<?> end = new End<>(structType);
+                End<?> end = new End<>(structType, packages);
                 return new Warp<>(CommonTypes.BasicOperations.StructI, end);
             }
 

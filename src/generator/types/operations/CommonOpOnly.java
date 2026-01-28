@@ -3,7 +3,7 @@ package generator.types.operations;
 import generator.PackageManager;
 import generator.types.TypeAttr;
 
-public class CommonOpOnly<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.CommonOnlyOperation {
+public class CommonOpOnly<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.CommonOnlyOperation {
     private final String typeName;
     private final T type;
     private final boolean realVoid;
@@ -29,7 +29,7 @@ public class CommonOpOnly<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Ty
         return new CommonOperation() {
             @Override
             public Operation makeOperation(PackageManager packages) {
-                return realVoid ? CommonOperation.makeVoidOperation() : CommonOperation.makeStaticOperation(type, typeName);
+                return realVoid ? CommonOperation.makeVoidOperation(packages) : CommonOperation.makeStaticOperation(packages, type);
             }
 
             @Override
@@ -38,7 +38,7 @@ public class CommonOpOnly<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Ty
                 if (realVoid) {
                     return new Reject<>(type);
                 }
-                return new End<>(type);
+                return new End<>(type, packages);
             }
         };
     }
