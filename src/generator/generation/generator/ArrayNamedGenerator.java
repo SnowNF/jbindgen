@@ -26,9 +26,6 @@ public class ArrayNamedGenerator implements Generator {
     }
 
     private static String makeValue(PackageManager packages, ArrayTypeNamed type) {
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
-        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         return """
                 import java.util.List;
                 import java.util.Objects;
@@ -39,15 +36,15 @@ public class ArrayNamedGenerator implements Generator {
                     public static final %8$s.Operations<%1$s> OPERATIONS = new %8$s.Operations<>(
                             (param, offset) -> new %1$s(%9$s.getAddr(param, offset).reinterpret(LENGTH * ELE_OPERATIONS.memoryLayout().byteSize())),
                             (source, dest, offset) -> %9$s.setAddr(dest, offset, source.ms),
-                            ValueLayout.ADDRESS);
+                            %12$s.ADDRESS);
                 
-                    private final MemorySegment ms;
+                    private final %4$s ms;
                 
-                    public %1$s(MemorySegment ms) {
+                    public %1$s(%4$s ms) {
                         this.ms = ms;
                     }
                 
-                    public %1$s(SegmentAllocator allocator) {
+                    public %1$s(%13$s allocator) {
                         this.ms = allocator.allocate(OPERATIONS.memoryLayout(), LENGTH);
                     }
                 
@@ -121,7 +118,7 @@ public class ArrayNamedGenerator implements Generator {
                             }
                 
                             @Override
-                            public MemorySegment value() {
+                            public %4$s value() {
                                 return ms;
                             }
                 
@@ -149,17 +146,19 @@ public class ArrayNamedGenerator implements Generator {
                     public int size() {
                         return (int) (ms.byteSize() / ELE_OPERATIONS.memoryLayout().byteSize());
                     }
-                }""".formatted(packages.getClassName(),
-                packages.useClass((TypeAttr.GenerationType) type.element()),
+                }""".formatted(packages.getClassName(), // 1
+                packages.useClass((TypeAttr.GenerationType) type.element()), // 2
                 ((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation(packages).str(), // 3
-                type.getOperation().getCommonOperation().makeMemoryLayout(packages),
+                packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT), // 4
                 type.length(), //5
                 packages.useClass(ValueInterface.I64I), //6
                 packages.useClass(BindTypes.I64), // 7
                 packages.useClass(BasicOperations.Info), // 8
                 packages.useClass(SpecificTypes.MemoryUtils), // 9
                 packages.useClass(BindTypes.Ptr), // 10
-                packages.useClass(SpecificTypes.ArrayOp) // 11
+                packages.useClass(SpecificTypes.ArrayOp), // 11
+                packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT), // 12
+                packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR)// 13
         );
     }
 }

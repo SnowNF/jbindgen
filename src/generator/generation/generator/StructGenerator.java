@@ -92,16 +92,14 @@ public class StructGenerator implements Generator {
     }
 
     private static String getMain(PackageManager packages, MemoryLayouts layout, String ext) {
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         return """
                 import java.util.Objects;
                 
                 public final class %1$s implements %4$s<%1$s>, %6$s<%1$s> {
-                    private final MemorySegment ms;
+                    private final %10$s ms;
                     public static final %6$s.Operations<%1$s> OPERATIONS = %4$s.makeOperations(%1$s::new, %2$s);
                 
-                    public %1$s(MemorySegment ms) {
+                    public %1$s(%10$s ms) {
                         this.ms = ms;
                     }
                 
@@ -109,15 +107,15 @@ public class StructGenerator implements Generator {
                         this.ms = %9$s.onHeapAllocator().allocate(OPERATIONS.memoryLayout());
                     }
                 
-                    public static %7$s<%1$s> array(SegmentAllocator allocator, %5$s<?> len) {
+                    public static %7$s<%1$s> array(%11$s allocator, %5$s<?> len) {
                         return array(allocator, len.operator().value());
                     }
                 
-                    public static %7$s<%1$s> array(SegmentAllocator allocator, long len) {
+                    public static %7$s<%1$s> array(%11$s allocator, long len) {
                         return new %7$s<>(allocator, %1$s.OPERATIONS, len);
                     }
                 
-                    public static %8$s<%1$s> ptr(SegmentAllocator allocator) {
+                    public static %8$s<%1$s> ptr(%11$s allocator) {
                         return new %8$s<>(allocator, %1$s.OPERATIONS);
                     }
                 
@@ -140,7 +138,7 @@ public class StructGenerator implements Generator {
                             }
                 
                             @Override
-                            public MemorySegment value() {
+                            public %10$s value() {
                                 return ms;
                             }
                         };
@@ -164,7 +162,9 @@ public class StructGenerator implements Generator {
                 packages.useClass(CommonTypes.BasicOperations.Info), // 6
                 packages.useClass(CommonTypes.SpecificTypes.Array), // 7
                 packages.useClass(CommonTypes.BindTypes.Ptr), // 8
-                packages.useClass(CommonTypes.SpecificTypes.MemoryUtils) // 9
+                packages.useClass(CommonTypes.SpecificTypes.MemoryUtils), // 9
+                packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT), // 10
+                packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR) // 11
         );
     }
 }

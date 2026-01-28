@@ -2,7 +2,6 @@ package generator.types;
 
 import generator.PackageManager;
 import generator.Utils;
-import generator.generation.generator.FuncProtocolGenerator;
 import generator.types.operations.CommonOperation;
 import generator.types.operations.FunctionPtrBased;
 import generator.types.operations.OperationAttr;
@@ -16,6 +15,9 @@ import static utils.CommonUtils.Assert;
 
 // function ptr type, not function protocol type
 public final class FunctionPtrType implements SingleGenerationType {
+    private static final String DEFAULT_FUNCTION_TYPE_NAME = "Function";
+    private static final String DEFAULT_FUNCTION_RAW_TYPE_NAME = "FunctionRaw";
+
     public record Arg(String argName, TypeAttr.TypeRefer type) {
         public Arg {
             Assert(Utils.isValidVarName(argName), "Arg name must be a valid variable name: " + argName);
@@ -73,8 +75,22 @@ public final class FunctionPtrType implements SingleGenerationType {
         return typeName;
     }
 
-    public String innerFunctionTypeName(PackageManager packages) {
-        return packages.useClass(this) + "." + FuncProtocolGenerator.FUNCTION_TYPE_NAME;
+    public String innerFunctionTypeName() {
+        if (typeName.equals(DEFAULT_FUNCTION_TYPE_NAME)) {
+            return typeName + "Wrapped";
+        }
+        return DEFAULT_FUNCTION_TYPE_NAME;
+    }
+
+    public String innerFunctionTypeRawName() {
+        if (typeName.equals(DEFAULT_FUNCTION_RAW_TYPE_NAME)) {
+            return typeName + "Raw";
+        }
+        return DEFAULT_FUNCTION_RAW_TYPE_NAME;
+    }
+
+    public String innerFunctionTypePath(PackageManager packages) {
+        return packages.useClass(this) + "." + innerFunctionTypeName();
     }
 
     @Override

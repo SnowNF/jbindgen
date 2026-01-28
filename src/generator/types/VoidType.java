@@ -36,4 +36,12 @@ public record VoidType(String typeName) implements
         return new CommonOpOnly<>(this, realVoid()// no class will generate, inline it
         );
     }
+
+    @Override
+    public String useTypeReplace() {
+        if (realVoid()) {
+            return typeName;
+        }
+        return null;
+    }
 }

@@ -35,6 +35,9 @@ public class PackageManager {
     }
 
     public String useClass(TypeAttr.GenerationType type) {
+        String replace = type.useTypeReplace();
+        if (replace != null)
+            return replace;
         used.add(type);
         PackagePath packagePath = location.queryPath(type);
         String rootClassName = packagePath.getRootClassName();

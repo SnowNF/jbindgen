@@ -10,7 +10,6 @@ import java.util.List;
 import static generator.generation.generator.FuncPtrUtils.getNonConflictType;
 
 public class FuncProtocolGenerator implements Generator {
-    public static final String FUNCTION_TYPE_NAME = "Function";
     private final FunctionPtrType functionPtrType;
 
     public FuncProtocolGenerator(FunctionPtrType functionPtrType) {
@@ -31,7 +30,7 @@ public class FuncProtocolGenerator implements Generator {
         FunctionWrapUtils wrap = new FunctionWrapUtils(packages, functionPtrType);
         String className = packages.getClassName();
         String interfaces = """
-                    public interface %6$sRaw {
+                    public interface %7$s {
                         %3$s invoke(%2$s);
                     }
                 
@@ -43,36 +42,42 @@ public class FuncProtocolGenerator implements Generator {
                 raw.rawRetType(),
                 wrap.upcallPara(),
                 wrap.upcallUpperRetType(),
-                FUNCTION_TYPE_NAME // 6
+                functionPtrType.innerFunctionTypeName(), // 6
+                functionPtrType.innerFunctionTypeRawName() // 7
         );
 
         FunctionPtrType lambdaType = getNonConflictLambdaType(functionPtrType);
         FunctionWrapUtils lambda = new FunctionWrapUtils(packages, lambdaType);
         String constructors = """
-                    public %1$s(Arena funcLifeTime, %4$sRaw function) {
+                    public %1$s(%7$s funcLifeTime, %6$s function) {
                         try {
-                            methodHandle = MethodHandles.lookup().findVirtual(%4$sRaw.class,
+                            methodHandle = %8$s.lookup().findVirtual(%6$s.class,
                                     "invoke", FUNCTION_DESCRIPTOR.toMethodType()).bindTo(function);
                             funPtr = %5$s.upcallStub(funcLifeTime, methodHandle, FUNCTION_DESCRIPTOR);
-                        } catch (NoSuchMethodException | IllegalAccessException e) {
+                        } catch (java.lang.NoSuchMethodException | java.lang.IllegalAccessException e) {
                             throw new %5$s.SymbolNotFound(e);
                         }
                     }
                 
-                    public static %1$s of(Arena funcLifeTime, %4$s function) {
-                        return new %1$s(funcLifeTime, (%4$sRaw) (%2$s)
+                    public static %1$s of(%7$s funcLifeTime, %4$s function) {
+                        return new %1$s(funcLifeTime, (%6$s) (%2$s)
                                 -> %3$s);
                     }
                 """.formatted(className,
                 lambda.upcallParaNames(),
                 lambda.upcallUpperRetTypeDestruct("function.invoke(%s)".formatted(lambda.upcallParaConstruct())),
-                FUNCTION_TYPE_NAME, utilsClassName);
+                functionPtrType.innerFunctionTypeName(),
+                utilsClassName, // 5
+                functionPtrType.innerFunctionTypeRawName(),
+                packages.useClass(CommonTypes.FFMTypes.ARENA), // 7
+                packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLES) // 8
+                );
 
         StringBuilder invokes = new StringBuilder("""
                     private %1$s invokeRaw(%2$s) {
                         try {
                             %3$sthis.methodHandle.invokeExact(%4$s);
-                        } catch (Throwable e) {
+                        } catch (java.lang.Throwable e) {
                             throw new %8$s.InvokeException(e);
                         }
                     }
@@ -113,26 +118,22 @@ public class FuncProtocolGenerator implements Generator {
     }
 
     private String make(PackageManager packages, FunctionRawUtils raw, String interfaces, String constructors, String invokes, String ext, Object utilsClassName) {
-        packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLE);
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLES);
-        packages.useClass(CommonTypes.FFMTypes.ARENA);
         return """
-                public class %1$s implements %9$s<%1$s, %1$s.Function>, %8$s<%1$s> {
+                public class %1$s implements %9$s<%1$s, %1$s.%14$s>, %8$s<%1$s> {
                     public static final %8$s.Operations<%1$s> OPERATIONS = %9$s.makeOperations(%1$s::new);
-                    public static final FunctionDescriptor FUNCTION_DESCRIPTOR = %2$s;
+                    public static final %13$s FUNCTION_DESCRIPTOR = %2$s;
                 
                 %3$s
-                    private final MemorySegment funPtr;
-                    private final MethodHandle methodHandle;
+                    private final %12$s funPtr;
+                    private final %11$s methodHandle;
                 
                 %4$s
                 
-                    public %1$s(MemorySegment funPtr) {
+                    public %1$s(%12$s funPtr) {
                         this(funPtr, false);
                     }
                 
-                    public %1$s(MemorySegment funPtr, boolean critical) {
+                    public %1$s(%12$s funPtr, boolean critical) {
                         this.funPtr = funPtr;
                         methodHandle = funPtr.address() == 0 ? null : %7$s.downcallHandle(funPtr, FUNCTION_DESCRIPTOR, critical);
                     }
@@ -140,16 +141,16 @@ public class FuncProtocolGenerator implements Generator {
                 %5$s
                 
                     @Override
-                    public %10$s<%1$s, Function> operator() {
+                    public %10$s<%1$s, %14$s> operator() {
                         return new %10$s<>() {
                             @Override
-                            public %8$s.Operations<Function> elementOperation() {
-                                throw new UnsupportedOperationException();
+                            public %8$s.Operations<%14$s> elementOperation() {
+                                throw new java.lang.UnsupportedOperationException();
                             }
                 
                             @Override
-                            public void setPointee(Function pointee) {
-                                throw new UnsupportedOperationException();
+                            public void setPointee(%14$s pointee) {
+                                throw new java.lang.UnsupportedOperationException();
                             }
                 
                             @Override
@@ -163,12 +164,12 @@ public class FuncProtocolGenerator implements Generator {
                             }
                 
                             @Override
-                            public Function pointee() {
-                                throw new UnsupportedOperationException();
+                            public %14$s pointee() {
+                                throw new java.lang.UnsupportedOperationException();
                             }
                 
                             @Override
-                            public MemorySegment value() {
+                            public %12$s value() {
                                 return funPtr;
                             }
                         };
@@ -180,7 +181,11 @@ public class FuncProtocolGenerator implements Generator {
                 utilsClassName, // 7
                 packages.useClass(CommonTypes.BasicOperations.Info), // 8
                 packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 9
-                CommonTypes.BindTypeOperations.PtrOp.operatorTypeName() // 10
+                CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(), // 10
+                packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLE), // 11
+                packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT), // 12
+                packages.useClass(CommonTypes.FFMTypes.FUNCTION_DESCRIPTOR), // 13
+                functionPtrType.innerFunctionTypeName() // 14
         );
     }
 }

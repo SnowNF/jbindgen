@@ -46,6 +46,9 @@ public class TypeAttr {
      * types have generation
      */
     public sealed interface GenerationType permits ArrayType, CommonTypes.BaseType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, TaggedNamedType, VoidType {
+        default String useTypeReplace() {
+            return null;
+        }
     }
 
     public sealed interface TypeRefer permits ArrayType, CommonTypes.BaseType, TaggedNamedType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {

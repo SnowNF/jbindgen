@@ -2,7 +2,10 @@ package generator.generation.generator;
 
 import generator.Generators;
 import generator.PackageManager;
-import generator.types.*;
+import generator.types.CommonTypes;
+import generator.types.PointerType;
+import generator.types.TypeAttr;
+import generator.types.ValueBasedType;
 
 public class ValueBasedGenerator implements Generator {
 
@@ -28,15 +31,7 @@ public class ValueBasedGenerator implements Generator {
         }
         PointerType pointerType = type.getPointerType().orElseThrow();
         var pointee = ((TypeAttr.OperationType) pointerType.pointee());
-        String pointeeName;
-        if (pointee instanceof VoidType v && v.realVoid()) {
-            pointeeName = "Void";
-        } else {
-            pointeeName = packages.useClass((TypeAttr.GenerationType) pointerType.pointee());
-        }
-
-        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        String pointeeName = packages.useClass((TypeAttr.GenerationType) pointerType.pointee());
         writer.write(packages, """
                 import java.util.Objects;
                 
@@ -44,13 +39,13 @@ public class ValueBasedGenerator implements Generator {
                     public static final %11$s.Operations<%4$s> ELEMENT_OPERATIONS = %6$s;
                     public static final %11$s.Operations<%3$s> OPERATIONS = %5$s.makeOperations(%3$s::new);
                 
-                    private final MemorySegment segment;
+                    private final %2$s segment;
                 
-                    private MemorySegment fitByteSize(MemorySegment segment) {
+                    private %2$s fitByteSize(%2$s segment) {
                         return segment.byteSize() == ELEMENT_OPERATIONS.memoryLayout().byteSize() ? segment : segment.reinterpret(ELEMENT_OPERATIONS.memoryLayout().byteSize());
                     }
                 
-                    public %3$s(MemorySegment segment) {
+                    public %3$s(%2$s segment) {
                         this.segment = fitByteSize(segment);
                     }
                 
@@ -58,7 +53,7 @@ public class ValueBasedGenerator implements Generator {
                         this.segment = fitByteSize(arrayOperation.operator().value());
                     }
                 
-                    public %3$s(%14$s<MemorySegment> pointee) {
+                    public %3$s(%14$s<%2$s> pointee) {
                         this.segment = fitByteSize(pointee.operator().value());
                     }
                 
@@ -66,15 +61,15 @@ public class ValueBasedGenerator implements Generator {
                         this.segment = fitByteSize(pointee.operator().value());
                     }
                 
-                    public static %12$s<%3$s> array(SegmentAllocator allocator, %10$s<?> len) {
+                    public static %12$s<%3$s> array(%1$s allocator, %10$s<?> len) {
                         return array(allocator, len.operator().value());
                     }
                 
-                    public static %12$s<%3$s> array(SegmentAllocator allocator, long len) {
+                    public static %12$s<%3$s> array(%1$s allocator, long len) {
                         return new %12$s<>(allocator, %3$s.OPERATIONS, len);
                     }
                 
-                    public static %13$s<%3$s> ptr(SegmentAllocator allocator) {
+                    public static %13$s<%3$s> ptr(%1$s allocator) {
                         return new %13$s<>(allocator, %3$s.OPERATIONS);
                     }
                 
@@ -85,7 +80,7 @@ public class ValueBasedGenerator implements Generator {
                                 '}';
                     }
                 
-                    public MemorySegment value() {
+                    public %2$s value() {
                         return segment;
                     }
                 
@@ -97,7 +92,7 @@ public class ValueBasedGenerator implements Generator {
                     public %8$s<%3$s, %4$s> operator() {
                         return new %8$s<>() {
                             @Override
-                            public MemorySegment value() {
+                            public %2$s value() {
                                 return segment;
                             }
                 
@@ -139,7 +134,10 @@ public class ValueBasedGenerator implements Generator {
                         return Objects.hashCode(segment);
                     }
                 }
-                """.formatted(null, null, typeName, pointeeName,
+                """.formatted(
+                packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR),
+                packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT),
+                typeName, pointeeName, // 4
                 packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 5
                 pointee.getOperation().getCommonOperation().makeOperation(packages).str(),
                 packages.useClass(CommonTypes.ValueInterface.PtrI), // 7

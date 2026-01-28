@@ -1279,7 +1279,6 @@ public class CommonGenerator implements Generator {
     static void genValueBasedTypes(PackageManager packages, BindTypes bindTypes, String typeName, Generators.Writer writer) {
         Assert(bindTypes != BindTypes.Ptr);
         if (bindTypes.getOperations().getValue().getPrimitive().noJavaPrimitive()) {
-            packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
             Assert(bindTypes.getOperations().getValue().getPrimitive().byteSize() == 16, " sizeof %s must be 16".formatted(bindTypes));
             var str = """
                     import java.lang.foreign.MemorySegment;
@@ -1305,15 +1304,15 @@ public class CommonGenerator implements Generator {
                             val.asByteBuffer().order(ByteOrder.nativeOrder()).putLong(low).putLong(high);
                         }
                     
-                        public static %9$s<%3$s> array(SegmentAllocator allocator, %7$s<?> len) {
+                        public static %9$s<%3$s> array(%1$s allocator, %7$s<?> len) {
                             return array(allocator, len.operator().value());
                         }
                     
-                        public static %9$s<%3$s> array(SegmentAllocator allocator, long len) {
+                        public static %9$s<%3$s> array(%1$s allocator, long len) {
                             return new %9$s<>(allocator, OPERATIONS, len);
                         }
                     
-                        public static %10$s<%3$s> ptr(SegmentAllocator allocator) {
+                        public static %10$s<%3$s> ptr(%1$s allocator) {
                             return new %10$s<>(allocator, OPERATIONS);
                         }
                     
@@ -1353,7 +1352,9 @@ public class CommonGenerator implements Generator {
                             return Arrays.hashCode(val.toArray(ValueLayout.JAVA_LONG));
                         }
                     }
-                    """.formatted(null, null, typeName, // 3
+                    """.formatted(
+                    packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR),
+                    null, typeName, // 3
                     packages.useClass(bindTypes.getOperations()),
                     bindTypes.getOperation().getCommonOperation().makeMemoryLayout(packages).getMemoryLayout(packages), //5
                     packages.useClass(bindTypes.getOperations().getValue()), //6
@@ -1367,7 +1368,6 @@ public class CommonGenerator implements Generator {
             writer.write(packages, str);
             return;
         }
-        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         var str = """
                 import java.util.Objects;
                 
@@ -1383,15 +1383,15 @@ public class CommonGenerator implements Generator {
                         this.val = val.operator().value();
                     }
                 
-                    public static %11$s<%3$s> array(SegmentAllocator allocator, %9$s<?> len) {
+                    public static %11$s<%3$s> array(%1$s allocator, %9$s<?> len) {
                         return array(allocator, len.operator().value());
                     }
                 
-                    public static %11$s<%3$s> array(SegmentAllocator allocator, long len) {
+                    public static %11$s<%3$s> array(%1$s allocator, long len) {
                         return new %11$s<>(allocator, OPERATIONS, len);
                     }
                 
-                    public static %12$s<%3$s> ptr(SegmentAllocator allocator) {
+                    public static %12$s<%3$s> ptr(%1$s allocator) {
                         return new %12$s<>(allocator, OPERATIONS);
                     }
                 
@@ -1435,8 +1435,10 @@ public class CommonGenerator implements Generator {
                         return Objects.hashCode(val);
                     }
                 }
-                """.formatted(null, null, typeName,
-                bindTypes.getPrimitiveType().getMemoryLayout().getMemoryLayout(packages), // 4
+                """.formatted(
+                        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR),
+                null, typeName,
+                null, // 4
                 packages.useClass(bindTypes.getOperations()), // 5
                 bindTypes.getPrimitiveType().useType(packages),
                 bindTypes.getPrimitiveType().getBoxedTypeName(),// 7
