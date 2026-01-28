@@ -1,5 +1,6 @@
 package generator.types;
 
+import generator.PackageManager;
 import generator.types.operations.OperationAttr;
 import generator.types.operations.PointerOp;
 
@@ -28,8 +29,8 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
     }
 
     @Override
-    public MemoryLayouts getMemoryLayout() {
-        return CommonTypes.Primitives.ADDRESS.getMemoryLayout();
+    public MemoryLayouts getMemoryLayout(PackageManager packages) {
+        return CommonTypes.Primitives.ADDRESS.getMemoryLayout(packages);
     }
 
     @Override

@@ -26,8 +26,8 @@ public class ArrayNamedGenerator implements Generator {
     }
 
     private static String makeValue(PackageManager packages, ArrayTypeNamed type) {
-        packages.addImport(((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation().imports());
-        packages.addImport(type.getOperation().getCommonOperation().makeDirectMemoryLayout().getTypeImports());
+        packages.addImport(((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation(packages).imports());
+        packages.addImport(type.getOperation().getCommonOperation().makeDirectMemoryLayout(packages).getTypeImports());
         packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
         packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
@@ -153,8 +153,8 @@ public class ArrayNamedGenerator implements Generator {
                     }
                 }""".formatted(packages.getClassName(),
                 packages.useClass((TypeAttr.GenerationType) type.element()),
-                ((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation().str(), // 3
-                type.getOperation().getCommonOperation().makeDirectMemoryLayout(),
+                ((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation(packages).str(), // 3
+                type.getOperation().getCommonOperation().makeDirectMemoryLayout(packages),
                 type.length(), //5
                 packages.useClass(ValueInterface.I64I), //6
                 packages.useClass(BindTypes.I64), // 7

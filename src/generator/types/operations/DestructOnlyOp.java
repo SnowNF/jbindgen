@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
 import generator.types.TypeImports;
@@ -14,7 +15,7 @@ public class DestructOnlyOp<T extends TypeAttr.NamedType & TypeAttr.TypeRefer> i
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
@@ -34,7 +35,7 @@ public class DestructOnlyOp<T extends TypeAttr.NamedType & TypeAttr.TypeRefer> i
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

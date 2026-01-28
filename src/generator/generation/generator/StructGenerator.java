@@ -35,7 +35,7 @@ public class StructGenerator implements Generator {
             stringBuilder.append("\n");
         }
         stringBuilder.append(toString(packages.getClassName(), availableMembers));
-        writer.write(packages, getMain(packages, struct.getMemoryLayout(), stringBuilder.toString()));
+        writer.write(packages, getMain(packages, struct.getMemoryLayout(packages), stringBuilder.toString()));
         return new GenerateResult(packages, struct);
     }
 
@@ -60,8 +60,8 @@ public class StructGenerator implements Generator {
         OperationAttr.Operation operation = ((TypeAttr.OperationType) member.type()).getOperation();
         String memberName = member.name();
         if (member.bitField()) {
-            var get = operation.getMemoryOperation().getterBitfield("ms", member.offset(), member.bitSize());
-            var set = operation.getMemoryOperation().setterBitfield("ms", member.offset(), member.bitSize(), memberName);
+            var get = operation.getMemoryOperation(packages).getterBitfield("ms", member.offset(), member.bitSize());
+            var set = operation.getMemoryOperation(packages).setterBitfield("ms", member.offset(), member.bitSize(), memberName);
             if (get.isEmpty() || set.isEmpty())
                 return Optional.empty();
             packages.addImport(get.get().imports());
@@ -78,8 +78,8 @@ public class StructGenerator implements Generator {
                                 }
                             """.formatted(packages.getClassName(), memberName, set.get().para(), set.get().codeSegment())));
         }
-        MemoryOperation.Getter getter = operation.getMemoryOperation().getter("ms", member.offset() / 8);
-        MemoryOperation.Setter setter = operation.getMemoryOperation().setter("ms", member.offset() / 8, memberName);
+        MemoryOperation.Getter getter = operation.getMemoryOperation(packages).getter("ms", member.offset() / 8);
+        MemoryOperation.Setter setter = operation.getMemoryOperation(packages).setter("ms", member.offset() / 8, memberName);
         packages.addImport(getter.imports());
         packages.addImport(setter.imports());
         return Optional.of(new GetterAndSetter("""
@@ -163,7 +163,7 @@ public class StructGenerator implements Generator {
                     }
                 
                 %3$s
-                }""".formatted(packages.getClassName(), layout.getMemoryLayout(), ext,
+                }""".formatted(packages.getClassName(), layout.getMemoryLayout(packages), ext,
                 packages.useClass(CommonTypes.SpecificTypes.StructOp), // 4
                 packages.useClass(CommonTypes.ValueInterface.I64I), // 5
                 packages.useClass(CommonTypes.BasicOperations.Info), // 6

@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.generation.generator.FuncProtocolGenerator;
 import generator.types.*;
 
@@ -16,7 +17,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
@@ -36,7 +37,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
             @Override
             public Getter getter(String ms, long offset) {
@@ -48,7 +49,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
-                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
                                 MemoryUtils.typeName(TypeAttr.NameType.RAW), ms, offset, varName),
@@ -61,18 +62,18 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
     public CommonOperation getCommonOperation() {
         return new CommonOperation() {
             @Override
-            public Operation makeOperation() {
+            public Operation makeOperation(PackageManager packages) {
                 return CommonOperation.makeStaticOperation(functionPtrType, typeName);
             }
 
 
             @Override
-            public MemoryLayouts makeDirectMemoryLayout() {
-                return CommonOperation.makeStaticMemoryLayout(CommonTypes.Primitives.ADDRESS.getMemoryLayout());
+            public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+                return CommonOperation.makeStaticMemoryLayout(CommonTypes.Primitives.ADDRESS.getMemoryLayout(packages));
             }
 
             @Override
-            public UpperType getUpperType() {
+            public UpperType getUpperType(PackageManager packages) {
                 End<?> end = new End<>(functionPtrType, functionPtrType.typeName(TypeAttr.NameType.RAW) + "." + FuncProtocolGenerator.FUNCTION_TYPE_NAME);
                 return new Warp<>(CommonTypes.ValueInterface.PtrI, end);
             }

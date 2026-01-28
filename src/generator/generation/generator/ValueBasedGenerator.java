@@ -35,7 +35,7 @@ public class ValueBasedGenerator implements Generator {
             pointeeName = packages.useClass((TypeAttr.GenerationType) pointerType.pointee());
         }
 
-        packages.addImport(pointee.getOperation().getCommonOperation().makeOperation().imports());
+        packages.addImport(pointee.getOperation().getCommonOperation().makeOperation(packages).imports());
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
         writer.write(packages, """
@@ -142,7 +142,7 @@ public class ValueBasedGenerator implements Generator {
                 }
                 """.formatted(null, null, typeName, pointeeName,
                 packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 5
-                pointee.getOperation().getCommonOperation().makeOperation().str(),
+                pointee.getOperation().getCommonOperation().makeOperation(packages).str(),
                 packages.useClass(CommonTypes.ValueInterface.PtrI), // 7
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(), // 8
                 packages.useClass(CommonTypes.SpecificTypes.ArrayOp), // 9

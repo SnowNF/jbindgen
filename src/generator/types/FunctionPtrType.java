@@ -1,5 +1,6 @@
 package generator.types;
 
+import generator.PackageManager;
 import generator.Utils;
 import generator.types.operations.CommonOperation;
 import generator.types.operations.FunctionPtrBased;
@@ -27,7 +28,7 @@ public final class FunctionPtrType extends AbstractGenerationType {
     private final CommonOperation.AllocatorType allocator;
 
     public FunctionPtrType(String typeName, List<Arg> args, TypeAttr.TypeRefer retType) {
-        super(CommonTypes.Primitives.ADDRESS.getMemoryLayout(), typeName, CommonTypes.Primitives.ADDRESS.byteSize());
+        super(CommonTypes.Primitives.ADDRESS::getMemoryLayout, typeName, CommonTypes.Primitives.ADDRESS.byteSize());
         this.args = List.copyOf(args);
         returnType = switch (retType) {
             case TypeAttr.SizedType normalType -> ((TypeAttr.TypeRefer) normalType);
@@ -52,12 +53,12 @@ public final class FunctionPtrType extends AbstractGenerationType {
         return args;
     }
 
-    public List<MemoryLayouts> getMemoryLayouts() {
+    public List<MemoryLayouts> getMemoryLayouts(PackageManager packages) {
         ArrayList<MemoryLayouts> memoryLayout = new ArrayList<>();
         if (this.getReturnType().isPresent())
-            memoryLayout.add(this.getReturnType().get().getOperation().getCommonOperation().makeDirectMemoryLayout());
+            memoryLayout.add(this.getReturnType().get().getOperation().getCommonOperation().makeDirectMemoryLayout(packages));
         for (Arg arg : this.getArgs()) {
-            memoryLayout.add(((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().makeDirectMemoryLayout());
+            memoryLayout.add(((TypeAttr.OperationType) arg.type()).getOperation().getCommonOperation().makeDirectMemoryLayout(packages));
         }
         return memoryLayout;
     }

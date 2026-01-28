@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
 import generator.types.TypeAttr;
@@ -18,7 +19,7 @@ public interface CommonOperation {
         }
     }
 
-    UpperType getUpperType();
+    UpperType getUpperType(PackageManager packages);
 
     record End<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType>
             (T type, String typeName) implements UpperType {
@@ -67,8 +68,8 @@ public interface CommonOperation {
     }
 
     record Warp<T extends TypeAttr.NamedType & TypeAttr.TypeRefer>(T outer, UpperType inner) implements UpperType {
-        public Warp(T outer, CommonOperation inner) {
-            this(outer, inner.getUpperType());
+        public Warp(T outer, CommonOperation inner, PackageManager packages) {
+            this(outer, inner.getUpperType(packages));
         }
 
         @Override
@@ -96,7 +97,7 @@ public interface CommonOperation {
     record Operation(String str, TypeImports imports) {
     }
 
-    Operation makeOperation();
+    Operation makeOperation(PackageManager packages);
 
     static Operation makeStaticOperation(TypeAttr.TypeRefer type, String typeName) {
         return new Operation(typeName + ".OPERATIONS", new TypeImports().addUseImports(type));
@@ -107,8 +108,8 @@ public interface CommonOperation {
                 new TypeImports().addUseImports(CommonTypes.BasicOperations.Info));
     }
 
-    default MemoryLayouts makeDirectMemoryLayout() {
-        return makeStaticMemoryLayout(makeOperation());
+    default MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+        return makeStaticMemoryLayout(makeOperation(packages));
     }
 
     static MemoryLayouts makeStaticMemoryLayout(Operation operation) {

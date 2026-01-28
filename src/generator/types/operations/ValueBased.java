@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.*;
 import generator.types.CommonTypes.SpecificTypes;
 import utils.CommonUtils;
@@ -20,7 +21,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
@@ -77,7 +78,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
             @Override
             public Getter getter(String ms, long offset) {
@@ -124,7 +125,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
-                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.set%s(%s, %s, %s.operator().value())".formatted(
                                 SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
@@ -144,7 +145,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                 long shift = bitOffset % bitAlign;
                 if (mask == -1 && shift == 0) {
                     var typeValue = p == primitives ? "" : ".%sValue() ".formatted(p.getPrimitiveTypeName());
-                    CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                    CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                     return Optional.of(new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                             "        %s.set%s(%s, %s, %s.operator().value()%s);".formatted(
                                     SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
@@ -152,7 +153,7 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
                             upperType.typeImports().addUseImports(SpecificTypes.MemoryUtils)));
                 }
                 long offset = bitOffset - shift;
-                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 var get = """
                                 if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) throw new UnsupportedOperationException();
                         """;
@@ -174,12 +175,12 @@ public class ValueBased<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Type
     public CommonOperation getCommonOperation() {
         return new CommonOperation() {
             @Override
-            public Operation makeOperation() {
+            public Operation makeOperation(PackageManager packages) {
                 return CommonOperation.makeStaticOperation(type, typeName);
             }
 
             @Override
-            public UpperType getUpperType() {
+            public UpperType getUpperType(PackageManager packages) {
                 if (type instanceof CommonTypes.BindTypes) {
                     return new Warp<>(bindTypes.getOperations().getValue(), new Reject<>(type));
                 }

@@ -20,7 +20,7 @@ public final class EnumType extends AbstractGenerationType {
     private final CommonTypes.BindTypes type;
 
     public EnumType(CommonTypes.BindTypes type, String typeName, List<Member> members) {
-        super(type.getPrimitiveType().getMemoryLayout(), typeName, type.byteSize());
+        super(p -> type.getPrimitiveType().getMemoryLayout(p), typeName, type.byteSize());
         this.members = List.copyOf(members);
         this.type = type;
         Assert(type.equals(CommonTypes.BindTypes.I32));

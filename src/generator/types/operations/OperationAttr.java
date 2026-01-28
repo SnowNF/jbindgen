@@ -1,10 +1,12 @@
 package generator.types.operations;
 
+import generator.PackageManager;
+
 public class OperationAttr {
     public sealed interface Operation {
-        FuncOperation getFuncOperation();
+        FuncOperation getFuncOperation(PackageManager packages);
 
-        MemoryOperation getMemoryOperation();
+        MemoryOperation getMemoryOperation(PackageManager packages);
 
         CommonOperation getCommonOperation();
     }

@@ -52,7 +52,7 @@ public class CommonTypes {
             this.nativeIntegral = nativeIntegral;
         }
 
-        public MemoryLayouts getMemoryLayout() {
+        public MemoryLayouts getMemoryLayout(PackageManager packages) {
             return memoryLayout;
         }
 
@@ -296,8 +296,8 @@ public class CommonTypes {
         }
 
         @Override
-        public MemoryLayouts getMemoryLayout() {
-            return operations.value.primitive.getMemoryLayout();
+        public MemoryLayouts getMemoryLayout(PackageManager packages) {
+            return operations.value.primitive.getMemoryLayout(packages);
         }
 
         @Override

@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.*;
 
 public class MemoryBased implements OperationAttr.MemoryBasedOperation {
@@ -12,7 +13,7 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
@@ -32,9 +33,9 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout().getMemoryLayout();
+            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
 
             @Override
             public Getter getter(String ms, long offset) {
@@ -45,7 +46,7 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
-                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
@@ -59,17 +60,17 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
     public CommonOperation getCommonOperation() {
         return new CommonOperation() {
             @Override
-            public Operation makeOperation() {
+            public Operation makeOperation(PackageManager packages) {
                 return CommonOperation.makeStaticOperation(structType, typeName);
             }
 
             @Override
-            public MemoryLayouts makeDirectMemoryLayout() {
-                return CommonOperation.makeStaticMemoryLayout(makeOperation());
+            public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+                return CommonOperation.makeStaticMemoryLayout(makeOperation(packages));
             }
 
             @Override
-            public UpperType getUpperType() {
+            public UpperType getUpperType(PackageManager packages) {
                 End<?> end = new End<>(structType);
                 return new Warp<>(CommonTypes.BasicOperations.StructI, end);
             }

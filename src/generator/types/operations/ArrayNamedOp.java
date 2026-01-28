@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.ArrayTypeNamed;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
@@ -19,7 +20,7 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
@@ -39,9 +40,9 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout().getMemoryLayout();
+            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
 
             @Override
             public Getter getter(String ms, long offset) {
@@ -52,7 +53,7 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
-                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 MemoryUtils.typeName(TypeAttr.NameType.RAW),
@@ -66,13 +67,13 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
     public CommonOperation getCommonOperation() {
         return new CommonOperation() {
             @Override
-            public Operation makeOperation() {
+            public Operation makeOperation(PackageManager packages) {
                 return CommonOperation.makeStaticOperation(arrayType, typeName);
             }
 
             @Override
-            public UpperType getUpperType() {
-                return new Warp<>(CommonTypes.BasicOperations.ArrayI, element.getOperation().getCommonOperation());
+            public UpperType getUpperType(PackageManager packages) {
+                return new Warp<>(CommonTypes.BasicOperations.ArrayI, element.getOperation().getCommonOperation(), packages);
             }
 
             @Override

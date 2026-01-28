@@ -15,6 +15,10 @@ public class PackageManager {
     private final HashMap<String, TypeAttr.GenerationType> imports = new HashMap<>();
     private final HashSet<TypeAttr.GenerationType> used = new HashSet<>();
 
+    public static PackageManager testPackageManager() {
+        return new PackageManager(unlocatedType -> new PackagePath().add("unlocatedType").close(unlocatedType.getClass().getSimpleName()), new PackagePath().add("com.example").close("Example"));
+    }
+
     public PackageManager(Generators.GenerationProvider location, TypeAttr.GenerationType type) {
         this(location, location.queryPath(type));
     }

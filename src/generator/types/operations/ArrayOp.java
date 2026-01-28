@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.*;
 
 import static generator.generation.generator.CommonGenerator.ARRAY_MAKE_OPERATION_METHOD;
@@ -17,7 +18,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
@@ -26,7 +27,7 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public Result constructFromRet(String varName) {
-                CommonOperation.Operation operation = element.getOperation().getCommonOperation().makeOperation();
+                CommonOperation.Operation operation = element.getOperation().getCommonOperation().makeOperation(packages);
                 return new Result("new %s(%s, %s)".formatted(typeName, varName, operation.str()), operation.imports());
             }
 
@@ -38,20 +39,21 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout().getMemoryLayout();
+            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
+
             @Override
             public Getter getter(String ms, long offset) {
                 return new Getter("", typeName, "new %s(%s, %s)".formatted(typeName,
                         "%s.asSlice(%s, %s)".formatted(ms, offset, memoryLayout),
-                        element.getOperation().getCommonOperation().makeOperation().str()),
+                        element.getOperation().getCommonOperation().makeOperation(packages).str()),
                         new TypeImports().addUseImports(arrayType));
             }
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
-                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 MemoryUtils.typeName(TypeAttr.NameType.RAW),
@@ -66,20 +68,20 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
     public CommonOperation getCommonOperation() {
         return new CommonOperation() {
             @Override
-            public Operation makeOperation() {
-                Operation eleOp = element.getOperation().getCommonOperation().makeOperation();
+            public Operation makeOperation(PackageManager packages) {
+                Operation eleOp = element.getOperation().getCommonOperation().makeOperation(packages);
                 return new Operation(arrayType.typeName(TypeAttr.NameType.RAW) + "." + ARRAY_MAKE_OPERATION_METHOD + "(%s, %s)"
                         .formatted(eleOp.str(), arrayType.length()), eleOp.imports().addUseImports(arrayType));
             }
 
             @Override
-            public UpperType getUpperType() {
-                return new Warp<>(CommonTypes.BasicOperations.ArrayI, element.getOperation().getCommonOperation());
+            public UpperType getUpperType(PackageManager packages) {
+                return new Warp<>(CommonTypes.BasicOperations.ArrayI, element.getOperation().getCommonOperation(), packages);
             }
 
             @Override
-            public MemoryLayouts makeDirectMemoryLayout() {
-                return arrayType.getMemoryLayout();
+            public MemoryLayouts makeDirectMemoryLayout(PackageManager packages) {
+                return arrayType.getMemoryLayout(packages);
             }
 
             @Override

@@ -1,5 +1,6 @@
 package generator.types;
 
+import generator.PackageManager;
 import generator.types.operations.ArrayOp;
 import generator.types.operations.OperationAttr;
 
@@ -35,7 +36,7 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
     }
 
     @Override
-    public MemoryLayouts getMemoryLayout() {
-        return MemoryLayouts.sequenceLayout(((TypeAttr.OperationType) element).getOperation().getCommonOperation().makeDirectMemoryLayout(), length);
+    public MemoryLayouts getMemoryLayout(PackageManager packages) {
+        return MemoryLayouts.sequenceLayout(((TypeAttr.OperationType) element).getOperation().getCommonOperation().makeDirectMemoryLayout(packages), length);
     }
 }

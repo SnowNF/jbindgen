@@ -1,5 +1,6 @@
 package generator.types;
 
+import generator.PackageManager;
 import generator.types.operations.MemoryBased;
 import generator.types.operations.OperationAttr;
 
@@ -55,9 +56,9 @@ public final class StructType implements SingleGenerationType {
     }
 
     private final long byteSize;
+    private final long byteAlign;
     private final String typeName;
     private final List<Member> members;
-    private final MemoryLayouts memoryLayout;
 
     public interface MemberProvider {
         List<Member> provide(StructType structType);
@@ -65,32 +66,32 @@ public final class StructType implements SingleGenerationType {
 
     public StructType(long byteSize, long byteAlign, String typeName, MemberProvider memberProvider) {
         this.byteSize = byteSize;
+        this.byteAlign = byteAlign;
         this.typeName = typeName;
         this.members = List.copyOf(memberProvider.provide(this));
-        memoryLayout = makeMemoryLayout(members, byteSize, byteAlign);
     }
 
-    private static MemoryLayouts makeMemoryLayouts(CommonTypes.Primitives primitives, long len, long bytePadding) {
+    private static MemoryLayouts makeMemoryLayouts(CommonTypes.Primitives primitives, long len, long bytePadding, PackageManager packages) {
         if (bytePadding != 0) {
             return MemoryLayouts.structLayout(List.of(
-                    MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(), len),
+                    MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(packages), len),
                     MemoryLayouts.paddingLayout(bytePadding)));
         }
-        return MemoryLayouts.structLayout(List.of(MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(), len)));
+        return MemoryLayouts.structLayout(List.of(MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(packages), len)));
     }
 
-    private static MemoryLayouts makeMemoryLayout(List<Member> members, long byteSize, long byteAlign) {
+    private static MemoryLayouts makeMemoryLayout(List<Member> members, long byteSize, long byteAlign, PackageManager packages) {
         if (members.isEmpty() || members.stream().anyMatch(Member::bitField)) {
             if (byteAlign == 1)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_BYTE, byteSize, 0);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_BYTE, byteSize, 0, packages);
             if (byteAlign == 2)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_SHORT, byteSize / 2, byteSize % 2);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_SHORT, byteSize / 2, byteSize % 2, packages);
             if (byteAlign == 4)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_INT, byteSize / 4, byteSize % 4);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_INT, byteSize / 4, byteSize % 4, packages);
             if (byteAlign == 8)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_LONG, byteSize / 8, byteSize % 8);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_LONG, byteSize / 8, byteSize % 8, packages);
             if (byteAlign == 16)
-                return makeMemoryLayouts(CommonTypes.Primitives.Integer128, byteSize / 16, byteSize % 16);
+                return makeMemoryLayouts(CommonTypes.Primitives.Integer128, byteSize / 16, byteSize % 16, packages);
             throw new IllegalArgumentException("unknown byteAlign: " + byteAlign);
         }
 
@@ -121,7 +122,7 @@ public final class StructType implements SingleGenerationType {
             ArrayList<MemoryLayouts> unionLayouts = new ArrayList<>();
             for (Member u : union) {
                 unionBits = Math.max(unionBits, u.bitSize);
-                MemoryLayouts ml = ((TypeAttr.OperationType) u.type).getOperation().getCommonOperation().makeDirectMemoryLayout();
+                MemoryLayouts ml = ((TypeAttr.OperationType) u.type).getOperation().getCommonOperation().makeDirectMemoryLayout(packages);
                 unionLayouts.add(MemoryLayouts.withName(ml, u.name));
             }
             layouts.add(unionLayoutMaybe(unionLayouts));
@@ -161,8 +162,8 @@ public final class StructType implements SingleGenerationType {
     }
 
     @Override
-    public MemoryLayouts getMemoryLayout() {
-        return memoryLayout;
+    public MemoryLayouts getMemoryLayout(PackageManager packages) {
+        return makeMemoryLayout(members, byteSize, byteAlign, packages);
     }
 
     @Override
@@ -174,7 +175,6 @@ public final class StructType implements SingleGenerationType {
     public String toString() {
         return "StructType{" +
                "members=" + members +
-               ", memoryLayout='" + memoryLayout + '\'' +
                ", typeName='" + typeName + '\'' +
                '}';
     }

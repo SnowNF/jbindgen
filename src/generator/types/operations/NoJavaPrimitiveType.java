@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.TypeAttr;
 import generator.types.TypeImports;
@@ -19,7 +20,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         return new FuncOperation() {
             @Override
             public Result destructToPara(String varName) {
@@ -39,9 +40,9 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         return new MemoryOperation() {
-            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout().getMemoryLayout();
+            private final String memoryLayout = getCommonOperation().makeDirectMemoryLayout(packages).getMemoryLayout(packages);
 
             @Override
             public Getter getter(String ms, long offset) {
@@ -52,7 +53,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
 
             @Override
             public Setter setter(String ms, long offset, String varName) {
-                CommonOperation.UpperType upperType = getCommonOperation().getUpperType();
+                CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
                 return new Setter(upperType.typeName(TypeAttr.NameType.WILDCARD) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 CommonTypes.SpecificTypes.MemoryUtils.typeName(TypeAttr.NameType.RAW),
@@ -66,7 +67,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
     public CommonOperation getCommonOperation() {
         return new CommonOperation() {
             @Override
-            public Operation makeOperation() {
+            public Operation makeOperation(PackageManager packages) {
                 return CommonOperation.makeStaticOperation(type, typeName);
             }
 
@@ -76,7 +77,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.NamedType & TypeAttr.TypeRef
             }
 
             @Override
-            public UpperType getUpperType() {
+            public UpperType getUpperType(PackageManager packages) {
                 return new Warp<>(bindTypes.getOperations().getValue(), new Reject<>(type));
             }
         };

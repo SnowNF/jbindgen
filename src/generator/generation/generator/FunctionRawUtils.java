@@ -31,16 +31,16 @@ public class FunctionRawUtils {
 
     public String rawRetType() {
         return function.getReturnType().map(operationType ->
-                        operationType.getOperation().getFuncOperation().getPrimitiveType().useType(packages))
+                        operationType.getOperation().getFuncOperation(packages).getPrimitiveType().useType(packages))
                 .orElse("void");
     }
 
 
     public String funcDescriptor() {
         List<String> memoryLayout = new ArrayList<>();
-        for (MemoryLayouts l : function.getMemoryLayouts()) {
+        for (MemoryLayouts l : function.getMemoryLayouts(packages)) {
             packages.addImport(l.getTypeImports());
-            memoryLayout.add(l.getMemoryLayout());
+            memoryLayout.add(l.getMemoryLayout(packages));
         }
         var str = String.join(", ", memoryLayout);
         return packages.useClass(FUNCTION_DESCRIPTOR)
@@ -53,7 +53,7 @@ public class FunctionRawUtils {
         if (function.getReturnType().isEmpty())
             return "";
         TypeAttr.OperationType operationType = function.getReturnType().get();
-        CommonTypes.Primitives primitiveType = operationType.getOperation().getFuncOperation().getPrimitiveType();
+        CommonTypes.Primitives primitiveType = operationType.getOperation().getFuncOperation(packages).getPrimitiveType();
         return "return (%s) ".formatted(primitiveType.useType(packages));
     }
 
@@ -72,7 +72,7 @@ public class FunctionRawUtils {
     private void commonInvokeParaStr(List<String> out) {
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             OperationAttr.Operation operation = ((TypeAttr.OperationType) arg.type()).getOperation();
-            CommonTypes.Primitives primitiveType = operation.getFuncOperation().getPrimitiveType();
+            CommonTypes.Primitives primitiveType = operation.getFuncOperation(packages).getPrimitiveType();
             String p = primitiveType.useType(packages) + " " + arg.argName();
             out.add(p);
         }

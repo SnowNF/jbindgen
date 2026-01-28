@@ -1,5 +1,6 @@
 package generator.types;
 
+import generator.PackageManager;
 import generator.types.operations.OperationAttr;
 
 public class TypeAttr {
@@ -16,7 +17,8 @@ public class TypeAttr {
          *
          * @return the presentation of the MemoryLayout and type used
          */
-        MemoryLayouts getMemoryLayout();
+        @Deprecated
+        MemoryLayouts getMemoryLayout(PackageManager packages);
 
         long byteSize();
     }

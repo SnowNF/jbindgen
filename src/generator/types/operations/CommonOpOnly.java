@@ -1,5 +1,6 @@
 package generator.types.operations;
 
+import generator.PackageManager;
 import generator.types.TypeAttr;
 
 public class CommonOpOnly<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.CommonOnlyOperation {
@@ -14,12 +15,12 @@ public class CommonOpOnly<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Ty
     }
 
     @Override
-    public FuncOperation getFuncOperation() {
+    public FuncOperation getFuncOperation(PackageManager packages) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public MemoryOperation getMemoryOperation() {
+    public MemoryOperation getMemoryOperation(PackageManager packages) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -27,12 +28,12 @@ public class CommonOpOnly<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & Ty
     public CommonOperation getCommonOperation() {
         return new CommonOperation() {
             @Override
-            public Operation makeOperation() {
+            public Operation makeOperation(PackageManager packages) {
                 return realVoid ? CommonOperation.makeVoidOperation() : CommonOperation.makeStaticOperation(type, typeName);
             }
 
             @Override
-            public UpperType getUpperType() {
+            public UpperType getUpperType(PackageManager packages) {
                 // use Ptr<?> instead of Ptr<? extends Void>
                 if (realVoid) {
                     return new Reject<>(type);
