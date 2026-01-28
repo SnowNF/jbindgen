@@ -14,7 +14,7 @@ import java.util.Optional;
 import static utils.CommonUtils.Assert;
 
 // function ptr type, not function protocol type
-public final class FunctionPtrType implements SingleGenerationType {
+public final class FunctionPtrType implements TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
     private static final String DEFAULT_FUNCTION_TYPE_NAME = "Function";
     private static final String DEFAULT_FUNCTION_RAW_TYPE_NAME = "FunctionRaw";
 

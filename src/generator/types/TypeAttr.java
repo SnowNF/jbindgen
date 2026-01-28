@@ -11,11 +11,11 @@ public class TypeAttr {
     /**
      * types that have size, layout
      */
-    public sealed interface SizedType permits SingleGenerationType, ArrayType, CommonTypes.Primitives, PointerType {
+    public sealed interface SizedType permits ArrayType, ArrayTypeNamed, CommonTypes.BindTypes, CommonTypes.Primitives, EnumType, FunctionPtrType, PointerType, StructType, ValueBasedType {
         long byteSize();
     }
 
-    public sealed interface OperationType permits SingleGenerationType, ArrayType, CommonTypes.BasicOperations, CommonTypes.ValueInterface, PointerType, RefOnlyType, VoidType {
+    public sealed interface OperationType permits ArrayType, ArrayTypeNamed, CommonTypes.BasicOperations, CommonTypes.BindTypes, CommonTypes.ValueInterface, EnumType, FunctionPtrType, PointerType, RefOnlyType, StructType, ValueBasedType, VoidType {
         /**
          * ways to construct, destruct the type
          */
@@ -28,7 +28,7 @@ public class TypeAttr {
         RAW,
     }
 
-    public sealed interface NamedType permits ArrayType, CommonTypes.BaseType, TaggedNamedType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {
+    public sealed interface NamedType permits ArrayType, ArrayTypeNamed, CommonTypes.BaseType, CommonTypes.BindTypes, EnumType, FunctionPtrType, PointerType, RefOnlyType, StructType, SymbolProviderType, TaggedNamedType, ValueBasedType, VoidType {
 
         /**
          * get the type name in java
@@ -45,12 +45,12 @@ public class TypeAttr {
     /**
      * types have generation
      */
-    public sealed interface GenerationType permits ArrayType, CommonTypes.BaseType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, TaggedNamedType, VoidType {
+    public sealed interface GenerationType permits ArrayType, ArrayTypeNamed, CommonTypes.BaseType, CommonTypes.BindTypes, EnumType, FunctionPtrType, PointerType, RefOnlyType, StructType, SymbolProviderType, TaggedNamedType, ValueBasedType, VoidType {
         default String useTypeReplace() {
             return null;
         }
     }
 
-    public sealed interface TypeRefer permits ArrayType, CommonTypes.BaseType, TaggedNamedType, PointerType, RefOnlyType, SingleGenerationType, SymbolProviderType, VoidType {
+    public sealed interface TypeRefer permits ArrayType, ArrayTypeNamed, CommonTypes.BaseType, CommonTypes.BindTypes, EnumType, FunctionPtrType, PointerType, RefOnlyType, StructType, SymbolProviderType, TaggedNamedType, ValueBasedType, VoidType {
     }
 }

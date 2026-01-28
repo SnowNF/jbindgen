@@ -8,7 +8,7 @@ import java.util.Objects;
 
 import static utils.CommonUtils.Assert;
 
-public final class EnumType implements SingleGenerationType {
+public final class EnumType implements TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
     /**
      * the enum member
      */

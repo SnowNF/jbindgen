@@ -11,7 +11,7 @@ import java.util.Objects;
 
 import static utils.CommonUtils.Assert;
 
-public final class StructType implements SingleGenerationType {
+public final class StructType implements TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
     /**
      * the struct member
      *

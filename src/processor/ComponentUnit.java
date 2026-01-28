@@ -77,14 +77,11 @@ public class ComponentUnit implements GenerateUnit {
         var path = switch (unlocatedType) {
             case CommonTypes.BaseType baseType -> dest.common().path().close(baseType.typeName());
             case RefOnlyType refOnlyType -> dest.refOnly().path().close(refOnlyType.typeName());
-            case SingleGenerationType singleGenerationType -> switch (singleGenerationType) {
-                case EnumType enumType -> dest.enumerate().path().close(enumType.typeName());
-                case FunctionPtrType functionPtrType -> dest.funcProtocol().path().close(functionPtrType.typeName());
-                case ValueBasedType valueBasedType -> dest.valueBased().path().close(valueBasedType.typeName());
-                case ArrayTypeNamed arrayTypeNamed -> dest.arrayNamed().path().close(arrayTypeNamed.typeName());
-                case CommonTypes.BindTypes bindTypes -> throw new UnsupportedOperationException("Not supported yet.");
-                case StructType structType -> dest.struct().path().close(structType.typeName());
-            };
+            case EnumType enumType -> dest.enumerate().path().close(enumType.typeName());
+            case FunctionPtrType functionPtrType -> dest.funcProtocol().path().close(functionPtrType.typeName());
+            case ValueBasedType valueBasedType -> dest.valueBased().path().close(valueBasedType.typeName());
+            case ArrayTypeNamed arrayTypeNamed -> dest.arrayNamed().path().close(arrayTypeNamed.typeName());
+            case StructType structType -> dest.struct().path().close(structType.typeName());
             case SymbolProviderType symbolProviderType -> symbolProviderType.path();
             case TaggedNamedType _, ArrayType _, PointerType _ -> throw new UnsupportedOperationException();
             case VoidType voidType -> dest.voidBased().path().close(voidType.typeName());
@@ -102,15 +99,11 @@ public class ComponentUnit implements GenerateUnit {
             var generator = switch (unhandledType) {
                 case CommonTypes.BaseType baseType -> new CommonGenerator(baseType);
                 case RefOnlyType refOnlyType -> new RefOnlyGenerator(refOnlyType);
-                case SingleGenerationType singleGenerationType -> switch (singleGenerationType) {
-                    case EnumType enumType -> new EnumGenerator(enumType);
-                    case FunctionPtrType functionPtrType -> new FuncProtocolGenerator(functionPtrType);
-                    case ValueBasedType valueBasedType -> new ValueBasedGenerator(valueBasedType);
-                    case ArrayTypeNamed arrayTypeNamed -> new ArrayNamedGenerator(arrayTypeNamed);
-                    case CommonTypes.BindTypes bindTypes ->
-                            throw new UnsupportedOperationException("Not supported yet.");
-                    case StructType structType -> new StructGenerator(structType);
-                };
+                case EnumType enumType -> new EnumGenerator(enumType);
+                case FunctionPtrType functionPtrType -> new FuncProtocolGenerator(functionPtrType);
+                case ValueBasedType valueBasedType -> new ValueBasedGenerator(valueBasedType);
+                case ArrayTypeNamed arrayTypeNamed -> new ArrayNamedGenerator(arrayTypeNamed);
+                case StructType structType -> new StructGenerator(structType);
                 case SymbolProviderType symbolProviderType -> new SymbolProviderGenerator(symbolProviderType);
                 case TaggedNamedType _, ArrayType _, PointerType _ -> throw new UnsupportedOperationException("todo");
                 case VoidType voidType -> new VoidBasedGenerator(voidType);
