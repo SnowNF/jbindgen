@@ -6,8 +6,7 @@ import generator.types.operations.OperationAttr;
 
 import static utils.CommonUtils.Assert;
 
-public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) implements
-        TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
+public record ArrayType(long length, TypeAttr.SizedType element, long byteSize) implements TypeAttr.SizedType {
     public static final CommonTypes.SpecificTypes ARRAY_TYPE = CommonTypes.SpecificTypes.Array;
 
     public ArrayType {
@@ -28,9 +27,8 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
     public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
         return switch (nameType) {
             case WILDCARD ->
-                    ARRAY_TYPE.getWildcardName(packages, ((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.WILDCARD));
-            case GENERIC ->
-                    ARRAY_TYPE.getGenericName(packages, ((TypeAttr.NamedType) element).typeName(packages, TypeAttr.NameType.GENERIC));
+                    ARRAY_TYPE.getWildcardName(packages, element.typeName(packages, TypeAttr.NameType.WILDCARD));
+            case GENERIC -> ARRAY_TYPE.getGenericName(packages, element.typeName(packages, TypeAttr.NameType.GENERIC));
             case RAW -> packages.useClass(ARRAY_TYPE);
         };
     }

@@ -3,8 +3,7 @@ package generator.types;
 import generator.types.operations.CommonOpOnly;
 import generator.types.operations.OperationAttr;
 
-public record RefOnlyType(String typeName) implements
-        TypeAttr.TypeRefer, TypeAttr.GenerationType, TypeAttr.NamedType, TypeAttr.OperationType {
+public record RefOnlyType(String typeName) implements TypeAttr.OperationType {
 
     @Override
     public String typeName() {

@@ -9,7 +9,7 @@ import java.util.Optional;
 
 import static utils.CommonUtils.Assert;
 
-public final class ValueBasedType implements TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
+public final class ValueBasedType implements TypeAttr.SizedType {
     private final CommonTypes.BindTypes bindTypes;
     private final PointerType pointerType;
     private final String typeName;

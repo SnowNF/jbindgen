@@ -1,8 +1,8 @@
 package generator.types;
 
 // used to generate tagged named interface
-public record TaggedNamedType(String typeName, TypeAttr.NamedType referType)
-        implements TypeAttr.TypeRefer, TypeAttr.GenerationType, TypeAttr.NamedType {
+public record TaggedNamedType(String typeName, TypeAttr.GenerationType referType)
+        implements TypeAttr.GenerationType {
 
     @Override
     public String typeName() {

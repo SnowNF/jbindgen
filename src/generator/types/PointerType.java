@@ -4,12 +4,8 @@ import generator.PackageManager;
 import generator.types.operations.OperationAttr;
 import generator.types.operations.PointerOp;
 
-public record PointerType(TypeAttr.TypeRefer pointee) implements
-        TypeAttr.SizedType,
-        TypeAttr.OperationType,
-        TypeAttr.NamedType,
-        TypeAttr.TypeRefer,
-        TypeAttr.GenerationType {
+public record PointerType(TypeAttr.GenerationType pointee) implements
+        TypeAttr.SizedType {
 
     @Override
     public OperationAttr.Operation getOperation() {
@@ -19,7 +15,7 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
     @Override
     public String toString() {
         return "PointerType{" +
-               "pointee=" + ((TypeAttr.NamedType) pointee).typeName() +
+               "pointee=" + pointee.typeName() +
                '}';
     }
 
@@ -41,9 +37,9 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
     public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
         return switch (nameType) {
             case WILDCARD ->
-                    CommonTypes.BindTypes.makePtrWildcardName(packages, ((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.WILDCARD));
+                    CommonTypes.BindTypes.makePtrWildcardName(packages, pointee.typeName(packages, TypeAttr.NameType.WILDCARD));
             case GENERIC ->
-                    CommonTypes.BindTypes.makePtrGenericName(packages, ((TypeAttr.NamedType) pointee).typeName(packages, TypeAttr.NameType.GENERIC));
+                    CommonTypes.BindTypes.makePtrGenericName(packages, pointee.typeName(packages, TypeAttr.NameType.GENERIC));
             case RAW -> packages.useClass(CommonTypes.BindTypes.Ptr);
         };
     }

@@ -6,8 +6,7 @@ import generator.types.operations.OperationAttr;
 
 import java.util.Objects;
 
-public record VoidType(String typeName) implements
-        TypeAttr.TypeRefer, TypeAttr.NamedType, TypeAttr.GenerationType, TypeAttr.OperationType {
+public record VoidType(String typeName) implements TypeAttr.OperationType {
     public VoidType {
         Objects.requireNonNull(typeName, "use VoidType.VOID instead");
     }
@@ -28,7 +27,7 @@ public record VoidType(String typeName) implements
         if (realVoid()) {
             return typeName;
         }
-        return TypeAttr.NamedType.super.typeName(packages, nameType);
+        return TypeAttr.OperationType.super.typeName(packages, nameType);
     }
 
     @Override

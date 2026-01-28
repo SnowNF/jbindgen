@@ -14,11 +14,11 @@ import java.util.Optional;
 import static utils.CommonUtils.Assert;
 
 // function ptr type, not function protocol type
-public final class FunctionPtrType implements TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
+public final class FunctionPtrType implements TypeAttr.SizedType {
     private static final String DEFAULT_FUNCTION_TYPE_NAME = "Function";
     private static final String DEFAULT_FUNCTION_RAW_TYPE_NAME = "FunctionRaw";
 
-    public record Arg(String argName, TypeAttr.TypeRefer type) {
+    public record Arg(String argName, TypeAttr.GenerationType type) {
         public Arg {
             Assert(Utils.isValidVarName(argName), "Arg name must be a valid variable name: " + argName);
         }
@@ -26,14 +26,14 @@ public final class FunctionPtrType implements TypeAttr.SizedType, TypeAttr.Opera
 
     private final String typeName;
     private final List<Arg> args;
-    private final TypeAttr.TypeRefer returnType;
+    private final TypeAttr.GenerationType returnType;
     private final CommonOperation.AllocatorType allocator;
 
-    public FunctionPtrType(String typeName, List<Arg> args, TypeAttr.TypeRefer retType) {
+    public FunctionPtrType(String typeName, List<Arg> args, TypeAttr.GenerationType retType) {
         this.typeName = typeName;
         this.args = List.copyOf(args);
         returnType = switch (retType) {
-            case TypeAttr.SizedType normalType -> ((TypeAttr.TypeRefer) normalType);
+            case TypeAttr.SizedType normalType -> ((TypeAttr.GenerationType) normalType);
             case VoidType _ -> null;
             default -> throw new IllegalStateException("Unexpected value: " + retType);
         };

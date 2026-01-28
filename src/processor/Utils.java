@@ -63,7 +63,7 @@ public class Utils {
             long bitSize = member.bitWidth().orElseThrow();
             Assert(offset >= 0);
             Assert(bitSize > 0);
-            members.add(new StructType.Member(conv(member.paraType(), null, structMap), input,
+            members.add(new StructType.Member((TypeAttr.SizedType) conv(member.paraType(), null, structMap), input,
                     offset, bitSize));
         }
         return members;
@@ -83,7 +83,7 @@ public class Utils {
         });
     }
 
-    private static FunctionPtrType getTypeFunction(String typeName, TypeAttr.TypeRefer retType, TypeFunction typeFunction, HashMap<String, StructValue> structMap) {
+    private static FunctionPtrType getTypeFunction(String typeName, TypeAttr.GenerationType retType, TypeFunction typeFunction, HashMap<String, StructValue> structMap) {
         ArrayList<FunctionPtrType.Arg> args = new ArrayList<>();
         ArrayList<Para> paras = typeFunction.getParas();
         for (int i = 0; i < paras.size(); i++) {
@@ -134,20 +134,20 @@ public class Utils {
      *             must be specified for single level
      * @return converted type
      */
-    public static TypeAttr.TypeRefer conv(Type type, String name) {
+    public static TypeAttr.OperationType conv(Type type, String name) {
         return conv(type, name, new HashMap<>());
     }
 
-    private static TypeAttr.TypeRefer conv(Type type, String name, HashMap<String, StructValue> structMap) {
+    private static TypeAttr.OperationType conv(Type type, String name, HashMap<String, StructValue> structMap) {
         switch (type) {
             case Array array -> {
                 if (name != null) {
-                    return new ArrayTypeNamed(name, array.getElementCount(), conv(array.getElementType(), null, structMap), array.getSizeof());
+                    return new ArrayTypeNamed(name, array.getElementCount(), (TypeAttr.SizedType) conv(array.getElementType(), null, structMap), array.getSizeof());
                 }
-                return new ArrayType(array.getElementCount(), conv(array.getElementType(), null, structMap), array.getSizeof());
+                return new ArrayType(array.getElementCount(), (TypeAttr.SizedType) conv(array.getElementType(), null, structMap), array.getSizeof());
             }
             case Enum anEnum -> {
-                TypeAttr.TypeRefer conv = conv(anEnum.getDeclares().getFirst().type(), null, structMap);
+                TypeAttr.OperationType conv = conv(anEnum.getDeclares().getFirst().type(), null, structMap);
                 var bindTypes = (CommonTypes.BindTypes) conv;
                 List<EnumType.Member> members = new ArrayList<>();
                 for (Declare declare : anEnum.getDeclares()) {

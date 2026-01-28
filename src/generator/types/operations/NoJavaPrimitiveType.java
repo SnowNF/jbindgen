@@ -6,7 +6,7 @@ import generator.types.TypeAttr;
 
 import static utils.CommonUtils.Assert;
 
-public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.MemoryBasedOperation {
+public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.OperationType> implements OperationAttr.MemoryBasedOperation {
     private final CommonTypes.BindTypes bindTypes;
     private final T type;
 

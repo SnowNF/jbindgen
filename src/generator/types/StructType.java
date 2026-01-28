@@ -11,7 +11,7 @@ import java.util.Objects;
 
 import static utils.CommonUtils.Assert;
 
-public final class StructType implements TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
+public final class StructType implements TypeAttr.SizedType {
     /**
      * the struct member
      *
@@ -20,9 +20,9 @@ public final class StructType implements TypeAttr.SizedType, TypeAttr.OperationT
      * @param offset  normally equals offsetof(TYPE, MEMBER) * 8
      * @param bitSize when using bitfield
      */
-    public record Member(TypeAttr.TypeRefer type, String name, long offset, long bitSize) {
+    public record Member(TypeAttr.SizedType type, String name, long offset, long bitSize) {
         private String typeName() {
-            return ((TypeAttr.NamedType) type).typeName();
+            return type.typeName();
         }
 
         // note: to avoid member to be a graph, we should compare type name instead of type
@@ -43,7 +43,7 @@ public final class StructType implements TypeAttr.SizedType, TypeAttr.OperationT
         @Override
         public String toString() {
             return "Member{" +
-                   "type=" + ((TypeAttr.NamedType) type).typeName() +
+                   "type=" + type.typeName() +
                    ", name='" + name + '\'' +
                    ", offset=" + offset +
                    ", bitSize=" + bitSize +
@@ -71,7 +71,7 @@ public final class StructType implements TypeAttr.SizedType, TypeAttr.OperationT
         this.members = List.copyOf(memberProvider.provide(this));
     }
 
-    private static MemoryLayouts makeMemoryLayouts(CommonTypes.Primitives primitives, long len, long bytePadding, PackageManager packages) {
+    private static MemoryLayouts makeMemoryLayouts(CommonTypes.Primitives primitives, long len, long bytePadding) {
         if (bytePadding != 0) {
             return MemoryLayouts.structLayout(List.of(
                     MemoryLayouts.sequenceLayout(primitives.getMemoryLayout(), len),
@@ -83,15 +83,15 @@ public final class StructType implements TypeAttr.SizedType, TypeAttr.OperationT
     private static MemoryLayouts makeMemoryLayout(List<Member> members, long byteSize, long byteAlign, PackageManager packages) {
         if (members.isEmpty() || members.stream().anyMatch(Member::bitField)) {
             if (byteAlign == 1)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_BYTE, byteSize, 0, packages);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_BYTE, byteSize, 0);
             if (byteAlign == 2)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_SHORT, byteSize / 2, byteSize % 2, packages);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_SHORT, byteSize / 2, byteSize % 2);
             if (byteAlign == 4)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_INT, byteSize / 4, byteSize % 4, packages);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_INT, byteSize / 4, byteSize % 4);
             if (byteAlign == 8)
-                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_LONG, byteSize / 8, byteSize % 8, packages);
+                return makeMemoryLayouts(CommonTypes.Primitives.JAVA_LONG, byteSize / 8, byteSize % 8);
             if (byteAlign == 16)
-                return makeMemoryLayouts(CommonTypes.Primitives.Integer128, byteSize / 16, byteSize % 16, packages);
+                return makeMemoryLayouts(CommonTypes.Primitives.Integer128, byteSize / 16, byteSize % 16);
             throw new IllegalArgumentException("unknown byteAlign: " + byteAlign);
         }
 

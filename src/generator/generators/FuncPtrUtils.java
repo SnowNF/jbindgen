@@ -27,6 +27,6 @@ public class FuncPtrUtils {
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             args.add(new FunctionPtrType.Arg(ConflictNameUtils.getNonConflictsNameExt(arg.argName(), forbidNames, existingNames), arg.type()));
         }
-        return new FunctionPtrType(function.typeName(), args, (TypeAttr.TypeRefer) function.getReturnType().orElse(VoidType.VOID));
+        return new FunctionPtrType(function.typeName(), args, (TypeAttr.GenerationType) function.getReturnType().orElse(VoidType.VOID));
     }
 }

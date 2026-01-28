@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class CommonTypes {
-    public enum Primitives implements TypeAttr.SizedType {
+    public enum Primitives {
         JAVA_BOOLEAN(MemoryLayouts.JAVA_BOOLEAN, "boolean", "Boolean", null, AddressLayout.JAVA_BOOLEAN, false, "Byte", false),
         JAVA_BYTE(MemoryLayouts.JAVA_BYTE, "byte", "Byte", null, AddressLayout.JAVA_BYTE, false, "Byte", true),
         JAVA_SHORT(MemoryLayouts.JAVA_SHORT, "short", "Short", null, AddressLayout.JAVA_SHORT, false, "Short", true),
@@ -93,7 +93,6 @@ public class CommonTypes {
             return !nativeIntegral;
         }
 
-        @Override
         public long byteSize() {
             return byteSize;
         }
@@ -204,7 +203,7 @@ public class CommonTypes {
     }
 
 
-    public enum BindTypes implements BaseType, TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
+    public enum BindTypes implements BaseType, TypeAttr.SizedType {
         I8(BindTypeOperations.I8Op),
         I16(BindTypeOperations.I16Op),
         I32(BindTypeOperations.I32Op),
@@ -350,6 +349,6 @@ public class CommonTypes {
     /**
      * generated, essential types
      */
-    public sealed interface BaseType extends TypeAttr.TypeRefer, TypeAttr.GenerationType, TypeAttr.NamedType permits BindTypes, FFMTypes, BindTypeOperations, BasicOperations, SpecificTypes, ValueInterface {
+    public sealed interface BaseType extends TypeAttr.GenerationType permits BindTypes, FFMTypes, BindTypeOperations, BasicOperations, SpecificTypes, ValueInterface {
     }
 }

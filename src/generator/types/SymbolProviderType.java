@@ -5,7 +5,7 @@ import generator.PackagePath;
 import java.util.Objects;
 
 public record SymbolProviderType(String className, PackagePath path)
-        implements TypeAttr.TypeRefer, TypeAttr.GenerationType, TypeAttr.NamedType {
+        implements TypeAttr.GenerationType {
 
     public SymbolProviderType {
         path.reqClosed();

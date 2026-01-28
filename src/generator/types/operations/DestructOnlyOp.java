@@ -2,9 +2,8 @@ package generator.types.operations;
 
 import generator.PackageManager;
 import generator.types.CommonTypes;
-import generator.types.TypeAttr;
 
-public class DestructOnlyOp<T extends TypeAttr.NamedType & TypeAttr.TypeRefer> implements OperationAttr.DesctructOnlyOperation {
+public class DestructOnlyOp<T> implements OperationAttr.DesctructOnlyOperation {
     private final T type;
     private final CommonTypes.Primitives primitives;
 

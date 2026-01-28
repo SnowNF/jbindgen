@@ -18,7 +18,7 @@ public interface CommonOperation {
 
     UpperType getUpperType(PackageManager packages);
 
-    record End<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType>
+    record End<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
             (T type, String typeName) implements UpperType {
         public End(T type, PackageManager packages) {
             this(type, type.typeName(packages, TypeAttr.NameType.RAW));
@@ -30,8 +30,8 @@ public interface CommonOperation {
         }
     }
 
-    record Reject<T extends TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType>(
-            T t) implements UpperType {
+    record Reject<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
+            (T t) implements UpperType {
         @Override
         public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
             return t.typeName(packages, nameType);
@@ -48,8 +48,8 @@ public interface CommonOperation {
         }
     }
 
-    record Warp<T extends TypeAttr.OperationType & TypeAttr.NamedType & TypeAttr.TypeRefer>(T outer,
-                                                                                            UpperType inner) implements UpperType {
+    record Warp<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
+            (T outer, UpperType inner) implements UpperType {
         public Warp(T outer, CommonOperation inner, PackageManager packages) {
             this(outer, inner.getUpperType(packages));
         }

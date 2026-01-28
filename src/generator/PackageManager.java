@@ -49,7 +49,7 @@ public class PackageManager {
     }
 
     public String useType(TypeAttr.GenerationType type, TypeAttr.NameType name) {
-        return ((TypeAttr.NamedType) type).typeName(this, name);
+        return type.typeName(this, name);
     }
 
     public String makeImports() {

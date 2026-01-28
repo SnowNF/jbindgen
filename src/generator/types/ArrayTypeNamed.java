@@ -5,8 +5,8 @@ import generator.types.operations.OperationAttr;
 
 import static utils.CommonUtils.Assert;
 
-public record ArrayTypeNamed(String typeName, long length, TypeAttr.TypeRefer element,
-                             long byteSize) implements TypeAttr.SizedType, TypeAttr.OperationType, TypeAttr.NamedType, TypeAttr.TypeRefer, TypeAttr.GenerationType {
+public record ArrayTypeNamed(String typeName, long length, TypeAttr.SizedType element, long byteSize)
+        implements TypeAttr.SizedType {
     public ArrayTypeNamed {
         Assert(length > 0, "length must be greater than zero");
     }

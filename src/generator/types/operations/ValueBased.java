@@ -10,7 +10,7 @@ import utils.CommonUtils;
 
 import java.util.Optional;
 
-public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType & TypeAttr.TypeRefer & TypeAttr.OperationType> implements OperationAttr.ValueBasedOperation {
+public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.OperationType> implements OperationAttr.ValueBasedOperation {
     private final T type;
     private final CommonTypes.Primitives primitives;
     private final CommonTypes.BindTypes bindTypes;
@@ -205,7 +205,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                 End<?> end = new End<>(type, packages);
                 if (type instanceof ValueBasedType v && v.getPointerType().isPresent()) {
                     // make Ptr<Void> -> Type
-                    TypeAttr.TypeRefer pointee = v.getPointerType().get().pointee();
+                    TypeAttr.GenerationType pointee = v.getPointerType().get().pointee();
                     if (pointee instanceof VoidType) {
                         return end;
                     }
@@ -213,7 +213,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.NamedType &
                     return new Warp<>(bindTypes.getOperations().getValue(), new UpperType() {
                         @Override
                         public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
-                            return ((TypeAttr.NamedType) pointee).typeName(packages, nameType);
+                            return pointee.typeName(packages, nameType);
                         }
 
                         @Override

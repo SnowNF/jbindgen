@@ -25,7 +25,7 @@ public class Processor {
                 continue;
             }
             Type s = t.getValue();
-            TypeAttr.TypeRefer conv = Utils.conv(s, null);
+            TypeAttr.GenerationType conv = Utils.conv(s, null);
             switch (conv) {
                 case ArrayTypeNamed arrayTypeNamed -> generateUnit.addType(arrayTypeNamed);
                 case EnumType e -> {
