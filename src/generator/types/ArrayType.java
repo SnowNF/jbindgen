@@ -19,11 +19,6 @@ public record ArrayType(long length, TypeAttr.TypeRefer element, long byteSize) 
     }
 
     @Override
-    public TypeImports getDefineImportTypes() {
-        return element.getUseImportTypes().addUseImports(ARRAY_TYPE);
-    }
-
-    @Override
     public TypeImports getUseImportTypes() {
         return element.getUseImportTypes().addUseImports(ARRAY_TYPE);
     }

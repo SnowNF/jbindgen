@@ -40,16 +40,6 @@ public final class FunctionPtrType extends AbstractGenerationType {
     }
 
 
-    @Override
-    public TypeImports getDefineImportTypes() {
-        TypeImports imports = new TypeImports();
-        args.forEach(arg -> imports.addUseImports(arg.type));
-        if (returnType != null) {
-            imports.addImport(returnType.getUseImportTypes());
-        }
-        return imports;
-    }
-
     public CommonOperation.AllocatorType allocatorType() {
         return allocator;
     }

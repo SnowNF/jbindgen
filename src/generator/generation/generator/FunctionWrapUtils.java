@@ -38,6 +38,7 @@ public class FunctionWrapUtils {
             return "void";
         }
         TypeAttr.OperationType retType = function.getReturnType().get();
+        packages.addImport(((TypeAttr.TypeRefer) retType).getUseImportTypes());
         var r = packages.useType((TypeAttr.GenerationType) retType, TypeAttr.NameType.GENERIC);
         if (allocatorType == AllocatorType.STANDARD) {
             // warp with Ptr<T>
@@ -129,7 +130,9 @@ public class FunctionWrapUtils {
             return "return new " + packages.useTypePrefix(CommonTypes.BindTypes.Ptr) + CommonTypes.BindTypes.makePtrGenericName(r)
                    + "(%s, %s)".formatted(value, operation.getCommonOperation().makeOperation().str());
         }
-        return "return " + operation.getFuncOperation().constructFromRet(value).codeSegment();
+        FuncOperation.Result construct = operation.getFuncOperation().constructFromRet(value);
+        packages.addImport(construct.imports());
+        return "return " + construct.codeSegment();
     }
 
     public String upcallUpperRetTypeDestruct(String value) {

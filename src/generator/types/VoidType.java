@@ -25,11 +25,6 @@ public record VoidType(String typeName) implements
     }
 
     @Override
-    public TypeImports getDefineImportTypes() {
-        return new TypeImports();
-    }
-
-    @Override
     public String typeName(TypeAttr.NameType nameType) {
         return typeName;
     }

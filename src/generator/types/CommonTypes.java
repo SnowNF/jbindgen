@@ -124,11 +124,6 @@ public class CommonTypes {
         }
 
         @Override
-        public TypeImports getDefineImportTypes() {
-            return new TypeImports().addUseImports(imports);
-        }
-
-        @Override
         public String typeName(TypeAttr.NameType nameType) {
             if (Generators.DEBUG)
                 return name() + Generators.DEBUG_NAME_APPEND;
@@ -172,11 +167,6 @@ public class CommonTypes {
         @Override
         public TypeImports getUseImportTypes() {
             return new TypeImports(this);
-        }
-
-        @Override
-        public TypeImports getDefineImportTypes() {
-            return new TypeImports().addUseImports(imports);
         }
 
         @Override
@@ -229,16 +219,6 @@ public class CommonTypes {
         @Override
         public TypeImports getUseImportTypes() {
             return new TypeImports(this);
-        }
-
-        @Override
-        public TypeImports getDefineImportTypes() {
-            return value.getUseImportTypes()
-                    .addUseImports(FFMTypes.VALUE_LAYOUT)
-                    .addUseImports(BasicOperations.Info)
-                    .addUseImports(SpecificTypes.MemoryUtils)
-                    .addUseImports(BasicOperations.Value)
-                    .addUseImports(referenceTypes);
         }
 
         public ValueInterface getValue() {
@@ -302,13 +282,6 @@ public class CommonTypes {
         @Override
         public TypeImports getUseImportTypes() {
             return new TypeImports(this);
-        }
-
-        @Override
-        public TypeImports getDefineImportTypes() {
-            return operations.getUseImportTypes()
-                    .addUseImports(referenceTypes.get())
-                    .addUseImports(operations.value);
         }
 
         public BindTypeOperations getOperations() {
@@ -377,11 +350,6 @@ public class CommonTypes {
             return new TypeImports(this);
         }
 
-        @Override
-        public TypeImports getDefineImportTypes() {
-            return new TypeImports().addUseImports(referenceTypes.get());
-        }
-
         public String getGenericName(String t) {
             if (!generic) {
                 throw new IllegalStateException("Cannot get generic name for non-generic type");
@@ -426,11 +394,6 @@ public class CommonTypes {
         @Override
         public TypeImports getUseImportTypes() {
             return new TypeImports(this);
-        }
-
-        @Override
-        public TypeImports getDefineImportTypes() {
-            return new TypeImports();
         }
 
         public Class<?> getType() {

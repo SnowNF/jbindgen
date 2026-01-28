@@ -4,7 +4,6 @@ import generator.Generators;
 import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
-import generator.types.TypeAttr;
 
 import java.util.List;
 
@@ -109,11 +108,15 @@ public class FuncProtocolGenerator implements Generator {
                                 '}';
                     }
                 """.formatted(className);
-        writer.write(packages, make(className, raw, interfaces, constructors, invokes.toString(), toString, utilsClassName));
+        writer.write(packages, make(packages, raw, interfaces, constructors, invokes.toString(), toString, utilsClassName));
         return new GenerateResult(packages, functionPtrType);
     }
 
-    private String make(String className, FunctionRawUtils raw, String interfaces, String constructors, String invokes, String ext, Object utilsClassName) {
+    private String make(PackageManager packages, FunctionRawUtils raw, String interfaces, String constructors, String invokes, String ext, Object utilsClassName) {
+        packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLE);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
+        packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLES);
+        packages.useClass(CommonTypes.FFMTypes.ARENA);
         return """
                 public class %1$s implements %9$s<%1$s, %1$s.Function>, %8$s<%1$s> {
                     public static final %8$s.Operations<%1$s> OPERATIONS = %9$s.makeOperations(%1$s::new);
@@ -172,11 +175,11 @@ public class FuncProtocolGenerator implements Generator {
                     }
                 
                 %6$s
-                }""".formatted(className, raw.funcDescriptor(),
+                }""".formatted(packages.getClassName(), raw.funcDescriptor(),
                 interfaces, constructors, invokes, ext, // 6
                 utilsClassName, // 7
-                CommonTypes.BasicOperations.Info.typeName(TypeAttr.NameType.RAW), // 8
-                CommonTypes.BindTypeOperations.PtrOp.typeName(TypeAttr.NameType.RAW), // 9
+                packages.useClass(CommonTypes.BasicOperations.Info), // 8
+                packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 9
                 CommonTypes.BindTypeOperations.PtrOp.operatorTypeName() // 10
         );
     }

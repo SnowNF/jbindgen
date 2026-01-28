@@ -16,11 +16,6 @@ public record PointerType(TypeAttr.TypeRefer pointee) implements
     }
 
     @Override
-    public TypeImports getDefineImportTypes() {
-        return pointee.getUseImportTypes().addUseImports(CommonTypes.BindTypes.Ptr);
-    }
-
-    @Override
     public TypeImports getUseImportTypes() {
         return pointee.getUseImportTypes().addUseImports(CommonTypes.BindTypes.Ptr);
     }

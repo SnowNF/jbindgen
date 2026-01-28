@@ -75,12 +75,6 @@ public class Processor {
         }
 
         public Optional<PackagePath> queryPath(TypeAttr.GenerationType unlocatedType) {
-            if (unlocatedType instanceof PointerType ptr) {
-                return Optional.ofNullable(dest.common().path().close(ptr.typeName(RAW)));
-            }
-            if (unlocatedType instanceof ArrayType arr) {
-                return Optional.ofNullable(dest.common().path().close(arr.typeName(RAW)));
-            }
             Optional<PackagePath> packagePath = allTypes.get(unlocatedType);
             if (packagePath == null)
                 return Optional.empty();
@@ -114,10 +108,6 @@ public class Processor {
         public ArrayList<Generator> queryGenerators(Set<TypeAttr.GenerationType> unhandledTypes) {
             ArrayList<Generator> generators = new ArrayList<>();
             for (TypeAttr.GenerationType unhandledType : unhandledTypes) {
-                if (unhandledType instanceof PointerType || unhandledType instanceof ArrayType) {
-                    generators.add(new EmptyGenerator(unhandledType));
-                    continue;
-                }
                 if (!allTypes.containsKey(unhandledType))
                     continue;
                 var generator = switch (unhandledType) {
@@ -224,6 +214,29 @@ public class Processor {
             public void addAllType(Map<? extends CommonTypes.BaseType, PackagePath> generations) {
                 generations.forEach(this::addType);
                 generators.add(new CommonGenerator(generations.keySet().stream().toList()));
+            }
+
+            @Override
+            public ArrayList<Generator> queryGenerators(Set<TypeAttr.GenerationType> unhandledTypes) {
+                ArrayList<Generator> ret = new ArrayList<>();
+                for (TypeAttr.GenerationType unhandledType : unhandledTypes) {
+                    if (unhandledType instanceof PointerType || unhandledType instanceof ArrayType) {
+                        ret.add(new EmptyGenerator(unhandledType));
+                    }
+                }
+                ret.addAll(super.queryGenerators(unhandledTypes));
+                return ret;
+            }
+
+            @Override
+            public Optional<PackagePath> queryPath(TypeAttr.GenerationType unlocatedType) {
+                if (unlocatedType instanceof PointerType ptr) {
+                    return Optional.of(dest.common().path().close(ptr.typeName(RAW)));
+                }
+                if (unlocatedType instanceof ArrayType arr) {
+                    return Optional.of(dest.common().path().close(arr.typeName(RAW)));
+                }
+                return super.queryPath(unlocatedType);
             }
 
             @Override

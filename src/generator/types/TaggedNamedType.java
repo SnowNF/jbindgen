@@ -9,11 +9,6 @@ public record TaggedNamedType(String typeName, TypeAttr.NamedType referType)
     }
 
     @Override
-    public TypeImports getDefineImportTypes() {
-        return new TypeImports();
-    }
-
-    @Override
     public String typeName(TypeAttr.NameType nameType) {
         return typeName;
     }

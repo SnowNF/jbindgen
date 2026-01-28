@@ -17,15 +17,6 @@ public record ArrayTypeNamed(String typeName, long length, TypeAttr.TypeRefer el
     }
 
     @Override
-    public TypeImports getDefineImportTypes() {
-        return element.getUseImportTypes()
-                .addUseImports(CommonTypes.BasicOperations.Info)
-                .addUseImports(CommonTypes.ValueInterface.I64I)
-                .addUseImports(CommonTypes.BindTypes.Ptr)
-                .addUseImports(CommonTypes.BindTypes.I64);
-    }
-
-    @Override
     public TypeImports getUseImportTypes() {
         return new TypeImports(this);
     }

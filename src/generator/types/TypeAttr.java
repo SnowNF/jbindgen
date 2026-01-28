@@ -55,11 +55,5 @@ public class TypeAttr {
          * @return the types when use this type
          */
         TypeImports getUseImportTypes();
-
-        /**
-         * @return the types used when define this type
-         * @implNote do not include self
-         */
-        TypeImports getDefineImportTypes();
     }
 }

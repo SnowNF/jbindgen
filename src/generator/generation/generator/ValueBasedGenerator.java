@@ -2,10 +2,7 @@ package generator.generation.generator;
 
 import generator.Generators;
 import generator.PackageManager;
-import generator.types.CommonTypes;
-import generator.types.PointerType;
-import generator.types.TypeAttr;
-import generator.types.ValueBasedType;
+import generator.types.*;
 
 public class ValueBasedGenerator implements Generator {
 
@@ -31,7 +28,12 @@ public class ValueBasedGenerator implements Generator {
         }
         PointerType pointerType = type.getPointerType().orElseThrow();
         var pointee = ((TypeAttr.OperationType) pointerType.pointee());
-        String pointeeName = packages.useClass((TypeAttr.GenerationType) pointerType.pointee());
+        String pointeeName;
+        if (pointee instanceof VoidType v && v.realVoid()) {
+            pointeeName = "Void";
+        } else {
+            pointeeName = packages.useClass((TypeAttr.GenerationType) pointerType.pointee());
+        }
 
         packages.addImport(pointee.getOperation().getCommonOperation().makeOperation().imports());
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
