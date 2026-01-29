@@ -5,14 +5,16 @@ import generator.PackageManager;
 import generator.PackagePath;
 import generator.types.TypeAttr;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ConstGenerator implements Generator {
-    private final List<ConstValue> values;
+    private final Collection<ConstValue> values;
     private final PackagePath path;
 
-    public ConstGenerator(List<ConstValue> values, PackagePath path) {
-        this.values = values;
+    public ConstGenerator(Collection<ConstValue> values, PackagePath path) {
+        this.values = new ArrayList<>(values);
         this.path = path;
     }
 

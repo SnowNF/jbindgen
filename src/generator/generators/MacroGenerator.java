@@ -42,10 +42,14 @@ public class MacroGenerator implements Generator {
     }
 
     public sealed interface Macro {
+        java.lang.String declName();
+
         record Primitive(CommonTypes.Primitives primitives, java.lang.String declName,
                          java.lang.String initializer, java.lang.String comment) implements Macro {
         }
-        record String(java.lang.String declName, java.lang.String initializer, java.lang.String comment) implements Macro {
+
+        record String(java.lang.String declName, java.lang.String initializer,
+                      java.lang.String comment) implements Macro {
         }
     }
 }

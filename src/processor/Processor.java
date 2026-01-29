@@ -13,37 +13,56 @@ import generator.types.*;
 import java.util.*;
 
 public class Processor {
-    private static void processType(ComponentUnit generateUnit, List<Function> functions, HashSet<Macro> macros,
-                                    ArrayList<Declare> varDeclares, HashMap<String, Type> types,
-                                    Map<String, Type> processedTypes,
-                                    Set<Function> processedFunSymbols) {
-        ArrayList<ConstGenerator.ConstValue> constValues = new ArrayList<>(varDeclares.stream()
-                .map(d -> new ConstGenerator.ConstValue(Utils.conv(d.type(), null), d.value(), d.name())).toList());
+    private record ProcessResult(
+            List<Declare> varDeclares,
+            Map<String, Type> types,
+            Set<Function> funSymbols) {
+    }
+
+    private static ProcessResult processType(ComponentUnit generateUnit,
+                                             List<Function> functions,
+                                             HashSet<Macro> macros,
+                                             ArrayList<Declare> varDeclares,
+                                             HashMap<String, Type> types,
+                                             Set<Declare> processedVarDeclares,
+                                             Map<String, Type> processedTypes,
+                                             Set<Function> processedFunSymbols) {
+        LinkedHashMap<ConstGenerator.ConstValue, Optional<String>> constValues = new LinkedHashMap<>();
+        for (Declare declare : varDeclares) {
+            if (processedVarDeclares.contains(declare)) {
+                continue;
+            }
+            ConstGenerator.ConstValue constValue = new ConstGenerator.ConstValue(Utils.conv(declare.type(), null), declare.value(), declare.name());
+            constValues.put(constValue, Optional.ofNullable(declare.location()));
+        }
         // types
         for (var t : types.entrySet()) {
             if (processedTypes.containsKey(t.getKey())) {
                 continue;
             }
             Type s = t.getValue();
+            var location = s.getLocation();
             TypeAttr.GenerationType conv = Utils.conv(s, null);
             switch (conv) {
-                case ArrayTypeNamed arrayTypeNamed -> generateUnit.addType(arrayTypeNamed);
+                case ArrayTypeNamed arrayTypeNamed -> generateUnit.addType(arrayTypeNamed, location);
                 case EnumType e -> {
                     Type type = Utils.typedefLookUp(s);
                     Enum en = (Enum) type;
                     if (en.isUnnamed()) {
                         for (Declare declare : en.getDeclares()) {
-                            constValues.add(new ConstGenerator.ConstValue(Utils.conv(declare.type(), null), declare.value(), declare.name()));
+                            constValues.put(
+                                    new ConstGenerator.ConstValue(Utils.conv(declare.type(), null), declare.value(), declare.name()),
+                                    Optional.ofNullable(declare.location()));
                         }
                     } else {
-                        generateUnit.addType(e);
+                        generateUnit.addType(e, location);
                     }
                 }
-                case FunctionPtrType functionPtrType -> generateUnit.addType(functionPtrType);
-                case ValueBasedType valueBasedType -> generateUnit.addType(valueBasedType);
-                case VoidType voidType -> generateUnit.addType(voidType);
-                case RefOnlyType refOnlyType -> generateUnit.addType(refOnlyType);
-                case StructType structType -> generateUnit.addType(structType);
+                case FunctionPtrType functionPtrType -> generateUnit.addType(functionPtrType, location);
+                case ValueBasedType valueBasedType -> generateUnit.addType(valueBasedType, location);
+                case VoidType voidType -> generateUnit.addType(voidType, location);
+                case RefOnlyType refOnlyType -> generateUnit.addType(refOnlyType, location);
+                case StructType structType -> generateUnit.addType(structType, location);
                 case CommonTypes.BindTypes _, PointerType _, ArrayType _ -> {
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + conv);
@@ -52,26 +71,27 @@ public class Processor {
         // constants
         generateUnit.addConstValues(constValues);
         // macros
-        HashSet<MacroGenerator.Macro> macro = new HashSet<>();
+        LinkedHashMap<MacroGenerator.Macro, Optional<String>> macro = new LinkedHashMap<>();
         macros.forEach(e -> {
             switch (e.type()) {
                 case PrimitiveTypes.CType c ->
-                        macro.add(new MacroGenerator.Macro.Primitive(Utils.conv2BindTypes(c).getPrimitiveType(), e.declName(), e.initializer(), e.comment()));
+                        macro.put(new MacroGenerator.Macro.Primitive(Utils.conv2BindTypes(c).getPrimitiveType(), e.declName(), e.initializer(), e.comment()), Optional.ofNullable(e.location()));
                 case PrimitiveTypes.JType _ ->
-                        macro.add(new MacroGenerator.Macro.String(e.declName(), e.initializer(), e.comment()));
+                        macro.put(new MacroGenerator.Macro.String(e.declName(), e.initializer(), e.comment()), Optional.ofNullable(e.location()));
             }
         });
         generateUnit.addMacros(macro);
         // function symbols
-        ArrayList<FunctionPtrType> functionPtrTypes = new ArrayList<>();
+        LinkedHashMap<FunctionPtrType, Optional<String>> functionPtrTypes = new LinkedHashMap<>();
         for (Function function : functions) {
             if (processedFunSymbols.contains(function))
                 continue;
             List<FunctionPtrType.Arg> args = function.paras().stream()
                     .map(para -> new FunctionPtrType.Arg(para.paraName(), Utils.conv(para.paraType(), null))).toList();
-            functionPtrTypes.add(new FunctionPtrType(function.name(), args, Utils.conv(function.ret(), null)));
+            functionPtrTypes.put(new FunctionPtrType(function.name(), args, Utils.conv(function.ret(), null)), Optional.ofNullable(function.location()));
         }
         generateUnit.addFunctionSymbols(functionPtrTypes);
+        return new ProcessResult(varDeclares, types, new HashSet<>(functions));
     }
 
     private final ArrayList<GenerateUnit> units = new ArrayList<>();
@@ -90,21 +110,25 @@ public class Processor {
 
     private final HashMap<String, Type> processedTypes = new HashMap<>();
     private final HashSet<Function> processedFunSymbols = new HashSet<>();
+    private final HashSet<Declare> processedVarDeclares = new HashSet<>();
 
     public Processor withExtra(List<Function> functions, HashSet<Macro> macros, ArrayList<Declare> varDeclares,
                                HashMap<String, Type> types, Utils.DestinationProvider dest, Utils.Filter filter, boolean greedy) {
         // symbol provider
         SymbolProviderType provider = new SymbolProviderType(dest.symbolProvider().path());
         ComponentUnit generateUnit = new ComponentUnit(provider, dest, filter, greedy);
-        processType(generateUnit, functions, macros, varDeclares, types,
-                Collections.unmodifiableMap(processedTypes), Collections.unmodifiableSet(processedFunSymbols));
-        processedTypes.putAll(types);
-        processedFunSymbols.addAll(functions);
+        ProcessResult processResult = processType(generateUnit, functions, macros, varDeclares, types,
+                Collections.unmodifiableSet(processedVarDeclares),
+                Collections.unmodifiableMap(processedTypes),
+                Collections.unmodifiableSet(processedFunSymbols));
+        processedTypes.putAll(processResult.types);
+        processedFunSymbols.addAll(processResult.funSymbols);
+        processedVarDeclares.addAll(processResult.varDeclares);
         units.add(generateUnit);
         return this;
     }
 
-    public Processor withExtra(Analyser analyser, Utils.DestinationProvider dest, Utils.Filter filter, boolean greedy) {
+    public Processor withExtra(Analyser analyser, Utils.DestinationProvider dest, boolean greedy, Utils.Filter filter) {
         return withExtra(analyser.getFunctions(), analyser.getMacros(), analyser.getVarDeclares(), analyser.getTypes(), dest, filter, greedy);
     }
 

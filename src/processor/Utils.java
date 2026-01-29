@@ -7,11 +7,12 @@ import analyser.types.*;
 import analyser.types.Enum;
 import analyser.types.Record;
 import generator.PackagePath;
+import generator.generators.ConstGenerator;
+import generator.generators.MacroGenerator;
 import generator.types.*;
 import utils.ConflictNameUtils;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static utils.CommonUtils.Assert;
@@ -249,104 +250,102 @@ public class Utils {
         }
     }
 
-    public interface Filter extends Predicate<Map.Entry<TypeAttr.GenerationType, Optional<String>>> {
-        @Override
-        default boolean test(Map.Entry<TypeAttr.GenerationType, Optional<String>> entry) {
-            var generation = entry.getKey();
-            Optional<String> value = entry.getValue();
-
-            return false;
-        }
-
-        default boolean testCommon(Optional<String> value) {
+    public interface Filter {
+        default boolean testArrayNamed(ArrayTypeNamed arrayTypeNamed, Optional<String> value) {
             return true;
         }
 
-        default boolean testArrayNamed(Optional<String> value) {
+        default boolean testEnumerate(EnumType enumType, Optional<String> value) {
             return true;
         }
 
-        default boolean testEnumerate(Optional<String> value) {
+        default boolean testFuncPointer(FunctionPtrType functionPtrType, Optional<String> value) {
             return true;
         }
 
-        default boolean testFuncPointer(Optional<String> value) {
+        default boolean testRefOnly(RefOnlyType refOnlyType, Optional<String> value) {
             return true;
         }
 
-        default boolean testRefOnly(Optional<String> value) {
+        default boolean testStructure(StructType structType, Optional<String> value) {
             return true;
         }
 
-        default boolean testStructure(Optional<String> value) {
+        default boolean testValueBased(ValueBasedType valueBasedType, Optional<String> value) {
             return true;
         }
 
-        default boolean testSymbolProvider(Optional<String> value) {
+        default boolean testVoidBased(VoidType voidType, Optional<String> value) {
             return true;
         }
 
-        default boolean testValueBased(Optional<String> value) {
+        default boolean testConstValues(ConstGenerator.ConstValue constValue, Optional<String> location) {
             return true;
         }
 
-        default boolean testVoidBased(Optional<String> value) {
+        default boolean testFuncSymbols(FunctionPtrType key, Optional<String> value) {
             return true;
         }
 
-        default boolean testConstValues(Optional<String> value) {
+        default boolean testMacros(MacroGenerator.Macro key, Optional<String> value) {
             return true;
         }
 
-        default boolean testFuncSymbols(Optional<String> value) {
-            return true;
-        }
-
-        default boolean testMacros(Optional<String> value) {
-            return true;
-        }
-
-        default boolean testVarSymbols(Optional<String> value) {
-            return true;
-        }
-
-        default boolean testTaggedTypes(Optional<String> value) {
-            return true;
-        }
-
-        static Filter ofDefault(Function<String, Boolean> test) {
+        static Filter ofDefault(Predicate<String> testHeader, Predicate<String> testDeclName) {
             return new Filter() {
-                final Predicate<Optional<String>> filter =
-                        value -> value.map(test).orElse(true);
+                final Predicate<Optional<String>> header = s -> s.map(testHeader::test).orElse(true);
+                final Predicate<TypeAttr.GenerationType> typeName = t -> testDeclName.test(t.typeName());
 
+                // types
                 @Override
-                public boolean testArrayNamed(Optional<String> value) {
-                    return filter.test(value);
+                public boolean testArrayNamed(ArrayTypeNamed arrayTypeNamed, Optional<String> value) {
+                    return header.test(value) && typeName.test(arrayTypeNamed);
                 }
 
                 @Override
-                public boolean testEnumerate(Optional<String> value) {
-                    return filter.test(value);
+                public boolean testEnumerate(EnumType enumType, Optional<String> value) {
+                    return header.test(value) && typeName.test(enumType);
                 }
 
                 @Override
-                public boolean testFuncPointer(Optional<String> value) {
-                    return filter.test(value);
+                public boolean testFuncPointer(FunctionPtrType functionPtrType, Optional<String> value) {
+                    return header.test(value) && typeName.test(functionPtrType);
                 }
 
                 @Override
-                public boolean testRefOnly(Optional<String> value) {
-                    return filter.test(value);
+                public boolean testRefOnly(RefOnlyType refOnlyType, Optional<String> value) {
+                    return header.test(value) && typeName.test(refOnlyType);
                 }
 
                 @Override
-                public boolean testStructure(Optional<String> value) {
-                    return filter.test(value);
+                public boolean testStructure(StructType structType, Optional<String> value) {
+                    return header.test(value) && typeName.test(structType);
                 }
 
                 @Override
-                public boolean testValueBased(Optional<String> value) {
-                    return filter.test(value);
+                public boolean testValueBased(ValueBasedType valueBasedType, Optional<String> value) {
+                    return header.test(value) && typeName.test(valueBasedType);
+                }
+
+                @Override
+                public boolean testVoidBased(VoidType voidType, Optional<String> value) {
+                    return header.test(value) && typeName.test(voidType);
+                }
+
+                // generations
+                @Override
+                public boolean testFuncSymbols(FunctionPtrType key, Optional<String> value) {
+                    return header.test(value) && typeName.test(key);
+                }
+
+                @Override
+                public boolean testConstValues(ConstGenerator.ConstValue constValue, Optional<String> value) {
+                    return header.test(value) && testDeclName.test(constValue.name());
+                }
+
+                @Override
+                public boolean testMacros(MacroGenerator.Macro key, Optional<String> value) {
+                    return header.test(value) && testDeclName.test(key.declName());
                 }
             };
         }

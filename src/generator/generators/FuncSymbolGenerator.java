@@ -8,6 +8,7 @@ import generator.types.FunctionPtrType;
 import generator.types.SymbolProviderType;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,7 +17,7 @@ public class FuncSymbolGenerator implements Generator {
     private final PackagePath dest;
     private final SymbolProviderType symbolProvider;
 
-    public FuncSymbolGenerator(List<FunctionPtrType> functions, PackagePath dest, SymbolProviderType symbolProvider) {
+    public FuncSymbolGenerator(Collection<FunctionPtrType> functions, PackagePath dest, SymbolProviderType symbolProvider) {
         this.functions = new ArrayList<>(functions);
         this.dest = dest;
         this.symbolProvider = symbolProvider;

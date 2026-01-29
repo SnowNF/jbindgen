@@ -9,11 +9,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class CmdLineParser {
     private static class Component {
         public String header;
-        public String filterString;
+        public Pattern headerFilterRegex = Pattern.compile(".*");  // allow all headers
+        public Pattern declFilterRegex = Pattern.compile(".*"); // allow all decl name
         public List<String> args;
         public boolean analyseMacro;
         public boolean greedy = true; // false then track generation by type reference
@@ -21,22 +23,25 @@ public class CmdLineParser {
         public String libPkg;
         public String libName;
 
-        public boolean finished() {
-            return header != null &&
-                   filterString != null &&
-                   args != null &&
-                   outDir != null &&
-                   libPkg != null &&
-                   libName != null;
+        public boolean unfinished() {
+            return header == null ||
+                   headerFilterRegex == null ||
+                   declFilterRegex == null ||
+                   args == null ||
+                   outDir == null ||
+                   libPkg == null ||
+                   libName == null;
         }
 
         @Override
         public String toString() {
             return "Component{" +
                    "header='" + header + '\'' +
-                   ", filterString='" + filterString + '\'' +
+                   ", headerFilterRegex='" + headerFilterRegex + '\'' +
+                   ", declFilterRegex='" + declFilterRegex + '\'' +
                    ", args=" + args +
                    ", analyseMacro=" + analyseMacro +
+                   ", greedy=" + greedy +
                    ", outDir=" + outDir +
                    ", libPkg='" + libPkg + '\'' +
                    ", libName='" + libName + '\'' +
@@ -52,7 +57,9 @@ public class CmdLineParser {
         System.out.println("--out=<output_directory>");
         System.out.println("--pkg-name=<package_name>");
         System.out.println("--name=<library_name>");
-        System.out.println("--filter-str=<filter_string>");
+        System.out.println("--filter-header=<filter_regex>");
+        System.out.println("--filter-decl=<decl_regex>");
+        System.out.println("--next-component");
     }
 
     private static List<Component> parse(String[] args) {
@@ -62,12 +69,14 @@ public class CmdLineParser {
         List<Component> components = new ArrayList<>();
         Component current = new Component();
         for (String arg : args) {
-            if (current.finished()) {
+            if (arg.equals("--next-component")) {
+                if (current.unfinished())
+                    throw new RuntimeException("Incomplete argument detected: " + current);
                 components.add(current);
                 current = new Component();
                 System.out.println("Note: creating new extra component");
+                continue;
             }
-
             String[] kv = arg.split("=");
             if (arg.equals("--header=")) {
                 kv = new String[]{"--header", ""};
@@ -98,8 +107,11 @@ public class CmdLineParser {
                 case "--name":
                     current.libName = value;
                     break;
-                case "--filter-str":
-                    current.filterString = value;
+                case "--filter-header":
+                    current.headerFilterRegex = Pattern.compile(value);
+                    break;
+                case "--filter-decl":
+                    current.declFilterRegex = Pattern.compile(value);
                     break;
                 case "--greedy":
                     current.greedy = Boolean.parseBoolean(value);
@@ -108,7 +120,7 @@ public class CmdLineParser {
                     throw new IllegalArgumentException("Invalid argument:" + arg);
             }
         }
-        if (!current.finished())
+        if (current.unfinished())
             throw new RuntimeException("Incomplete argument detected: " + current);
         components.add(current);
         return components;
@@ -147,16 +159,20 @@ public class CmdLineParser {
             primaryAnalyser.close();
             primaryProc = primaryProc.withExtra(primaryAnalyser,
                     Utils.DestinationProvider.ofDefault(new PackagePath(primary.outDir).add(primary.libPkg), primary.libName),
-                    Utils.Filter.ofDefault(s -> s.contains(primary.filterString)), primary.greedy);
+                    primary.greedy, Utils.Filter.ofDefault(
+                            s -> primary.headerFilterRegex.matcher(s).matches(),
+                            s -> primary.declFilterRegex.matcher(s).matches())
+            );
         }
-
         while (it.hasNext()) {
             Component extra = it.next();
             Analyser analyser = new Analyser(extra.header, extra.args, extra.analyseMacro);
             analyser.close();
             primaryProc = primaryProc.withExtra(analyser,
                     Utils.DestinationProvider.ofDefault(new PackagePath(extra.outDir).add(extra.libPkg), extra.libName),
-                    Utils.Filter.ofDefault(s -> s.contains(extra.filterString)), extra.greedy);
+                    extra.greedy, Utils.Filter.ofDefault(
+                            s -> primary.headerFilterRegex.matcher(s).matches(),
+                            s -> primary.declFilterRegex.matcher(s).matches()));
         }
         primaryProc.generate();
     }
