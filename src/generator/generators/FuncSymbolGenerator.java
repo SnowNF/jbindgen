@@ -66,25 +66,28 @@ public class FuncSymbolGenerator implements Generator {
     private static String makeWrappedCall(FunctionWrapUtils wrap) {
         // only consider AllocatorType.STANDARD and AllocatorType.NONE here
         StringBuilder sb = new java.lang.StringBuilder();
-        sb.append("""     
-                    public static %2$s %1$s(%3$s) {
-                        %4$s;
-                    }
-                """.formatted(
-                wrap.getFunctionName(),
-                wrap.downcallRetType(),
-                wrap.downcallUpperPara(),
-                wrap.downcallTypeReturn("%s$Raw(%s)".formatted(wrap.getFunctionName(), wrap.downcallUpperParaDestruct()))));
-        wrap.hasOnHeapReturnVariant().ifPresent(variant ->
-                sb.append("""
-                        
-                            public static %2$s %1$s(%3$s) {
-                                %4$s;
-                            }
-                        """.formatted(variant.getFunctionName(),
-                        variant.downcallRetType(),
-                        variant.downcallUpperPara(), // 3
-                        variant.downcallTypeReturn("%s$Raw(%s)".formatted(variant.getFunctionName(), variant.downcallUpperParaDestruct())))));
+        if (wrap.onHeapReturnVariant().isEmpty()) {
+            sb.append("""     
+                        public static %2$s %1$s(%3$s) {
+                            %4$s;
+                        }
+                    """.formatted(
+                    wrap.getFunctionName(),
+                    wrap.downcallRetType(),
+                    wrap.downcallUpperPara(),
+                    wrap.downcallTypeReturn("%s$Raw(%s)".formatted(wrap.getFunctionName(), wrap.downcallUpperParaDestruct()))));
+        } else {
+            var variant = wrap.onHeapReturnVariant().get();
+            sb.append("""
+                    
+                        public static %2$s %1$s(%3$s) {
+                            %4$s;
+                        }
+                    """.formatted(variant.getFunctionName(),
+                    variant.downcallRetType(),
+                    variant.downcallUpperPara(), // 3
+                    variant.downcallTypeReturn("%s$Raw(%s)".formatted(variant.getFunctionName(), variant.downcallUpperParaDestruct()))));
+        }
         return sb.toString();
     }
 }

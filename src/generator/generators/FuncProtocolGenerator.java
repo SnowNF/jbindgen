@@ -71,39 +71,43 @@ public class FuncProtocolGenerator implements Generator {
                 functionPtrType.innerFunctionTypeRawName(),
                 packages.useClass(CommonTypes.FFMTypes.ARENA), // 7
                 packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLES) // 8
-                );
+        );
 
         StringBuilder invokes = new StringBuilder("""
                     private %1$s invokeRaw(%2$s) {
                         try {
                             %3$sthis.methodHandle.invokeExact(%4$s);
                         } catch (java.lang.Throwable e) {
-                            throw new %8$s.InvokeException(e);
+                            throw new %5$s.InvokeException(e);
                         }
-                    }
-                
-                    public %5$s invoke(%6$s) {
-                        %7$s;
                     }
                 """.formatted(raw.rawRetType(),
                 raw.rawDowncallPara(),
                 raw.rawReturnCast(),
                 raw.rawDowncallStr(), // 4
-                wrap.downcallRetType(),
-                wrap.downcallUpperPara(), // 6
-                wrap.downcallTypeReturn("invokeRaw(%s)".formatted(wrap.downcallUpperParaDestruct())),
-                utilsClassName)); // 8
-        wrap.hasOnHeapReturnVariant().ifPresent(variant ->
-                invokes.append("""
-                        
-                            public %1$s invoke(%2$s) {
-                                %3$s;
-                            }
-                        """.formatted(
-                        variant.downcallRetType(),
-                        variant.downcallUpperPara(),
-                        variant.downcallTypeReturn("invokeRaw(%s)".formatted(variant.downcallUpperParaDestruct()) // 3
-                        ))));
+                utilsClassName)); // 5
+        if (wrap.onHeapReturnVariant().isEmpty()) {
+            invokes.append("""
+                        public %1$s invoke(%2$s) {
+                            %3$s;
+                        }
+                    """.formatted(
+                    wrap.downcallRetType(),
+                    wrap.downcallUpperPara(),
+                    wrap.downcallTypeReturn("invokeRaw(%s)".formatted(wrap.downcallUpperParaDestruct()))));
+        } else {
+            var variant = wrap.onHeapReturnVariant().get();
+            invokes.append("""
+                    
+                        public %1$s invoke(%2$s) {
+                            %3$s;
+                        }
+                    """.formatted(
+                    variant.downcallRetType(),
+                    variant.downcallUpperPara(),
+                    variant.downcallTypeReturn("invokeRaw(%s)".formatted(variant.downcallUpperParaDestruct()) // 3
+                    )));
+        }
         String toString = """
                     @Override
                     public String toString() {

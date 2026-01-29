@@ -138,7 +138,7 @@ public class FunctionWrapUtils {
         return destruct.codeSegment();
     }
 
-    public Optional<OnHeapReturnVariant> hasOnHeapReturnVariant() {
+    public Optional<OnHeapReturnVariant> onHeapReturnVariant() {
         if (allocatorType == AllocatorType.STANDARD) {
             return Optional.of(new OnHeapReturnVariant(this));
         }
