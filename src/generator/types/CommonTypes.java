@@ -105,7 +105,9 @@ public class CommonTypes {
         PteI(false),//pointee
         ArrayI(true),
         StructI(true),
-        ;
+        PtrView(true),
+        ArrayNamed(true),
+        PtrNamed(true);
         private final boolean destruct;
 
         BasicOperations(boolean destruct) {
@@ -136,7 +138,6 @@ public class CommonTypes {
         FP32I(Primitives.JAVA_FLOAT),
         FP64I(Primitives.JAVA_DOUBLE),
         PtrI(Primitives.ADDRESS),
-        PtrView(Primitives.ADDRESS),
         FP16I(Primitives.FLOAT16),
         FP128I(Primitives.LONG_DOUBLE),
         I128I(Primitives.Integer128);
@@ -264,8 +265,8 @@ public class CommonTypes {
     public enum SpecificTypes implements BaseType {
         FunctionUtils(false),
         MemoryUtils(false),
-        ArrayOp(true),
         Array(true),
+        ArrayOp(true),
         StructOp(true),
         Str(false),
         ;

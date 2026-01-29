@@ -5,7 +5,6 @@ import generator.types.CommonTypes;
 import generator.types.CommonTypes.SpecificTypes;
 import generator.types.TypeAttr;
 import generator.types.ValueBasedType;
-import generator.types.VoidType;
 import utils.CommonUtils;
 
 import java.util.Optional;
@@ -204,23 +203,8 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.OperationTy
                 }
                 End<?> end = new End<>(type, packages);
                 if (type instanceof ValueBasedType v && v.getPointerType().isPresent()) {
-                    // make Ptr<Void> -> Type
-                    TypeAttr.GenerationType pointee = v.getPointerType().get().pointee();
-                    if (pointee instanceof VoidType) {
-                        return end;
-                    }
-                    // PtrI<pointee>, get pointee as inner Wildacrd type
-                    return new Warp<>(bindTypes.getOperations().getValue(), new UpperType() {
-                        @Override
-                        public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
-                            return pointee.typeName(packages, nameType);
-                        }
-
-                        @Override
-                        public TypeAttr.OperationType type() {
-                            return ((TypeAttr.OperationType) pointee);
-                        }
-                    });
+                    // named ptr type
+                    return new Warp<>(CommonTypes.BasicOperations.PtrNamed, end);
                 }
                 return new Warp<>(bindTypes.getOperations().getValue(), end);
             }

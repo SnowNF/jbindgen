@@ -49,14 +49,17 @@ public class CommonGenerator implements Generator {
                 }
                 case CommonTypes.FFMTypes _ -> {
                 }
-                case BasicOperations ext -> {
-                    switch (ext) {
+                case BasicOperations basic -> {
+                    switch (basic) {
                         case Operation -> genOperation(packages);
                         case Info -> genInfo(packages);
                         case Value -> genValue(packages);
                         case PteI -> genPteI(packages);
-                        case ArrayI -> genArrayI(packages);
-                        case StructI -> genStructI(packages);
+                        case ArrayI -> genBasicOperations(packages, BasicOperations.ArrayI);
+                        case StructI -> genBasicOperations(packages, BasicOperations.StructI);
+                        case PtrView -> genBasicOperations(packages, BasicOperations.PtrView);
+                        case ArrayNamed -> genBasicOperations(packages, BasicOperations.ArrayNamed);
+                        case PtrNamed -> genBasicOperations(packages, BasicOperations.PtrNamed);
                     }
                 }
             }
@@ -65,10 +68,10 @@ public class CommonGenerator implements Generator {
         return new GenerateResult(packageManagers, baseTypes);
     }
 
-    private void genStructI(PackageManager packages) {
+    private void genBasicOperations(PackageManager packages, BasicOperations types) {
         packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
         writer.write(packages, """
-                public interface %4$s<E> extends %3$s<MemorySegment> {
+                public interface %4$s<T> extends %3$s<MemorySegment> {
                     static <I> %4$s<I> of(MemorySegment value) {
                         return new %4$s<>() {
                             @Override
@@ -89,35 +92,7 @@ public class CommonGenerator implements Generator {
                 }
                 """.formatted(null, null,
                 packages.useClass(BasicOperations.Value), // 3
-                packages.useClass(BasicOperations.StructI) // 4
-        ));
-    }
-
-    private void genArrayI(PackageManager packages) {
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        writer.write(packages, """
-                public interface %4$s<E> extends %3$s<MemorySegment> {
-                    static <I> %4$s<I> of(MemorySegment value) {
-                        return new %4$s<>() {
-                            @Override
-                            public ValueOp<MemorySegment> operator() {
-                                return () -> value;
-                            }
-                
-                            @Override
-                            public String toString() {
-                                return String.valueOf(value);
-                            }
-                        };
-                    }
-                
-                    static <I> %4$s<I> of(%4$s<?> value) {
-                        return of(value.operator().value());
-                    }
-                }
-                """.formatted(null, null,
-                packages.useClass(BasicOperations.Value), // 3
-                packages.useClass(BasicOperations.ArrayI) // 4
+                packages.useClass(types) // 4
         ));
     }
 
@@ -179,7 +154,7 @@ public class CommonGenerator implements Generator {
                     import java.lang.foreign.MemorySegment;
                     import java.util.function.Function;
                     
-                    public interface %3$s<S, E> extends %7$s<S>, %5$s<E>, %6$s<E> {
+                    public interface %3$s<S, E> extends %7$s<S>, %1$s<S>, %5$s<E>, %6$s<E> {
                         @Override
                         %4$s<S, E> operator();
                     
@@ -196,7 +171,9 @@ public class CommonGenerator implements Generator {
                                         ValueLayout.ADDRESS);
                         }
                     }
-                    """.formatted(null, null,
+                    """.formatted(
+                    packages.useClass(BasicOperations.PtrNamed),
+                    null,
                     packages.useClass(btOp),
                     btOp.operatorTypeName(),
                     packages.useClass(btOp.getValue()),
@@ -240,7 +217,7 @@ public class CommonGenerator implements Generator {
                 import java.util.List;
                 import java.util.RandomAccess;
                 
-                public interface %3$s<A, E> extends %11$s<A>, %7$s<E>, %4$s<E>, List<E> {
+                public interface %3$s<A, E> extends %11$s<A>, %7$s<E>, %4$s<E>, %5$s<A>, List<E> {
                     interface ArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A> {
                         A reinterpret(long length);
                 
@@ -279,69 +256,10 @@ public class CommonGenerator implements Generator {
                     ArrayOpI<A, E> operator();
                 }""".formatted(null, null,
                 packages.useClass(SpecificTypes.ArrayOp),
-                packages.useClass(ValueInterface.PtrView), // 4
-                null,
+                packages.useClass(BasicOperations.PtrView), // 4
+                packages.useClass(BasicOperations.ArrayNamed),
                 packages.useClass(BindTypes.Ptr),
                 packages.useClass(BasicOperations.ArrayI),// 7
-                packages.useClass(ValueInterface.I64I),
-                packages.useClass(BindTypes.I64), // 9
-                packages.useClass(ValueInterface.I32I), // 10
-                packages.useClass(BasicOperations.Info), // 11
-                packages.useClass(BasicOperations.Value) // 12
-        ));
-    }
-
-    private void genFlatArrayOp(PackageManager packages) {
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        writer.write(packages, """
-                import java.util.AbstractList;
-                import java.util.List;
-                import java.util.RandomAccess;
-                
-                public interface %3$s<A, E> extends %11$s<A>, %7$s<E>, List<E> {
-                    interface FlatArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A> {
-                        A reinterpret(long length);
-                
-                        default A reinterpret(%8$s<?> length) {
-                            return reinterpret(length.operator().value());
-                        }
-                
-                        default A reinterpret(%10$s<?> length) {
-                            return reinterpret(length.operator().value());
-                        }
-                
-                        %6$s<E> pointerAt(long index);
-                
-                        default %6$s<E> pointerAt(%8$s<?> index) {
-                            return pointerAt(index.operator().value());
-                        }
-                
-                        default %6$s<E> pointerAt(%10$s<?> index) {
-                            return pointerAt(index.operator().value());
-                        }
-                
-                        List<%6$s<E>> pointerList();
-                
-                        %9$s longSize();
-                
-                        %11$s.Operations<E> elementOperation();
-                    }
-                
-                    abstract class AbstractRandomAccessList<E> extends AbstractList<E> implements RandomAccess {
-                    }
-                
-                    interface FixedFlatArrayOpI<A, E> extends FlatArrayOpI<A, E> {
-                        A reinterpret();
-                    }
-                
-                    FlatArrayOpI<A, E> operator();
-                }""".formatted(
-                null, null,
-                null, //packages.useClass(SpecificTypes.FlatArrayOp),
-                null, // 4
-                null,
-                packages.useClass(BindTypes.Ptr),
-                packages.useClass(BasicOperations.ArrayI), // 7
                 packages.useClass(ValueInterface.I64I),
                 packages.useClass(BindTypes.I64), // 9
                 packages.useClass(ValueInterface.I32I), // 10
@@ -530,7 +448,7 @@ public class CommonGenerator implements Generator {
                         operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
                         return element;
                     }
-
+                
                     @Override
                     public ArrayOpI<%12$s<E>, E> operator() {
                         return new ArrayOpI<>() {
@@ -604,11 +522,11 @@ public class CommonGenerator implements Generator {
                     public %6$s<E> pointerAt(%8$s<?> index) {
                         return operator().pointerAt(index.operator().value());
                     }
-
+                
                     public %6$s<E> pointerAtFirst() {
                         return new %6$s<>(this);
                     }
-
+                
                     public List<%6$s<E>> pointerList() {
                         return operator().pointerList();
                     }
@@ -642,7 +560,7 @@ public class CommonGenerator implements Generator {
                 """.formatted(null, null,
                 packages.useClass(SpecificTypes.ArrayOp),
                 packages.useClass(CommonTypes.BindTypeOperations.PtrOp),
-                packages.useClass(ValueInterface.PtrView), // 5
+                packages.useClass(BasicOperations.PtrView), // 5
                 packages.useClass(BindTypes.Ptr),  // 6
                 packages.useClass(BindTypes.I64), // 7
                 packages.useClass(ValueInterface.I64I), // 8
@@ -650,221 +568,6 @@ public class CommonGenerator implements Generator {
                 packages.useClass(BasicOperations.Info), // 10
                 packages.useClass(SpecificTypes.MemoryUtils), // 11
                 packages.useClass(SpecificTypes.Array) // 12
-        ));
-    }
-
-    private void genFlatArray(PackageManager packages) {
-        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        packages.useClass(CommonTypes.FFMTypes.MEMORY_LAYOUT);
-        writer.write(packages, """
-                import java.util.*;
-                
-                public class %12$s<E> extends %3$s.AbstractRandomAccessList<E> implements %3$s<%12$s<E>, E>, %10$s<%12$s<E>> {
-                    public static <I> Operations<%12$s<I>> makeOperations(Operations<I> operation, %8$s<?> len) {
-                        return makeOperations(operation, len.operator().value());
-                    }
-                    public static <I> Operations<%12$s<I>> makeOperations(Operations<I> operation, long len) {
-                        return new Operations<>((param, offset) -> new %12$s<>(param.asSlice(offset, len * operation.memoryLayout().byteSize()),
-                                operation), (source, dest, offset) -> %11$s.memcpy(source.ptr, 0, dest, offset, len * operation.memoryLayout().byteSize()),
-                                MemoryLayout.sequenceLayout(len, operation.memoryLayout()));
-                    }
-                
-                    protected final MemorySegment ptr;
-                    protected final %10$s.Operations<E> operations;
-                
-                    public %12$s(%5$s<E> ptr, %10$s.Operations<E> operations) {
-                        this.ptr = ptr.operator().value();
-                        this.operations = operations;
-                    }
-                
-                    public %12$s(%4$s<?, E> ptr) {
-                        this.ptr = ptr.operator().value();
-                        this.operations = ptr.operator().elementOperation();
-                    }
-                
-                    public %12$s(MemorySegment ptr, %10$s.Operations<E> operations) {
-                        this.ptr = ptr;
-                        this.operations = operations;
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, Collection<E> elements) {
-                        this.operations = operations;
-                        this.ptr = allocator.allocate(operations.memoryLayout(), elements.size());
-                        int i = 0;
-                        for (E element : elements) {
-                            operations.copy().copyTo(element, ptr, operations.memoryLayout().byteSize() * i);
-                            i++;
-                        }
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %9$s<?> len) {
-                        this(allocator, operations, len.operator().value());
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, long len) {
-                        this.operations = operations;
-                        this.ptr = allocator.allocate(operations.memoryLayout(), len);
-                    }
-                
-                    public %12$s(SegmentAllocator allocator, %10$s.Operations<E> operations, %8$s<?> len) {
-                        this(allocator, operations, len.operator().value());
-                    }
-                
-                    public E get(int index) {
-                        Objects.checkIndex(index, size());
-                        return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
-                    }
-                
-                    private E get(long index) {
-                        Objects.checkIndex(index, sizeLong());
-                        return operations.constructor().create(ptr, index * operations.memoryLayout().byteSize());
-                    }
-                
-                    public E get(%9$s<?> index) {
-                        return get(index.operator().value());
-                    }
-                
-                    public E get(%8$s<?> index) {
-                        return get(index.operator().value());
-                    }
-                
-                    @Override
-                    public E set(int index, E element) {
-                        Objects.checkIndex(index, size());
-                        operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
-                        return element;
-                    }
-                
-                    public E set(%9$s<?> index, E element) {
-                        return set(index.operator().value(), element);
-                    }
-                
-                    public E set(%8$s<?> index, E element) {
-                        return set(index.operator().value(), element);
-                    }
-                
-                    public E set(long index, E element) {
-                        Objects.checkIndex(index, sizeLong());
-                        operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
-                        return element;
-                    }
-                
-                    @Override
-                    public FlatArrayOpI<%12$s<E>, E> operator() {
-                        return new FlatArrayOpI<>() {
-                            @Override
-                            public %10$s.Operations<E> elementOperation() {
-                                return operations;
-                            }
-                
-                            @Override
-                            public %12$s<E> reinterpret(long length) {
-                                return new %12$s<>(ptr.reinterpret(length * operations.memoryLayout().byteSize()), operations);
-                            }
-                
-                            @Override
-                            public %12$s<E> reinterpret(%8$s<?> length) {
-                                return reinterpret(length.operator().value());
-                            }
-                
-                            @Override
-                            public %6$s<E> pointerAt(long index) {
-                                Objects.checkIndex(index, size());
-                                return new %6$s<>(ptr.asSlice(index * operations.memoryLayout().byteSize(), operations.memoryLayout()), operations);
-                            }
-                
-                            @Override
-                            public %6$s<E> pointerAt(%8$s<?> index) {
-                                return pointerAt(index.operator().value());
-                            }
-                
-                            @Override
-                            public List<%6$s<E>> pointerList() {
-                                return new %3$s.AbstractRandomAccessList<>() {
-                                    @Override
-                                    public %6$s<E> get(int index) {
-                                        return pointerAt(index);
-                                    }
-                
-                                    @Override
-                                    public int size() {
-                                        return %12$s.this.size();
-                                    }
-                                };
-                            }
-                
-                            @Override
-                            public %10$s.Operations<%12$s<E>> getOperations() {
-                                return makeOperations(operations, sizeLong());
-                            }
-                
-                            @Override
-                            public %12$s<E> self() {
-                                return %12$s.this;
-                            }
-                
-                            @Override
-                            public MemorySegment value() {
-                                return ptr;
-                            }
-                
-                            @Override
-                            public %7$s longSize() {
-                                return new %7$s(ptr.byteSize() / operations.memoryLayout().byteSize());
-                            }
-                        };
-                    }
-                
-                    public %6$s<E> pointerAt(long index) {
-                        return operator().pointerAt(index);
-                    }
-                
-                    public %6$s<E> pointerAt(%8$s<?> index) {
-                        return operator().pointerAt(index.operator().value());
-                    }
-                
-                    public List<%6$s<E>> pointerList() {
-                        return operator().pointerList();
-                    }
-                
-                    @Override
-                    public int size() {
-                        return (int) (ptr.byteSize() / operations.memoryLayout().byteSize());
-                    }
-                
-                    private long sizeLong() {
-                        return longSize().operator().value();
-                    }
-                
-                    public %7$s longSize() {
-                        return operator().longSize();
-                    }
-                
-                    @Override
-                    public %12$s<E> subList(int fromIndex, int toIndex) {
-                        Objects.checkFromToIndex(fromIndex, toIndex, size());
-                        return new %12$s<E>(ptr.asSlice(fromIndex * operations.memoryLayout().byteSize(),
-                                (toIndex - fromIndex) * operations.memoryLayout().byteSize()), operations);
-                    }
-                
-                    public %12$s<E> subList(%8$s<?> fromIndex, %8$s<?> toIndex) {
-                        Objects.checkFromToIndex(fromIndex.operator().value(), toIndex.operator().value(), sizeLong());
-                        return new %12$s<E>(ptr.asSlice(fromIndex.operator().value() * operations.memoryLayout().byteSize(),
-                                (toIndex.operator().value() - fromIndex.operator().value()) * operations.memoryLayout().byteSize()), operations);
-                    }
-                }
-                """.formatted(null, null,
-                null, // packages.useClass(SpecificTypes.FlatArrayOp),
-                packages.useClass(CommonTypes.BindTypeOperations.PtrOp),
-                packages.useClass(ValueInterface.PtrI), // 5
-                packages.useClass(BindTypes.Ptr),
-                packages.useClass(BindTypes.I64), // 7
-                packages.useClass(ValueInterface.I64I), // 8
-                packages.useClass(ValueInterface.I32I), // 9
-                packages.useClass(BasicOperations.Info), // 10
-                packages.useClass(SpecificTypes.MemoryUtils), // 11
-                null // packages.useClass(SpecificTypes.FlatArray) // 12
         ));
     }
 
@@ -976,11 +679,11 @@ public class CommonGenerator implements Generator {
                             return s;
                         return "Str{ptr=" + ptr + '}';
                     }
-
+                
                     public %4$s<%11$s> pointerAtFirst() {
                         return new %4$s<>(this);
                     }
-
+                
                     private long strlen = -1;
                 
                     @Override
@@ -1056,7 +759,7 @@ public class CommonGenerator implements Generator {
                 packages.useClass(SpecificTypes.ArrayOp),// 3
                 packages.useClass(BindTypes.Ptr),
                 packages.useClass(SpecificTypes.Str),// 5
-                packages.useClass(ValueInterface.PtrView),
+                packages.useClass(BasicOperations.PtrView),
                 packages.useClass(ValueInterface.I8I),
                 packages.useClass(ValueInterface.I64I),//8
                 packages.useClass(BindTypes.I64),
@@ -1106,7 +809,7 @@ public class CommonGenerator implements Generator {
                     packages.useClass(type),
                     type.getPrimitive().getBoxedTypeName(),
                     type.getPrimitive().useType(packages), // 5
-                    packages.useClass(ValueInterface.PtrView)
+                    packages.useClass(BasicOperations.PtrView)
             ));
             return;
         }
