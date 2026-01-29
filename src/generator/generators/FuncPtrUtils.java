@@ -3,7 +3,6 @@ package generator.generators;
 import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
-import generator.types.TypeAttr;
 import generator.types.VoidType;
 import utils.ConflictNameUtils;
 
@@ -27,6 +26,6 @@ public class FuncPtrUtils {
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             args.add(new FunctionPtrType.Arg(ConflictNameUtils.getNonConflictsNameExt(arg.argName(), forbidNames, existingNames), arg.type()));
         }
-        return new FunctionPtrType(function.typeName(), args, (TypeAttr.GenerationType) function.getReturnType().orElse(VoidType.VOID));
+        return new FunctionPtrType(function.typeName(), args, function.getReturnType().orElse(VoidType.VOID));
     }
 }

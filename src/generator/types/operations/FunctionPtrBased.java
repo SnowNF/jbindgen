@@ -4,7 +4,6 @@ import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.FunctionPtrType;
 import generator.types.MemoryLayouts;
-import generator.types.TypeAttr;
 
 import static generator.types.CommonTypes.SpecificTypes.MemoryUtils;
 
@@ -50,7 +49,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
                                 packages.useClass(MemoryUtils), ms, offset, varName));
             }

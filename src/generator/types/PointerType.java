@@ -12,13 +12,6 @@ public record PointerType(TypeAttr.GenerationType pointee) implements
         return new PointerOp(this);
     }
 
-    @Override
-    public String toString() {
-        return "PointerType{" +
-               "pointee=" + pointee.typeName() +
-               '}';
-    }
-
     public MemoryLayouts getMemoryLayout(PackageManager packages) {
         return CommonTypes.Primitives.ADDRESS.getMemoryLayout();
     }

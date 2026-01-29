@@ -4,7 +4,6 @@ import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
 import generator.types.StructType;
-import generator.types.TypeAttr;
 
 public class MemoryBased implements OperationAttr.MemoryBasedOperation {
     private final StructType structType;
@@ -48,7 +47,7 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
                                 varName, 0, ms, offset, memoryLayout));

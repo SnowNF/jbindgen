@@ -51,7 +51,7 @@ public class NoJavaPrimitiveType<T extends TypeAttr.GenerationType & TypeAttr.Op
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages) + " " + varName,
                         "%s.memcpy(%s.operator().value(), %s, %s, %s, %s.byteSize())".formatted(
                                 packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
                                 varName, 0, ms, offset, memoryLayout));

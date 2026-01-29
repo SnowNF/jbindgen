@@ -38,7 +38,7 @@ public class FunctionWrapUtils {
             return "void";
         }
         TypeAttr.OperationType retType = function.getReturnType().get();
-        var r = packages.useType((TypeAttr.GenerationType) retType, TypeAttr.NameType.GENERIC);
+        var r = packages.useType(retType, TypeAttr.NameType.GENERIC);
         if (allocatorType == AllocatorType.STANDARD) {
             // warp with Ptr<T>
             return CommonTypes.BindTypes.makePtrGenericName(packages, r);
@@ -53,7 +53,7 @@ public class FunctionWrapUtils {
         TypeAttr.OperationType retType = function.getReturnType().get();
         var operation = retType.getOperation();
         CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType(packages);
-        return upperType.typeName(packages, TypeAttr.NameType.WILDCARD);
+        return upperType.typeName(packages);
     }
 
     public String downcallUpperPara() {
@@ -64,7 +64,7 @@ public class FunctionWrapUtils {
         for (FunctionPtrType.Arg arg : function.getArgs()) {
             var operation = ((TypeAttr.OperationType) arg.type()).getOperation();
             CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType(packages);
-            String typeName = upperType.typeName(packages, TypeAttr.NameType.WILDCARD);
+            String typeName = upperType.typeName(packages);
             out.add(typeName + " " + arg.argName());
         }
         return String.join(", ", out);
@@ -73,7 +73,7 @@ public class FunctionWrapUtils {
     public String upcallPara() {
         List<String> out = new ArrayList<>();
         for (FunctionPtrType.Arg arg : function.getArgs()) {
-            out.add(packages.useType((TypeAttr.GenerationType) arg.type(), TypeAttr.NameType.GENERIC) + " " + arg.argName());
+            out.add(packages.useType(arg.type(), TypeAttr.NameType.GENERIC) + " " + arg.argName());
         }
         return String.join(", ", out);
     }
@@ -119,7 +119,7 @@ public class FunctionWrapUtils {
         TypeAttr.OperationType retType = function.getReturnType().get();
         OperationAttr.Operation operation = retType.getOperation();
         if (allocatorType == AllocatorType.STANDARD) {
-            String r = packages.useClass((TypeAttr.GenerationType) retType);
+            String r = packages.useClass(retType);
             // warp Ptr<T>
             return "return new " + CommonTypes.BindTypes.makePtrGenericName(packages, r)
                    + "(%s, %s)".formatted(value, operation.getCommonOperation().makeOperation(packages).str());
@@ -162,7 +162,7 @@ public class FunctionWrapUtils {
         }
 
         public String downcallRetType() {
-            return wrap.packages.useClass((TypeAttr.GenerationType) retType);
+            return wrap.packages.useClass(retType);
         }
 
         public String downcallUpperPara() {
@@ -170,7 +170,7 @@ public class FunctionWrapUtils {
             for (FunctionPtrType.Arg arg : function.getArgs()) {
                 var operation = ((TypeAttr.OperationType) arg.type()).getOperation();
                 CommonOperation.UpperType upperType = operation.getCommonOperation().getUpperType(wrap.packages);
-                String typeName = upperType.typeName(wrap.packages, TypeAttr.NameType.WILDCARD);
+                String typeName = upperType.typeName(wrap.packages);
                 out.add(typeName + " " + arg.argName());
             }
             return String.join(", ", out);

@@ -53,7 +53,7 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages) + " " + varName,
                         "%s.setAddr(%s, %s, %s.operator().value())".formatted(
                                 packages.useClass(CommonTypes.SpecificTypes.MemoryUtils),
                                 ms, offset, varName));
@@ -77,7 +77,7 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                return new Warp<>(CommonTypes.BasicOperations.PtrView, pointeeType.getOperation().getCommonOperation(), packages);
+                return new Warp<>(CommonTypes.BasicOperations.PtrView, pointeeType.getOperation().getCommonOperation().getUpperType(packages));
             }
         };
     }

@@ -135,7 +135,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.OperationTy
             @Override
             public Setter setter(String ms, long offset, String varName) {
                 CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                return new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                return new Setter(upperType.typeName(packages) + " " + varName,
                         "%s.set%s(%s, %s, %s.operator().value())".formatted(
                                 packages.useClass(SpecificTypes.MemoryUtils),
                                 primitives.getMemoryUtilName(), ms, offset, varName));
@@ -154,7 +154,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.OperationTy
                 if (mask == -1 && shift == 0) {
                     var typeValue = p == primitives ? "" : ".%sValue() ".formatted(p.getPrimitiveTypeName());
                     CommonOperation.UpperType upperType = getCommonOperation().getUpperType(packages);
-                    return Optional.of(new Setter(upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                    return Optional.of(new Setter(upperType.typeName(packages) + " " + varName,
                             "        %s.set%s(%s, %s, %s.operator().value()%s);".formatted(
                                     packages.useClass(SpecificTypes.MemoryUtils),
                                     p.getMemoryUtilName(), ms, bitOffset / 8, varName, typeValue)));
@@ -182,7 +182,7 @@ public class ValueBased<T extends TypeAttr.GenerationType & TypeAttr.OperationTy
                         ms,
                         offset / 8, value);
                 return Optional.of(new Setter(
-                        upperType.typeName(packages, TypeAttr.NameType.WILDCARD) + " " + varName,
+                        upperType.typeName(packages) + " " + varName,
                         get + set));
             }
         };

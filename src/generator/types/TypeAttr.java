@@ -43,6 +43,12 @@ public class TypeAttr {
             return packages.useClass(this);
         }
 
+        /**
+         * replace the type to be imported.
+         * no longer import it
+         *
+         * @return replaced type name
+         */
         default String useTypeReplace() {
             return null;
         }

@@ -7,7 +7,7 @@ import generator.types.TypeAttr;
 
 public interface CommonOperation {
     interface UpperType {
-        String typeName(PackageManager packages, TypeAttr.NameType nameType);
+        String typeName(PackageManager packages);
 
         TypeAttr.OperationType type();
 
@@ -25,7 +25,7 @@ public interface CommonOperation {
         }
 
         @Override
-        public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
+        public String typeName(PackageManager packages) {
             return typeName;
         }
     }
@@ -33,8 +33,8 @@ public interface CommonOperation {
     record Reject<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
             (T t) implements UpperType {
         @Override
-        public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
-            return t.typeName(packages, nameType);
+        public String typeName(PackageManager packages) {
+            return t.typeName(packages, TypeAttr.NameType.WILDCARD);
         }
 
         @Override
@@ -50,20 +50,12 @@ public interface CommonOperation {
 
     record Warp<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
             (T outer, UpperType inner) implements UpperType {
-        public Warp(T outer, CommonOperation inner, PackageManager packages) {
-            this(outer, inner.getUpperType(packages));
-        }
-
         @Override
-        public String typeName(PackageManager packages, TypeAttr.NameType nameType) {
+        public String typeName(PackageManager packages) {
             final String outerRaw = outer.typeName(packages, TypeAttr.NameType.RAW);
-            return switch (nameType) {
-                case WILDCARD -> inner.rejectWildcard()
-                        ? outerRaw + "<?>"
-                        : outerRaw + "<? extends %s>".formatted(inner.typeName(packages, nameType));
-                case GENERIC -> outerRaw + "<%s>".formatted(inner.typeName(packages, nameType));
-                case RAW -> outerRaw;
-            };
+            return inner.rejectWildcard()
+                    ? outerRaw + "<?>"
+                    : outerRaw + "<? extends %s>".formatted(inner.typeName(packages));
         }
 
         @Override
