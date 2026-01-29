@@ -40,11 +40,9 @@ public class CommonGenerator implements Generator {
                 case SpecificTypes specificTypes -> {
                     switch (specificTypes) {
                         case Array -> genArray(packages);
-                        case FlatArray -> genFlatArray(packages);
                         case Str -> genStr(packages);
                         case FunctionUtils -> genFunctionUtils(packages);
                         case ArrayOp -> genArrayOp(packages);
-                        case FlatArrayOp -> genFlatArrayOp(packages);
                         case StructOp -> genStructOp(packages);
                         case MemoryUtils -> genMemoryUtils(packages);
                     }
@@ -242,8 +240,8 @@ public class CommonGenerator implements Generator {
                 import java.util.List;
                 import java.util.RandomAccess;
                 
-                public interface %3$s<A, E> extends %11$s<A>, %7$s<E>, %4$s<A, E>, List<E> {
-                    interface ArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A>, %5$s<A, E> {
+                public interface %3$s<A, E> extends %11$s<A>, %7$s<E>, %4$s<E>, List<E> {
+                    interface ArrayOpI<A, E> extends %12$s.ValueOp<MemorySegment>, %11$s.InfoOp<A> {
                         A reinterpret(long length);
                 
                         default A reinterpret(%8$s<?> length) {
@@ -267,6 +265,8 @@ public class CommonGenerator implements Generator {
                         List<%6$s<E>> pointerList();
                 
                         %9$s longSize();
+                
+                        %11$s.Operations<E> elementOperation();
                     }
                 
                     abstract class AbstractRandomAccessList<E> extends AbstractList<E> implements RandomAccess {
@@ -279,8 +279,8 @@ public class CommonGenerator implements Generator {
                     ArrayOpI<A, E> operator();
                 }""".formatted(null, null,
                 packages.useClass(SpecificTypes.ArrayOp),
-                packages.useClass(CommonTypes.BindTypeOperations.PtrOp), // 4
-                CommonTypes.BindTypeOperations.PtrOp.operatorTypeName(),
+                packages.useClass(ValueInterface.PtrView), // 4
+                null,
                 packages.useClass(BindTypes.Ptr),
                 packages.useClass(BasicOperations.ArrayI),// 7
                 packages.useClass(ValueInterface.I64I),
@@ -337,7 +337,7 @@ public class CommonGenerator implements Generator {
                     FlatArrayOpI<A, E> operator();
                 }""".formatted(
                 null, null,
-                packages.useClass(SpecificTypes.FlatArrayOp),
+                null, //packages.useClass(SpecificTypes.FlatArrayOp),
                 null, // 4
                 null,
                 packages.useClass(BindTypes.Ptr),
@@ -437,7 +437,7 @@ public class CommonGenerator implements Generator {
     private void genArray(PackageManager packages) {
         packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR);
         packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT);
-        packages.useClass(CommonTypes.FFMTypes.VALUE_LAYOUT);
+        packages.useClass(CommonTypes.FFMTypes.MEMORY_LAYOUT);
         writer.write(packages, """
                 import java.util.*;
                 
@@ -445,15 +445,10 @@ public class CommonGenerator implements Generator {
                     public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation, %8$s<?> len) {
                         return makeOperations(operation, len.operator().value());
                     }
-                
                     public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation, long len) {
-                        return new %10$s.Operations<>((param, offset) -> new %12$s<>(%11$s.getAddr(param, offset).reinterpret(len * operation.memoryLayout().byteSize()),
-                                operation), (source, dest, offset) -> %11$s.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
-                    }
-                
-                    public static <I> %10$s.Operations<%12$s<I>> makeOperations(Operations<I> operation) {
-                        return new %10$s.Operations<>((param, offset) -> new %12$s<>(%11$s.getAddr(param, offset),
-                                operation), (source, dest, offset) -> %11$s.setAddr(dest, offset, source.ptr), ValueLayout.ADDRESS);
+                        return new Operations<>((param, offset) -> new %12$s<>(param.asSlice(offset, len * operation.memoryLayout().byteSize()),
+                                operation), (source, dest, offset) -> %11$s.memcpy(source.ptr, 0, dest, offset, len * operation.memoryLayout().byteSize()),
+                                MemoryLayout.sequenceLayout(len, operation.memoryLayout()));
                     }
                 
                     protected final MemorySegment ptr;
@@ -535,18 +530,13 @@ public class CommonGenerator implements Generator {
                         operations.copy().copyTo(element, ptr, index * operations.memoryLayout().byteSize());
                         return element;
                     }
-                
+
                     @Override
                     public ArrayOpI<%12$s<E>, E> operator() {
                         return new ArrayOpI<>() {
                             @Override
                             public %10$s.Operations<E> elementOperation() {
                                 return operations;
-                            }
-                
-                            @Override
-                            public void setPointee(E pointee) {
-                                set(0, pointee);
                             }
                 
                             @Override
@@ -596,11 +586,6 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
-                            public E pointee() {
-                                return get(0);
-                            }
-                
-                            @Override
                             public MemorySegment value() {
                                 return ptr;
                             }
@@ -619,7 +604,11 @@ public class CommonGenerator implements Generator {
                     public %6$s<E> pointerAt(%8$s<?> index) {
                         return operator().pointerAt(index.operator().value());
                     }
-                
+
+                    public %6$s<E> pointerAtFirst() {
+                        return new %6$s<>(this);
+                    }
+
                     public List<%6$s<E>> pointerList() {
                         return operator().pointerList();
                     }
@@ -653,7 +642,7 @@ public class CommonGenerator implements Generator {
                 """.formatted(null, null,
                 packages.useClass(SpecificTypes.ArrayOp),
                 packages.useClass(CommonTypes.BindTypeOperations.PtrOp),
-                packages.useClass(ValueInterface.PtrI), // 5
+                packages.useClass(ValueInterface.PtrView), // 5
                 packages.useClass(BindTypes.Ptr),  // 6
                 packages.useClass(BindTypes.I64), // 7
                 packages.useClass(ValueInterface.I64I), // 8
@@ -866,7 +855,7 @@ public class CommonGenerator implements Generator {
                     }
                 }
                 """.formatted(null, null,
-                packages.useClass(SpecificTypes.FlatArrayOp),
+                null, // packages.useClass(SpecificTypes.FlatArrayOp),
                 packages.useClass(CommonTypes.BindTypeOperations.PtrOp),
                 packages.useClass(ValueInterface.PtrI), // 5
                 packages.useClass(BindTypes.Ptr),
@@ -875,7 +864,7 @@ public class CommonGenerator implements Generator {
                 packages.useClass(ValueInterface.I32I), // 9
                 packages.useClass(BasicOperations.Info), // 10
                 packages.useClass(SpecificTypes.MemoryUtils), // 11
-                packages.useClass(SpecificTypes.FlatArray) // 12
+                null // packages.useClass(SpecificTypes.FlatArray) // 12
         ));
     }
 
@@ -987,7 +976,11 @@ public class CommonGenerator implements Generator {
                             return s;
                         return "Str{ptr=" + ptr + '}';
                     }
-                
+
+                    public %4$s<%11$s> pointerAtFirst() {
+                        return new %4$s<>(this);
+                    }
+
                     private long strlen = -1;
                 
                     @Override
@@ -1029,16 +1022,6 @@ public class CommonGenerator implements Generator {
                             }
                 
                             @Override
-                            public %11$s pointee() {
-                                return get(0);
-                            }
-                
-                            @Override
-                            public void setPointee(%11$s pointee) {
-                                set(0, pointee);
-                            }
-                
-                            @Override
                             public List<%4$s<%11$s>> pointerList() {
                                 return new %3$s.AbstractRandomAccessList<>() {
                                     @Override
@@ -1073,7 +1056,7 @@ public class CommonGenerator implements Generator {
                 packages.useClass(SpecificTypes.ArrayOp),// 3
                 packages.useClass(BindTypes.Ptr),
                 packages.useClass(SpecificTypes.Str),// 5
-                packages.useClass(ValueInterface.PtrI),
+                packages.useClass(ValueInterface.PtrView),
                 packages.useClass(ValueInterface.I8I),
                 packages.useClass(ValueInterface.I64I),//8
                 packages.useClass(BindTypes.I64),
@@ -1095,6 +1078,35 @@ public class CommonGenerator implements Generator {
                     """.formatted(null, null,
                     packages.useClass(type),
                     packages.useClass(BasicOperations.Value) // 4
+            ));
+            return;
+        }
+        if (type == ValueInterface.PtrI) {
+            writer.write(packages, """
+                    public interface %3$s<I> extends %6$s<I> {
+                        static <I> %3$s<I> of(%5$s value) {
+                            return new %3$s<>() {
+                                @Override
+                                public %6$s.ValueOp<%4$s> operator() {
+                                    return () -> value;
+                                }
+                    
+                                @Override
+                                public String toString() {
+                                    return String.valueOf(value);
+                                }
+                            };
+                        }
+                    
+                        static <I> %3$s<I> of(%3$s<?> value) {
+                            return of(value.operator().value());
+                        }
+                    }
+                    """.formatted(null, null,
+                    packages.useClass(type),
+                    type.getPrimitive().getBoxedTypeName(),
+                    type.getPrimitive().useType(packages), // 5
+                    packages.useClass(ValueInterface.PtrView)
             ));
             return;
         }
@@ -1151,7 +1163,7 @@ public class CommonGenerator implements Generator {
                     private final %8$s.Operations<E> operation;
                 
                     private MemorySegment fitByteSize(MemorySegment segment) {
-                        return segment.byteSize() == operation.memoryLayout().byteSize() ? segment : segment.reinterpret(operation.memoryLayout().byteSize());
+                        return segment.byteSize() >= operation.memoryLayout().byteSize() ? segment : segment.reinterpret(operation.memoryLayout().byteSize());
                     }
                 
                     public %3$s(MemorySegment segment, %8$s.Operations<E> operation) {
@@ -1436,7 +1448,7 @@ public class CommonGenerator implements Generator {
                     }
                 }
                 """.formatted(
-                        packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR),
+                packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR),
                 null, typeName,
                 null, // 4
                 packages.useClass(bindTypes.getOperations()), // 5

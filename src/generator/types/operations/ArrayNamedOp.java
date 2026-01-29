@@ -13,7 +13,7 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
 
     public ArrayNamedOp(ArrayTypeNamed arrayType) {
         this.arrayType = arrayType;
-        this.element = (TypeAttr.OperationType) arrayType.element();
+        this.element = arrayType.element();
     }
 
     @Override

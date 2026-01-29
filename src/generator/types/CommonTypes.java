@@ -136,6 +136,7 @@ public class CommonTypes {
         FP32I(Primitives.JAVA_FLOAT),
         FP64I(Primitives.JAVA_DOUBLE),
         PtrI(Primitives.ADDRESS),
+        PtrView(Primitives.ADDRESS),
         FP16I(Primitives.FLOAT16),
         FP128I(Primitives.LONG_DOUBLE),
         I128I(Primitives.Integer128);
@@ -265,8 +266,6 @@ public class CommonTypes {
         MemoryUtils(false),
         ArrayOp(true),
         Array(true),
-        FlatArrayOp(true),
-        FlatArray(true),
         StructOp(true),
         Str(false),
         ;

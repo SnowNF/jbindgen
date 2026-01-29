@@ -74,7 +74,7 @@ public class FunctionPtrBased implements OperationAttr.ValueBasedOperation {
             @Override
             public UpperType getUpperType(PackageManager packages) {
                 End<?> end = new End<>(functionPtrType, functionPtrType.innerFunctionTypePath(packages));
-                return new Warp<>(CommonTypes.ValueInterface.PtrI, end);
+                return new Warp<>(CommonTypes.ValueInterface.PtrView, end);
             }
         };
     }

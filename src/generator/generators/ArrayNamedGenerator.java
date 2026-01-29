@@ -8,7 +8,6 @@ import generator.types.CommonTypes.BasicOperations;
 import generator.types.CommonTypes.BindTypes;
 import generator.types.CommonTypes.SpecificTypes;
 import generator.types.CommonTypes.ValueInterface;
-import generator.types.TypeAttr;
 
 public class ArrayNamedGenerator implements Generator {
     private final ArrayTypeNamed arrayNamed;
@@ -98,11 +97,6 @@ public class ArrayNamedGenerator implements Generator {
                             }
                 
                             @Override
-                            public void setPointee(%2$s pointee) {
-                                set(0, pointee);
-                            }
-                
-                            @Override
                             public %8$s.Operations<%1$s> getOperations() {
                                 return OPERATIONS;
                             }
@@ -110,11 +104,6 @@ public class ArrayNamedGenerator implements Generator {
                             @Override
                             public %1$s self() {
                                 return %1$s.this;
-                            }
-                
-                            @Override
-                            public %2$s pointee() {
-                                return get(0);
                             }
                 
                             @Override
@@ -127,6 +116,10 @@ public class ArrayNamedGenerator implements Generator {
                                 return new %7$s(ms.byteSize() / ELE_OPERATIONS.memoryLayout().byteSize());
                             }
                         };
+                    }
+                
+                    public %10$s<%2$s> pointerAtFirst() {
+                        return new %10$s<>(this);
                     }
                 
                     @Override
@@ -147,8 +140,8 @@ public class ArrayNamedGenerator implements Generator {
                         return (int) (ms.byteSize() / ELE_OPERATIONS.memoryLayout().byteSize());
                     }
                 }""".formatted(packages.getClassName(), // 1
-                packages.useClass((TypeAttr.GenerationType) type.element()), // 2
-                ((TypeAttr.OperationType) type.element()).getOperation().getCommonOperation().makeOperation(packages).str(), // 3
+                packages.useClass(type.element()), // 2
+                type.element().getOperation().getCommonOperation().makeOperation(packages).str(), // 3
                 packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT), // 4
                 type.length(), //5
                 packages.useClass(ValueInterface.I64I), //6
