@@ -73,7 +73,7 @@ public class ArrayNamedOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                End<?> end = new End<>(arrayType, packages);
+                End<?> end = new End<>(arrayType, packages, false);
                 return new Warp<>(CommonTypes.BasicOperations.ArrayNamed, end);
             }
 

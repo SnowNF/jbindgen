@@ -36,7 +36,7 @@ public class CommonOpOnly<T extends TypeAttr.GenerationType & TypeAttr.Operation
                 if (realVoid) {
                     return new Reject<>(type);
                 }
-                return new End<>(type, packages);
+                return new End<>(type, packages, true);
             }
         };
     }

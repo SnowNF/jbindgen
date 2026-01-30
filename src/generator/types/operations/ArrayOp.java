@@ -76,7 +76,9 @@ public class ArrayOp implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                return new Warp<>(CommonTypes.BasicOperations.ArrayI, element.getOperation().getCommonOperation().getUpperType(packages));
+                return new Warp<>(CommonTypes.BasicOperations.ArrayI,
+                        element.getOperation().getCommonOperation().getUpperType(packages)
+                );
             }
 
             @Override

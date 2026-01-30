@@ -9,53 +9,61 @@ public interface CommonOperation {
     interface UpperType {
         String typeName(PackageManager packages);
 
-        TypeAttr.OperationType type();
+        String innerName(PackageManager packages);
 
-        default boolean rejectWildcard() {
-            return false;
-        }
+        TypeAttr.OperationType type();
     }
 
     UpperType getUpperType(PackageManager packages);
 
-    record End<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
-            (T type, String typeName) implements UpperType {
-        public End(T type, PackageManager packages) {
-            this(type, type.typeName(packages, TypeAttr.NameType.RAW));
+    record End<T extends TypeAttr.OperationType>
+            (T type, String typeName, boolean wildcard) implements UpperType {
+        public End(T type, PackageManager packages, boolean wildcard) {
+            this(type, packages.useClass(type), wildcard);
         }
 
         @Override
         public String typeName(PackageManager packages) {
             return typeName;
         }
+
+        @Override
+        public String innerName(PackageManager packages) {
+            return wildcard ? ("? extends " + typeName) : typeName;
+        }
     }
 
-    record Reject<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
+    record Reject<T extends TypeAttr.OperationType>
             (T t) implements UpperType {
         @Override
         public String typeName(PackageManager packages) {
-            return t.typeName(packages, TypeAttr.NameType.WILDCARD);
+            return packages.useClass(t);
+        }
+
+        @Override
+        public String innerName(PackageManager packages) {
+            return "?";
         }
 
         @Override
         public TypeAttr.OperationType type() {
             return t;
         }
-
-        @Override
-        public boolean rejectWildcard() {
-            return true;
-        }
     }
 
-    record Warp<T extends TypeAttr.OperationType & TypeAttr.GenerationType>
+    record Warp<T extends TypeAttr.OperationType>
             (T outer, UpperType inner) implements UpperType {
         @Override
         public String typeName(PackageManager packages) {
-            final String outerRaw = outer.typeName(packages, TypeAttr.NameType.RAW);
-            return inner.rejectWildcard()
-                    ? outerRaw + "<?>"
-                    : outerRaw + "<? extends %s>".formatted(inner.typeName(packages));
+            final String outerRaw = packages.useClass(outer);
+            return outerRaw + "<%s>".formatted(inner.innerName(packages));
+        }
+
+        @Override
+        public String innerName(PackageManager packages) {
+            final String outerRaw = packages.useClass(outer);
+            var name = (outerRaw + "<%s>".formatted(inner.innerName(packages)));
+            return "? extends " + name;
         }
 
         @Override

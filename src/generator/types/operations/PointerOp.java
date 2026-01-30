@@ -77,7 +77,9 @@ public class PointerOp implements OperationAttr.ValueBasedOperation {
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                return new Warp<>(CommonTypes.BasicOperations.PtrView, pointeeType.getOperation().getCommonOperation().getUpperType(packages));
+                return new Warp<>(CommonTypes.BasicOperations.PtrView,
+                        pointeeType.getOperation().getCommonOperation().getUpperType(packages)
+                );
             }
         };
     }

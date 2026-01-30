@@ -189,7 +189,7 @@ public class FuncProtocolGenerator implements Generator {
                 packages.useClass(CommonTypes.FFMTypes.METHOD_HANDLE), // 11
                 packages.useClass(CommonTypes.FFMTypes.MEMORY_SEGMENT), // 12
                 packages.useClass(CommonTypes.FFMTypes.FUNCTION_DESCRIPTOR), // 13
-                functionPtrType.innerFunctionTypeName() // 14
+                functionPtrType.innerFunctionTypeRawName() // 14
         );
     }
 }

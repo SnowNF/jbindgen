@@ -70,7 +70,7 @@ public class MemoryBased implements OperationAttr.MemoryBasedOperation {
 
             @Override
             public UpperType getUpperType(PackageManager packages) {
-                End<?> end = new End<>(structType, packages);
+                End<?> end = new End<>(structType, packages, false);
                 return new Warp<>(CommonTypes.BasicOperations.StructI, end);
             }
 

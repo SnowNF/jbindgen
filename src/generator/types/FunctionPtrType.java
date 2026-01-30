@@ -90,7 +90,7 @@ public final class FunctionPtrType implements TypeAttr.SizedType {
     }
 
     public String innerFunctionTypePath(PackageManager packages) {
-        return packages.useClass(this) + "." + innerFunctionTypeName();
+        return packages.useClass(this) + "." + innerFunctionTypeRawName();
     }
 
     @Override
