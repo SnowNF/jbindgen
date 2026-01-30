@@ -31,7 +31,7 @@ public class TypeAttr {
     /**
      * types have generation
      */
-    public sealed interface GenerationType permits CommonTypes.BaseType, SymbolProviderType, TaggedNamedType, OperationType {
+    public sealed interface GenerationType permits CommonTypes.BaseType, SymbolProviderType, OperationType {
         /**
          * get the type name in java
          *

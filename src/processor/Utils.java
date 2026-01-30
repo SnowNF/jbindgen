@@ -227,8 +227,6 @@ public class Utils {
 
         Destination funcSymbols();
 
-        Destination namedTypes();
-
         PathOnly common();
 
         PathOnly enumerate();
@@ -390,11 +388,6 @@ public class Utils {
         @Override
         public Destination funcSymbols() {
             return new Destination(p.close(libName + "FunctionSymbols"));
-        }
-
-        @Override
-        public Destination namedTypes() {
-            return new Destination(p.close(libName + "NamedTypes"));
         }
 
         @Override

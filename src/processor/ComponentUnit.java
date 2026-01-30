@@ -66,7 +66,7 @@ public class ComponentUnit implements GenerateUnit {
             ArrayList<Generator> greedy = new ArrayList<>();
             allTypes.forEach((key, value) -> {
                 boolean r = switch (key) {
-                    case CommonTypes.BaseType _, SymbolProviderType _, TaggedNamedType _ -> false;
+                    case CommonTypes.BaseType _, SymbolProviderType _ -> false;
                     case TypeAttr.OperationType operationType -> switch (operationType) {
                         case RefOnlyType refOnlyType -> filter.testRefOnly(refOnlyType, value);
                         case TypeAttr.SizedType sizedType -> switch (sizedType) {
@@ -106,7 +106,7 @@ public class ComponentUnit implements GenerateUnit {
             case ArrayTypeNamed arrayTypeNamed -> dest.arrayNamed().path().close(arrayTypeNamed.typeName());
             case StructType structType -> dest.struct().path().close(structType.typeName());
             case SymbolProviderType symbolProviderType -> symbolProviderType.path();
-            case TaggedNamedType _, ArrayType _, PointerType _ -> throw new UnsupportedOperationException();
+            case ArrayType _, PointerType _ -> throw new UnsupportedOperationException();
             case VoidType voidType -> dest.voidBased().path().close(voidType.typeName());
         };
         return Optional.of(path);
@@ -127,7 +127,7 @@ public class ComponentUnit implements GenerateUnit {
                 case ArrayTypeNamed arrayTypeNamed -> new ArrayNamedGenerator(arrayTypeNamed);
                 case StructType structType -> new StructGenerator(structType);
                 case SymbolProviderType symbolProviderType -> new SymbolProviderGenerator(symbolProviderType);
-                case TaggedNamedType _, ArrayType _, PointerType _ -> throw new UnsupportedOperationException("todo");
+                case ArrayType _, PointerType _ -> throw new UnsupportedOperationException("todo");
                 case VoidType voidType -> new VoidBasedGenerator(voidType);
             };
             generators.add(generator);
