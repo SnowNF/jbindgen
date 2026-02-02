@@ -86,16 +86,15 @@ public class FuncProtocolGenerator implements Generator {
                 raw.rawReturnCast(),
                 raw.rawDowncallStr(), // 4
                 utilsClassName)); // 5
-        if (wrap.onHeapReturnVariant().isEmpty()) {
-            invokes.append("""
-                        public %1$s invoke(%2$s) {
-                            %3$s;
-                        }
-                    """.formatted(
-                    wrap.downcallRetType(),
-                    wrap.downcallUpperPara(),
-                    wrap.downcallTypeReturn("invokeRaw(%s)".formatted(wrap.downcallUpperParaDestruct()))));
-        } else {
+        invokes.append("""
+                    public %1$s invoke(%2$s) {
+                        %3$s;
+                    }
+                """.formatted(
+                wrap.downcallRetType(),
+                wrap.downcallUpperPara(),
+                wrap.downcallTypeReturn("invokeRaw(%s)".formatted(wrap.downcallUpperParaDestruct()))));
+        if (wrap.onHeapReturnVariant().isPresent()) {
             var variant = wrap.onHeapReturnVariant().get();
             invokes.append("""
                     
