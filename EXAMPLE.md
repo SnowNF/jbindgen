@@ -1,19 +1,171 @@
 
-Example
-----
+# Example
 
-Generate the [miniaudio](https://github.com/mackron/miniaudio) bindings
+
+---
+
+## Generating Miniaudio Bindings
+
+This section describes how to generate bindings for
+[miniaudio](https://github.com/mackron/miniaudio) using the binding generator.
+
+### Basic Command
 
 ```shell
 java src/Main.java \
-'--header=/path/to/miniaudio.h' \
-'--args=-I;/usr/include' \
-'--enable-macro=true' \
-'--out=miniaudio-out/src' \
-'--pkg-name=libminiaudio' \
-'--name=MiniAudio' \
-'--filter-str=miniaudio.h'
+  '--header=/path/to/miniaudio.h' \
+  '--args=-I;/usr/include' \
+  '--enable-macro=true' \
+  '--out=miniaudio-out/src' \
+  '--pkg-name=libminiaudio' \
+  '--name=MiniAudio' \
+  '--filter-decl=ma.*'
 ```
+
+> **Note**
+> Some arguments contain characters that are interpreted by the shell.
+> It is recommended to wrap each argument in quotes when using **bash**.
+
+---
+
+## Argument Details
+
+### `--header=/path/to/miniaudio.h`
+
+Path to the main `miniaudio.h` header file that will be parsed by Clang.
+
+---
+
+### `--args=-I;/usr/include`
+
+Extra arguments passed directly to
+`clang_parseTranslationUnit2`.
+
+* The tool uses **`;` (semicolon)** as the internal separator,
+  so multiple arguments can be specified:
+
+  ```text
+  --args=-I;/usr/include;-DMY_DEFINE
+  ```
+* Because `;` has special meaning in **bash**, this option **must be quoted**:
+
+  ```shell
+  '--args=-I;/usr/include;-DMY_DEFINE'
+  ```
+
+Typical use cases:
+
+* Adding include directories (`-I`)
+* Defining macros (`-D`)
+* Passing Clang-specific flags
+
+---
+
+### `--enable-macro=true`
+
+Enables generation of macro-based constants
+
+Without this option, macro definitions will be ignored.
+
+---
+
+### `--out=miniaudio-out/src`
+
+Output directory for the generated source files.
+
+---
+
+### `--pkg-name=libminiaudio`
+
+Specifies the **package name** of the generated bindings.
+
+Example (Java):
+
+```java
+package libminiaudio;
+```
+
+---
+
+### `--name=MiniAudio`
+
+Specifies the **base name of generated files**.
+
+Examples:
+
+* `MiniAudioFunctionSymbols.java`
+* `MiniAudioMacros.java`
+* `MiniAudioConstants.java`
+
+---
+
+### `--filter-decl=ma.*`
+
+Filters declarations by **symbol name**.
+
+Only functions, types, macros, and constants whose names start with `ma`
+will be generated.
+
+This is useful to:
+
+* Avoid pulling in unrelated system or helper symbols
+* Keep the output strictly Miniaudio-specific
+
+---
+
+### `--filter-header=...`
+
+Filters declarations by **header file path**.
+
+* This option matches against the **absolute header path**
+* Internally implemented as:
+
+  ```java
+  Pattern.compile(...).asMatchPredicate()
+  ```
+* Therefore, the pattern usually needs to include **directory prefixes**
+
+Example:
+
+```shell
+'--filter-header=.*/miniaudio.h'
+```
+
+This is especially useful when:
+
+* Multiple headers are transitively included
+* You want to restrict output to a specific header file
+
+---
+
+### `--greedy`
+
+Forces the generator to emit **all types defined in the header**,
+instead of only types referenced by exported symbols.
+
+Recommended when:
+
+* You want full type coverage
+* You want to avoid missing structs, enums, or typedefs
+
+---
+
+## Recommended Command
+
+```shell
+java src/Main.java \
+  '--header=/path/to/miniaudio.h' \
+  '--args=-I;/usr/include' \
+  '--enable-macro=true' \
+  '--greedy' \
+  '--out=miniaudio-out/src' \
+  '--pkg-name=libminiaudio' \
+  '--name=MiniAudio' \
+  '--filter-decl=ma.*' \
+  '--filter-header=.*miniaudio.h'
+```
+
+---
 
 Using miniaudio to play the music file
 
@@ -24,6 +176,7 @@ import libminiaudio.aggregates.ma_engine;
 import libminiaudio.aggregates.ma_engine_config;
 import libminiaudio.aggregates.ma_log;
 import libminiaudio.common.FunctionUtils;
+import libminiaudio.common.Ptr;
 import libminiaudio.common.PtrI;
 import libminiaudio.common.Str;
 import libminiaudio.enumerates.ma_result;
@@ -32,60 +185,42 @@ import libminiaudio.functions.ma_log_callback_proc;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
-import java.util.Optional;
-
 import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) {
-        // Set the symbol provider for MiniAudio.
-        MiniAudioSymbolProvider.symbolProvider = new FunctionUtils.SymbolProvider() {
-            // Override the provide method to look up symbols from the miniaudio shared library.
-            @Override
-            public Optional<FunctionUtils.Symbol> provide(String name) {
-                // Find the symbol in the miniaudio.so library using global arena and throw an exception if not found.
-                return Optional.of(new FunctionUtils.FunctionSymbol(SymbolLookup.libraryLookup("/path/to/miniaudio.so", Arena.global()).find(name).orElseThrow()));
-            }
-        };
+    public static void main() {
 
-        // Create a confined arena for memory management.
+        MiniAudioSymbolProvider.symbolProvider = name ->
+                SymbolLookup.libraryLookup("/path/to/libminiaudio.so",
+                        Arena.global()).find(name).map(FunctionUtils.FunctionSymbol::new);
+
         Arena mem = Arena.ofConfined();
-        // Initialize the engine configuration.
-        ma_engine_config ma_engine_config = MiniAudioFunctionSymbols.ma_engine_config_init(mem);
-        // Create a log object.
-        ma_log log = new ma_log(mem);
-        // Initialize the log with no user data.
-        MiniAudioFunctionSymbols.ma_log_init(PtrI.of(MemorySegment.NULL), log.operator().getPointer());
-        // Register a callback function for the log to print messages to the console.
-        MiniAudioFunctionSymbols.ma_log_register_callback(log.operator().getPointer(), MiniAudioFunctionSymbols.ma_log_callback_init(mem, new ma_log_callback_proc(mem,
-                // Define the callback function that prints the log level and message.
-                (ma_log_callback_proc.Function) (pUserData, level, pMessage)
-                        -> System.out.print(new Str(MiniAudioFunctionSymbols.ma_log_level_to_string(level)) + " : " + new Str(pMessage).get())), PtrI.of(MemorySegment.NULL)));
-        // Assign log to the engine configuration.
-        ma_engine_config.pLog(log.operator().getPointer());
 
-        // Create a new engine instance.
-        ma_engine engine = new ma_engine(mem);
-        // Initialize the audio engine with the given configuration and engine object.
-        ma_result result = MiniAudioFunctionSymbols.ma_engine_init(ma_engine_config.operator().getPointer(), engine.operator().getPointer());
-        // Check if the engine initialization was successful.
-        // If it failed, print an error message and exit.
+        Ptr<ma_engine_config> ma_engine_config = MiniAudioFunctionSymbols.ma_engine_config_init(mem);
+
+        Ptr<ma_log> log = ma_log.ptr(mem);
+        MiniAudioFunctionSymbols.ma_log_init(PtrI.of(MemorySegment.NULL), log);
+        MiniAudioFunctionSymbols.ma_log_register_callback(log,
+                MiniAudioFunctionSymbols.ma_log_callback_init(ma_log_callback_proc.of(mem,
+                        (pUserData, level, pMessage)
+                                -> System.out.print(new Str(MiniAudioFunctionSymbols.ma_log_level_to_string(level)) + " : " + new Str(pMessage).get())), PtrI.of(MemorySegment.NULL)));
+        ma_engine_config.pte().pLog(log);
+
+        Ptr<ma_engine> engine = ma_engine.ptr(mem);
+        ma_result result = MiniAudioFunctionSymbols.ma_engine_init(ma_engine_config, engine);
         if (!ma_result.MA_SUCCESS.equals(result)) {
             System.out.println("Failed");
             return;
         }
 
-        // Play the specified sound file.
-        MiniAudioFunctionSymbols.ma_engine_play_sound(engine.operator().getPointer(), new Str(mem, "music.flac"), PtrI.of(MemorySegment.NULL));
-        // Wait for user input to stop the sound.
+        MiniAudioFunctionSymbols.ma_engine_play_sound(engine, new Str(mem, "music.flac"), PtrI.of(MemorySegment.NULL));
         new Scanner(System.in).nextLine();
-        // Uninitialize the engine.
-        MiniAudioFunctionSymbols.ma_engine_uninit(engine.operator().getPointer());
+        MiniAudioFunctionSymbols.ma_engine_uninit(engine);
     }
 }
 ```
 
-Generate the Vulkan and [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) bindings
+## Generating the Vulkan and [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator) Bindings
 
 ```shell
 java src/Main.java \
@@ -95,14 +230,15 @@ java src/Main.java \
 '--out=vulkan-out/src' \
 '--pkg-name=vk' \
 '--name=Vulkan' \
-'--filter-str=vulkan/vulkan.h' \
+'--filter-decl=(vk.*|VK_.*|Vk.*)' \
+'--next-component' \
 '--header=/usr/include/vk_mem_alloc.h' \
 '--args=-I;/usr/include' \
-'--enable-macro=true' \
+'--enable-macro=false' \
 '--out=vma-out/src' \
 '--pkg-name=vma' \
 '--name=Vma' \
-'--filter-str=vk_mem_alloc.h'
+'--filter-decl=vma.*'
 ```
 
 Build libvma.so
@@ -125,42 +261,16 @@ g++ vma.cpp -fPIC -shared -DVMA_STATIC_VULKAN_FUNCTIONS=0 -DVMA_DYNAMIC_VULKAN_F
 Using VMA to allocate 1024 MiB GPU memory
 
 ```java
-import static vk.VulkanFunctionSymbols.vkCreateDevice;
-import static vk.VulkanFunctionSymbols.vkCreateInstance;
-import static vk.VulkanFunctionSymbols.vkEnumeratePhysicalDevices;
-import static vk.VulkanMacros.VK_API_VERSION_1_0;
-import static vk.enumerates.VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-import static vk.enumerates.VkResult.VK_SUCCESS;
-import static vk.enumerates.VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
-import static vk.enumerates.VkStructureType.VK_STRUCTURE_TYPE_APPLICATION_INFO;
-import static vk.enumerates.VkStructureType.VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-import static vk.enumerates.VkStructureType.VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-import static vk.enumerates.VkStructureType.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-import static vma.VmaFunctionSymbols.vmaCreateAllocator;
-import static vma.VmaFunctionSymbols.vmaCreateBuffer;
-import static vma.enumerates.VmaMemoryUsage.VMA_MEMORY_USAGE_CPU_TO_GPU;
-
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SymbolLookup;
-import java.util.Optional;
-import java.util.Scanner;
-
 import vk.VulkanSymbolProvider;
 import vk.aggregates.VkApplicationInfo;
 import vk.aggregates.VkBufferCreateInfo;
 import vk.aggregates.VkDeviceCreateInfo;
 import vk.aggregates.VkInstanceCreateInfo;
-import vk.common.Array;
-import vk.common.FunctionUtils;
-import vk.common.I32I;
-import vk.common.I64I;
-import vk.common.PtrI;
-import vk.common.Str;
+import vk.common.*;
+import vk.enumerates.VkBufferUsageFlagBits;
 import vk.functions.PFN_vkGetDeviceProcAddr;
 import vk.functions.PFN_vkGetInstanceProcAddr;
 import vk.values.VkBuffer;
-import vk.values.VkDevice;
 import vk.values.VkInstance;
 import vk.values.VkPhysicalDevice;
 import vk.values.uint32_t;
@@ -171,112 +281,111 @@ import vma.aggregates.VmaVulkanFunctions;
 import vma.values.VmaAllocation;
 import vma.values.VmaAllocator;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.util.Optional;
+import java.util.Scanner;
+
+import static vk.VulkanFunctionSymbols.*;
+import static vk.VulkanMacros.VK_API_VERSION_1_0;
+import static vk.enumerates.VkBufferUsageFlagBits.VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+import static vk.enumerates.VkResult.VK_SUCCESS;
+import static vk.enumerates.VkSharingMode.VK_SHARING_MODE_EXCLUSIVE;
+import static vk.enumerates.VkStructureType.*;
+import static vma.VmaFunctionSymbols.vmaCreateAllocator;
+import static vma.VmaFunctionSymbols.vmaCreateBuffer;
+import static vma.enumerates.VmaMemoryUsage.VMA_MEMORY_USAGE_CPU_TO_GPU;
+
 
 public class Main {
     public static void main(String[] args) {
-        VulkanSymbolProvider.symbolProvider = new FunctionUtils.SymbolProvider() {
-            @Override
-            public Optional<FunctionUtils.Symbol> provide(String name) {
-                return Optional.of(new FunctionUtils.FunctionSymbol(SymbolLookup.libraryLookup("libvulkan.so", Arena.global()).find(name).orElseThrow()));
-            }
-        };
-        VmaSymbolProvider.symbolProvider = new FunctionUtils.SymbolProvider() {
-            @Override
-            public Optional<FunctionUtils.Symbol> provide(String name) {
-                return Optional.of(new FunctionUtils.FunctionSymbol(SymbolLookup.libraryLookup("/path/to/libvma.so", Arena.global()).find(name).orElseThrow()));
-            }
-        };
+        VulkanSymbolProvider.symbolProvider = name -> Optional.of(new FunctionUtils.FunctionSymbol(
+                SymbolLookup.libraryLookup("libvulkan.so", Arena.global()).find(name).orElseThrow()));
+        VmaSymbolProvider.symbolProvider = name -> Optional.of(new FunctionUtils.FunctionSymbol(
+                SymbolLookup.libraryLookup("/path/to/libvma.so", Arena.global()).find(name).orElseThrow()));
 
         Arena mem = Arena.ofConfined();
-        Array<VkInstance> instances = VkInstance.list(mem, 1);
-        Array<VkApplicationInfo> appInfos = VkApplicationInfo.list(mem, 1);
-        VkApplicationInfo appInfo = appInfos.getFirst();
-        appInfo.sType(VK_STRUCTURE_TYPE_APPLICATION_INFO);
-        appInfo.pApplicationName(Str.list(mem, new String[]{"Vulkan Memory Allocation Example"}).getFirst());
-        appInfo.applicationVersion(I32I.of(1));
-        appInfo.pEngineName(Str.list(mem, new String[]{"No Engine"}).getFirst());
-        appInfo.engineVersion(I32I.of(1));
-        appInfo.apiVersion(I32I.of(VK_API_VERSION_1_0));
+        Ptr<VkApplicationInfo> appInfo = VkApplicationInfo.ptr(mem);
+        appInfo.apply(i -> {
+            i.sType(VK_STRUCTURE_TYPE_APPLICATION_INFO);
+            i.pApplicationName(new Str(mem, "Vulkan Memory Allocation Example"));
+            i.applicationVersion(I32I.of(1));
+            i.pEngineName(new Str(mem, "No Engine"));
+            i.engineVersion(I32I.of(1));
+            i.apiVersion(I32I.of(VK_API_VERSION_1_0));
+        });
 
-        Array<VkInstanceCreateInfo> createInfos = VkInstanceCreateInfo.list(mem, 1);
-        VkInstanceCreateInfo createInfo = createInfos.getFirst();
-        createInfo.sType(I32I.of(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO));
-        createInfo.pApplicationInfo(appInfos);
+        Ptr<VkInstanceCreateInfo> createInfo = VkInstanceCreateInfo.ptr(mem);
+        createInfo.apply(i -> {
+            i.sType(I32I.of(VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO));
+            i.pApplicationInfo(appInfo);
+        });
 
-        if (!vkCreateInstance(createInfos, PtrI.of(MemorySegment.NULL), instances).equals(VK_SUCCESS)) {
-            System.err.println("Failed to create Vulkan instance!");
-            return;
-        }
-
-        VkInstance instance = instances.getFirst();
+        VkInstance instance = VkInstance.ptr(mem).self(i -> {
+            if (!vkCreateInstance(createInfo, PtrI.of(MemorySegment.NULL), i).equals(VK_SUCCESS)) {
+                throw new RuntimeException("Failed to create Vulkan instance!");
+            }
+        }).pte();
 
         // Create a Vulkan device
-        Array<vk.values.VkDevice> devices = vk.values.VkDevice.list(mem, 1);
+        Ptr<vk.values.VkDevice> device = vk.values.VkDevice.ptr(mem);
 
         // Enumerate physical devices and pick the first one
-        Array<uint32_t> deviceCount = uint32_t.list(mem, 1);
+        Ptr<uint32_t> deviceCount = uint32_t.ptr(mem);
         vkEnumeratePhysicalDevices(instance, deviceCount, PtrI.of(MemorySegment.NULL));
 
-        if (deviceCount.getFirst().operator().value() == 0) {
-            System.err.println("Failed to find GPUs with Vulkan support!");
-            return;
+        if (deviceCount.pte().value() == 0) {
+            throw new RuntimeException("Failed to find a GPU with Vulkan support!");
         }
 
-        Array<VkPhysicalDevice> devicesList = VkPhysicalDevice.list(mem, deviceCount.size());
-        vkEnumeratePhysicalDevices(instance, deviceCount, devicesList);
-        VkPhysicalDevice physicalDevice = devicesList.getFirst(); // Take the first available device
+        VkPhysicalDevice physicalDevice = VkPhysicalDevice.ptr(mem).self(
+                i -> vkEnumeratePhysicalDevices(instance, deviceCount, i)).pte();
 
         // Create the logical device
-        Array<VkDeviceCreateInfo> deviceCreateInfos = VkDeviceCreateInfo.list(mem, 1);
-        VkDeviceCreateInfo deviceCreateInfo = deviceCreateInfos.getFirst();
-        deviceCreateInfo.sType(I32I.of(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO));
+        Ptr<VkDeviceCreateInfo> deviceCreateInfo = VkDeviceCreateInfo.ptr(mem);
+        deviceCreateInfo.pte().sType(I32I.of(VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO));
 
-        if (!vkCreateDevice(physicalDevice, deviceCreateInfos, PtrI.of(MemorySegment.NULL), devices).equals(VK_SUCCESS)) {
-            System.err.println("Failed to create Vulkan device!");
-            return;
+        if (!vkCreateDevice(physicalDevice, deviceCreateInfo, PtrI.of(MemorySegment.NULL), device).equals(VK_SUCCESS)) {
+            throw new RuntimeException("Failed to create Vulkan device!");
         }
-        VkDevice device = devices.getFirst();
 
-        Array<VkBuffer> buffer = VkBuffer.list(mem, 1);
+        Ptr<VkBuffer> buffer = VkBuffer.ptr(mem);
 
-        VmaVulkanFunctions vmaVkFuncs = new VmaVulkanFunctions(mem)
-                .vkGetInstanceProcAddr(new PFN_vkGetInstanceProcAddr(VulkanSymbolProvider.symbolProvider.provide("vkGetInstanceProcAddr").orElseThrow().getSymbol()));
-        vmaVkFuncs.vkGetDeviceProcAddr(new PFN_vkGetDeviceProcAddr(VulkanSymbolProvider.symbolProvider.provide("vkGetDeviceProcAddr").orElseThrow().getSymbol()));
+        var vmaVkFuncs = VmaVulkanFunctions.ptr(mem).apply(i -> {
+            i.vkGetInstanceProcAddr(new PFN_vkGetInstanceProcAddr(VulkanSymbolProvider.symbolProvider.provide("vkGetInstanceProcAddr").orElseThrow().getSymbol()));
+            i.vkGetDeviceProcAddr(new PFN_vkGetDeviceProcAddr(VulkanSymbolProvider.symbolProvider.provide("vkGetDeviceProcAddr").orElseThrow().getSymbol()));
+        });
 
+        var allocatorInfo = VmaAllocatorCreateInfo.ptr(mem);
+        allocatorInfo.pte().physicalDevice(physicalDevice).device(device.pte())
+                .instance(instance).pVulkanFunctions(vmaVkFuncs);
 
-        VmaAllocatorCreateInfo allocatorInfo = VmaAllocatorCreateInfo.list(mem, 1).getFirst();
-        allocatorInfo.physicalDevice(physicalDevice);
-        allocatorInfo.device(device);
-        allocatorInfo.instance(instance);
-        allocatorInfo.pVulkanFunctions(vmaVkFuncs.operator().getPointer());
-        Array<VmaAllocator> allocator = VmaAllocator.list(mem, 1);
-        if (!vmaCreateAllocator(allocatorInfo.operator().getPointer(), allocator).equals(VK_SUCCESS)) {
-            System.out.println("Failed to create VMA allocator!");
+        Ptr<VmaAllocator> allocator = VmaAllocator.ptr(mem);
+        if (!vmaCreateAllocator(allocatorInfo, allocator).equals(VK_SUCCESS)) {
+            throw new RuntimeException("Failed to create VMA allocator!");
         }
-        VmaAllocator allocatorValue = allocator.getFirst();
-        Array<VmaAllocation> allocation = VmaAllocation.list(mem, 1);
-        createBuffer(allocatorValue, 1024 * 1024 * 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT.operator().value(), buffer, allocation);
+
+        Ptr<VmaAllocation> allocation = VmaAllocation.ptr(mem);
+        createBuffer(allocator.pte(), 1024 * 1024 * 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, buffer, allocation);
         System.out.println("Allocated 1024 MiB GPU memory");
         System.out.println("Press enter to exit...");
         new Scanner(System.in).nextLine();
     }
 
-
-    static void createBuffer(VmaAllocator allocator, long size, int usage,
-                             Array<VkBuffer> buffer, Array<VmaAllocation> allocation) {
+    static void createBuffer(VmaAllocator allocator, long size, VkBufferUsageFlagBits usage,
+                             Ptr<VkBuffer> buffer, Ptr<VmaAllocation> allocation) {
         Arena mem = Arena.ofConfined();
-        Array<VkBufferCreateInfo> bufferInfo = VkBufferCreateInfo.list(mem, 1);
-        bufferInfo.getFirst().sType(I32I.of(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO));
-        bufferInfo.getFirst().size(I64I.of(size));
-        bufferInfo.getFirst().usage(I32I.of(usage));
-        bufferInfo.getFirst().sharingMode(I32I.of(VK_SHARING_MODE_EXCLUSIVE));
-        Array<VmaAllocationCreateInfo> allocInfo = VmaAllocationCreateInfo.list(mem, 1);
-        allocInfo.getFirst().usage(VMA_MEMORY_USAGE_CPU_TO_GPU);
+        Ptr<VkBufferCreateInfo> bufferInfo = VkBufferCreateInfo.ptr(mem);
+        bufferInfo.pte().sType(I32I.of(VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO))
+                .size(I64I.of(size))
+                .usage(I32I.of(usage))
+                .sharingMode(I32I.of(VK_SHARING_MODE_EXCLUSIVE));
+        Ptr<VmaAllocationCreateInfo> allocInfo = VmaAllocationCreateInfo.ptr(mem);
+        allocInfo.pte().usage(VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-
-        if (!vmaCreateBuffer(allocator, bufferInfo.getFirst().operator().getPointer(), allocInfo,
-                buffer, allocation, PtrI.of(MemorySegment.NULL)).equals(VK_SUCCESS)) {
-            System.err.println("Failed to create buffer with VMA!");
+        if (!vmaCreateBuffer(allocator, bufferInfo, allocInfo, buffer, allocation, PtrI.of(MemorySegment.NULL)).equals(VK_SUCCESS)) {
+            throw new RuntimeException("Failed to create buffer with VMA!");
         }
         mem.close();
     }
