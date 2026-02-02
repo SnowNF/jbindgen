@@ -171,8 +171,8 @@ public class CmdLineParser {
             primaryProc = primaryProc.withExtra(analyser,
                     Utils.DestinationProvider.ofDefault(new PackagePath(extra.outDir).add(extra.libPkg), extra.libName),
                     extra.greedy, Utils.Filter.ofDefault(
-                            s -> primary.headerFilterRegex.matcher(s).matches(),
-                            s -> primary.declFilterRegex.matcher(s).matches()));
+                            s -> extra.headerFilterRegex.matcher(s).matches(),
+                            s -> extra.declFilterRegex.matcher(s).matches()));
         }
         primaryProc.generate();
     }
