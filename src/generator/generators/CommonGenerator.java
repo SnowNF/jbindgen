@@ -607,7 +607,7 @@ public class CommonGenerator implements Generator {
                 
                     private static %12$s<%5$s> makeArray(SegmentAllocator allocator, Stream<String> ss) {
                         List<%5$s> list = ss.map(s -> new %5$s(allocator, s)).toList();
-                        return new %12$s<>(allocator, list.getFirst().operator().getOperations(), list);
+                        return new %12$s<>(allocator, OPERATIONS, list);
                     }
                 
                     private static long strlen(MemorySegment segment) {
