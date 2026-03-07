@@ -178,6 +178,17 @@ public class FuncProtocolGenerator implements Generator {
                         };
                     }
                 
+                    @Override
+                    public boolean equals(Object o) {
+                        if (!(o instanceof %1$s that)) return false;
+                        return java.util.Objects.equals(funPtr, that.funPtr) && java.util.Objects.equals(methodHandle, that.methodHandle);
+                    }
+                
+                    @Override
+                    public int hashCode() {
+                        return java.util.Objects.hash(funPtr, methodHandle);
+                    }
+                
                 %6$s
                 }""".formatted(packages.getClassName(), raw.funcDescriptor(),
                 interfaces, constructors, invokes, ext, // 6

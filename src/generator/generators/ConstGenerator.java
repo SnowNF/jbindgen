@@ -24,7 +24,7 @@ public class ConstGenerator implements Generator {
         if (values.isEmpty()) return null;
         StringBuilder core = new StringBuilder();
         for (var val : values) {
-            String typeName = packages.useClass((TypeAttr.GenerationType) val.type());
+            String typeName = packages.useClass(val.type());
             core.append("""
                         public static final %s %s = new %s(%s);
                     """.formatted(typeName, val.name(), typeName, val.value()));

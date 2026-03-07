@@ -5,7 +5,6 @@ import generator.PackageManager;
 import generator.types.CommonTypes;
 import generator.types.MemoryLayouts;
 import generator.types.StructType;
-import generator.types.TypeAttr;
 import generator.types.operations.MemoryOperation;
 import generator.types.operations.OperationAttr;
 
@@ -57,7 +56,7 @@ public class StructGenerator implements Generator {
     }
 
     private static Optional<GetterAndSetter> makeGetterAndSetter(PackageManager packages, StructType.Member member) {
-        OperationAttr.Operation operation = ((TypeAttr.OperationType) member.type()).getOperation();
+        OperationAttr.Operation operation = member.type().getOperation();
         String memberName = member.name();
         if (member.bitField()) {
             var get = operation.getMemoryOperation(packages).getterBitfield("ms", member.offset(), member.bitSize());
@@ -93,7 +92,6 @@ public class StructGenerator implements Generator {
 
     private static String getMain(PackageManager packages, MemoryLayouts layout, String ext) {
         return """
-                import java.util.Objects;
                 
                 public final class %1$s implements %4$s<%1$s>, %6$s<%1$s> {
                     private final %10$s ms;
@@ -147,12 +145,12 @@ public class StructGenerator implements Generator {
                     @Override
                     public boolean equals(Object o) {
                         if (!(o instanceof %1$s s)) return false;
-                        return Objects.equals(ms, s.ms);
+                        return java.util.Objects.equals(ms, s.ms);
                     }
                 
                     @Override
                     public int hashCode() {
-                        return Objects.hashCode(ms);
+                        return java.util.Objects.hashCode(ms);
                     }
                 
                 %3$s

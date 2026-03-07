@@ -92,6 +92,11 @@ public class EnumGenerator implements Generator {
                         return obj instanceof %1$s that && that.val == val;
                     }
                 
+                    @Override
+                    public int hashCode() {
+                        return java.util.Objects.hashCode(val);
+                    }
+                
                     %4$s
                 }""".formatted(enumName,
                 packages.useClass(CommonTypes.FFMTypes.SEGMENT_ALLOCATOR), // 2
