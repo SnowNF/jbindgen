@@ -150,6 +150,11 @@ public class FuncProtocolGenerator implements Generator {
                             public %8$s.Operations<%14$s> elementOperation() {
                                 throw new java.lang.UnsupportedOperationException();
                             }
+
+                            @Override
+                            public %1$s reinterpret(java.util.function.Function<%12$s, %12$s> mapper) {
+                                throw new java.lang.UnsupportedOperationException();
+                            }
                 
                             @Override
                             public void setPointee(%14$s pointee) {

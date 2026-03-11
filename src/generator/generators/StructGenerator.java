@@ -48,11 +48,12 @@ public class StructGenerator implements Generator {
         return """
                     @Override
                     public String toString() {
-                        return (ms.address() == 0 && ms.isNative()) ? ms.toString()
+                        return (!ms.scope().isAlive() || (ms.address() == 0 && ms.isNative()))
+                                ? "%s{" + ms + "}"
                                 : "%s{" +
                                   %s                  '}';
                     }
-                """.formatted(className, ss.isEmpty() ? "" : "\"" + String.join("                  \", ", ss));
+                """.formatted(className, className, ss.isEmpty() ? "" : "\"" + String.join("                  \", ", ss));
     }
 
     private static Optional<GetterAndSetter> makeGetterAndSetter(PackageManager packages, StructType.Member member) {

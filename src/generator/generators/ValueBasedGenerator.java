@@ -41,6 +41,8 @@ public class ValueBasedGenerator implements Generator {
                     private final %2$s segment;
                 
                     private %2$s fitByteSize(%2$s segment) {
+                        if (!segment.isNative())
+                            return segment;
                         return segment.byteSize() == ELEMENT_OPERATIONS.memoryLayout().byteSize() ? segment : segment.reinterpret(ELEMENT_OPERATIONS.memoryLayout().byteSize());
                     }
                 
@@ -114,7 +116,12 @@ public class ValueBasedGenerator implements Generator {
                             public %11$s.Operations<%4$s> elementOperation() {
                                 return ELEMENT_OPERATIONS;
                             }
-                
+
+                            @Override
+                            public %3$s reinterpret(java.util.function.Function<%2$s, %2$s> mapper) {
+                                return new %3$s(mapper.apply(segment));
+                            }
+
                             @Override
                             public void setPointee(%4$s pointee) {
                                 ELEMENT_OPERATIONS.copy().copyTo(pointee, segment, 0);
